@@ -1,0 +1,3 @@
+; $Id$
+name = Facebook Status
+description = "Adds a block to your site which allows users to maintain an arbitrary status, Facebook-style."
