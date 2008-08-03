@@ -1,4 +1,5 @@
 <?php
+// $Id$
 //facebook_status.install
 function facebook_status_install() {
   $result = array();
@@ -44,8 +45,8 @@ function facebook_status_install() {
 }
 
 /**
-* Implementation of hook_uninstall().
-*/
+ * Implementation of hook_uninstall().
+ */
 function facebook_status_uninstall() {
   db_query('DROP TABLE {facebook_status}');
 }
