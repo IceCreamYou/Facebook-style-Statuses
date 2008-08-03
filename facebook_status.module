@@ -6,11 +6,11 @@
  * @param section which section of the site we're displaying help
  * @return help text for section
  */
-function facebook_status_help($section='') {
+function facebook_status_help($path='', $arg) {
 
   $output = '';
 
-  switch ($section) {
+  switch ($path) {
     case "admin/help#facebook_status":
       $output = '<p>'. t("This module adds a Facebook-style status block.  Please see <a href=\"http://drupal.org/project/facebook_status\" title=\"http://drupal.org/project/facebook_status\" rel=\"nofollow\">http://drupal.org/project/facebook_status</a> for more information.") .'</p>';
       break;
@@ -175,14 +175,14 @@ function facebook_status_form_display() {
 
 //the submit function, tells Drupal what to do when the status is submitted
 //indentation is a little "off" here because permission checking was added "after the fact"
-function facebook_status_update_form_submit($form, $form_values) {
+function facebook_status_update_form_submit($form, $form_state['values']) {
   global $user;
       //note that this first part is only for people who can edit their own status, so we don't need to check whose database records to update.
       if ( user_access('edit own facebook_status') && !user_access('edit all facebook_status') ) {
-  if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_values['name'], time(), $user->uid) ) {
+  if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $user->uid) ) {
     //only save last $num_status updates; delete one if there are too many
     if ( variable_get('facebook_status_number', 10) ) { //zero is the equivalent of infinite; that is, if var(facebook_status_number) == 0 then no rows will ever be deleted.
-      while ( db_num_rows(db_query("SELECT * FROM {facebook_status} WHERE uid = %d", $user->uid)) > variable_get('facebook_status_number', 10) ) {
+      while ( db_result(db_query("SELECT COUNT(*) FROM {facebook_status} WHERE uid = %d", $user->uid)) > variable_get('facebook_status_number', 10) ) {
         db_query_range("DELETE FROM {facebook_status} WHERE uid = %d ORDER BY status_time ASC", $user->uid, 0, 1);
       }
     }
@@ -203,7 +203,7 @@ function facebook_status_update_form_submit($form, $form_values) {
   else {
     $uid = $user->uid;
   } //on any other page (i.e. not a user page or a node) just use the current user
-  if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_values['name'], time(), $uid) ) {
+  if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $uid) ) {
     //only save last $num_status updates; delete one if there are too many
     if ( variable_get('facebook_status_number', 10) ) { //zero is the equivalent of infinite; that is, if var(facebook_status_number) == 0 then no rows will ever be deleted.
       while ( db_result(db_query("SELECT COUNT(sid) FROM {facebook_status} WHERE uid = %d", $uid)) > variable_get('facebook_status_number', 10) ) { //only continue if there are too many status records from one user; note that we have to use 'while' instead of 'if' so it still works if 'facebook_status_number' is lowered
@@ -220,13 +220,13 @@ function facebook_status_update_form_submit($form, $form_values) {
         return '';
 }
 
-function facebook_status_update_form_validate($form_id, $form_values) {
+function facebook_status_update_form_validate($form, $form_state) {
   global $user;
   if ( user_access('edit own facebook_status') && !user_access('edit all facebook_status') ) {
-    if ($form_values['name'] == '' || $form_values['name'] == ' ') { //if the user didn't enter anything in the textfield or entered whitespace,
+    if ($form_state['values']['name'] == '' || $form_state['values']['name'] == ' ') { //if the user didn't enter anything in the textfield or entered whitespace,
       $last_status = db_result(db_query_range("SELECT status_fb FROM {facebook_status} WHERE uid = %d ORDER BY status_time DESC", $user->uid, 0, 1)); //get the last status
       if ( $last_status ) { //if the user has posted her status before, use that so we don't have to have a blank status
-        $form_values['name'] = $last_status;
+        $form_state['values']['name'] = $last_status;
       }
       else {
         form_set_error('', t('You must enter a status in order to save it.')); //give an error as opposed to saving a default so we can distinguish more easily who hasn't set their status
@@ -234,7 +234,7 @@ function facebook_status_update_form_validate($form_id, $form_values) {
     } //else just keep going
   }
   else if (user_access('edit all facebook_status')) { //the only difference in this section is that $uid is used instead of $user->uid
-    if ($form_values['name'] == '' || $form_values['name'] == ' ') { //if the user didn't enter anything in the textfield or entered whitespace,
+    if ($form_state['values']['name'] == '' || $form_state['values']['name'] == ' ') { //if the user didn't enter anything in the textfield or entered whitespace,
       //determine the uid of the user whose status will be updated
       if ( arg(0) == 'user' && is_numeric(arg(1)) ) {
         $uid = arg(1);
@@ -247,7 +247,7 @@ function facebook_status_update_form_validate($form_id, $form_values) {
       } //on any other page (i.e. not a user page or a node) just use the current user
       $last_status = db_result(db_query_range("SELECT status_fb FROM {facebook_status} WHERE uid = %d ORDER BY status_time DESC", $uid, 0, 1)); //get the last status
       if ( $last_status ) { //if the user has posted her status before, use that so we don't have to have a blank status
-        $form_values['name'] = $last_status;
+        $form_state['values']['name'] = $last_status;
       }
       else {
         form_set_error('', t('You must enter a status in order to save it.')); //give an error as opposed to saving a default so we can distinguish more easily who hasn't set their status
@@ -428,28 +428,28 @@ if (module_exists('user_relationships')) {
   return system_settings_form($form);
 }
 
-function facebook_status_admin_validate($form_id, $form_values) {
-  if (!(is_numeric($form_values['facebook_status_field_length']) && $form_values['facebook_status_field_length'] <= variable_get('facebook_status_length', 192) && $form_values['facebook_status_field_length'] > 1)) {
+function facebook_status_admin_validate($form, $form_state) {
+  if (!(is_numeric($form_state['values']['facebook_status_field_length']) && $form_state['values']['facebook_status_field_length'] <= variable_get('facebook_status_length', 192) && $form_state['values']['facebook_status_field_length'] > 1)) {
     form_set_error('', t('Please enter a number between 1 and the maximum status length, inclusive, for the length of the status textfield.'));
   }
-  if (!(is_numeric($form_values['facebook_status_length']) && $form_values['facebook_status_length'] <= 255 && $form_values['facebook_status_length'] > 1)) {
+  if (!(is_numeric($form_state['values']['facebook_status_length']) && $form_state['values']['facebook_status_length'] <= 255 && $form_state['values']['facebook_status_length'] > 1)) {
     form_set_error('', t('Please enter a number between 1 and 255, inclusive, for the maximum status length.'));
   }
-  if (!(is_numeric($form_values['facebook_status_number']) && $form_values['facebook_status_number'] <= 999 && $form_values['facebook_status_number'] > 1)) {
+  if (!(is_numeric($form_state['values']['facebook_status_number']) && $form_state['values']['facebook_status_number'] <= 999 && $form_state['values']['facebook_status_number'] > 1)) {
     form_set_error('', t('Please enter a number between 0 and 999, inclusive, for the maximum number of status updates to keep in the database for each user; use zero to keep all updates.'));
   }
 if (module_exists('user_relationships')) {
-  if (!(is_numeric($form_values['facebook_status_max_num_block_stats']) && $form_values['facebook_status_max_num_block_stats'] >= 1)) {
+  if (!(is_numeric($form_state['values']['facebook_status_max_num_block_stats']) && $form_state['values']['facebook_status_max_num_block_stats'] >= 1)) {
     form_set_error('', t('Please enter a number between 1 and the maximum number of status updates kept in the database for each user, inclusive, for the maximum number of statuses to show in the Facebook Status UR Recent Updates block.'));
   }
-  if (!(is_numeric($form_values['facebook_status_max_block_len']) && $form_values['facebook_status_max_block_len'] >= 25)) {
+  if (!(is_numeric($form_state['values']['facebook_status_max_block_len']) && $form_state['values']['facebook_status_max_block_len'] >= 25)) {
     form_set_error('', t('Please enter a number between 25 and the maximum status length, inclusive, for the maximum length of statuses in the Facebook Status UR Recent Updates block.'));
   }
 }
-  if (!(is_numeric($form_values['facebook_status_max_block_len_all']) && $form_values['facebook_status_max_block_len_all'] >= 25)) {
+  if (!(is_numeric($form_state['values']['facebook_status_max_block_len_all']) && $form_state['values']['facebook_status_max_block_len_all'] >= 25)) {
     form_set_error('', t('Please enter a number between 25 and the maximum status length, inclusive, for the maximum length of statuses in the Facebook Status Recent Updates block.'));
   }
-  if (!(is_numeric($form_values['facebook_status_max_num_block_stats_all']) && $form_values['facebook_status_max_num_block_stats_all'] >= 1)) {
+  if (!(is_numeric($form_state['values']['facebook_status_max_num_block_stats_all']) && $form_state['values']['facebook_status_max_num_block_stats_all'] >= 1)) {
     form_set_error('', t('Please enter a number above zero for the maximum number of statuses to show in the Facebook Status Recent Updates block.'));
   }
 }
@@ -463,11 +463,11 @@ function facebook_status_menu() {
 
   $items[] = array(
     'path' => 'admin/settings/facebook_status',
-    'title' => t('Facebook Status settings'),
-    'description' => t('Allows administrators to adjust certain display settings for Facebook Status.'),
-    'callback' => 'drupal_get_form',
-    'callback arguments' => 'facebook_status_admin',
-    'access' => user_access('access administration pages'),
+    'title' => 'Facebook Status settings',
+    'description' => 'Allows administrators to adjust certain display settings for Facebook Status.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => 'facebook_status_admin',
+    'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -491,7 +491,7 @@ if (!$number) {
   if ($ur_rtid = -1) {
     $ur_rtid = variable_get('facebook_status_ur_type', 1);
   }
-  if (db_num_rows(db_query("SELECT * FROM {user_relationship_types}"))) { //don't bother with any of this if there aren't any relationship types yet
+  if (db_result(db_query("SELECT COUNT(*) FROM {user_relationship_types}"))) { //don't bother with any of this if there aren't any relationship types yet
   global $user;
   $ur_object = db_fetch_array(db_query("SELECT is_oneway, requires_approval FROM {user_relationship_types} WHERE rtid = %d", $ur_rtid));
   if ($ur_object['is_oneway'] == 1) {
