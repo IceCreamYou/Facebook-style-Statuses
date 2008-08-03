@@ -137,7 +137,7 @@ function facebook_status_update_form() {
     '#size' => variable_get('facebook_status_field_length', 30),
     '#maxlength' => variable_get('facebook_status_length', 192), //warning: the status column in the {facebook_status} table only holds 255 bytes.  In strict SQL mode, statuses larger than this will not be saved; in other modes, they will be truncated.
     '#description' => t("Please enter your status.  Remember that it will not update unless you click 'Save.'"),
-    '#default_value' => ((!empty( $status[0]['status_fb'] ) ) ? $status[0]['status_fb'] : t("is ")),
+    '#default_value' => ((!empty( $status[0]['status_fb'] ) ) ? htmlspecialchars($status[0]['status_fb'], ENT_NOQUOTES) : t("is ")),
   );
   $form['submit'] = array('#type' => 'submit', '#value' => t("Save") );
   return $form;
