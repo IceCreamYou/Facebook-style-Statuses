@@ -2,6 +2,14 @@
 // $Id$
 
 /**
+ * @file
+ * Facebook-style statuses gives each user a status that they can update and others can view.
+ *
+ * The module provides a number of blocks and integration with other modules to maximize usability.
+ * In addition, several convenient hooks are provided to facilitate custom blocks.
+ */
+
+/**
  * Implementation of hook_schema().
  */
 function facebook_status_schema() {
@@ -49,13 +57,19 @@ function facebook_status_install() {
 }
 
 /**
-* Implementation of hook_uninstall().
-*/
+ * Implementation of hook_uninstall().
+ */
 function facebook_status_uninstall() {
   // Remove tables
   drupal_uninstall_schema('facebook_status');
+  variable_del('facebook_status_max_num_block_stats_all');
+  variable_del('facebook_status_max_num_block_stats');
+  variable_del('facebook_status_max_block_len_all');
+  variable_del('facebook_status_max_block_len');
   variable_del('facebook_status_field_length');
+  variable_del('facebook_status_ur_type');
   variable_del('facebook_status_length');
   variable_del('facebook_status_number');
   variable_del('facebook_status_mode');
+  variable_del('facebook_status_ajax');
 }
