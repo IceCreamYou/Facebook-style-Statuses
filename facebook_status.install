@@ -1,6 +1,17 @@
 <?php
 // $Id$
-//facebook_status.install
+
+/**
+ * @file
+ * Facebook-style statuses gives each user a status that they can update and others can view.
+ *
+ * The module provides a number of blocks and integration with other modules to maximize usability.
+ * In addition, several convenient hooks are provided to facilitate custom blocks.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
 function facebook_status_install() {
   $result = array();
   switch ($GLOBALS['db_type']) {
