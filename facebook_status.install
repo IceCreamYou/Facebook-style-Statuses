@@ -60,4 +60,19 @@ function facebook_status_install() {
  */
 function facebook_status_uninstall() {
   db_query('DROP TABLE {facebook_status}');
+  variable_del('facebook_status_max_num_block_stats_all');
+  variable_del('facebook_status_max_num_block_stats');
+  variable_del('facebook_status_clear_user_records');
+  variable_del('facebook_status_max_block_len_all');
+  variable_del('facebook_status_clear_user_string');
+  variable_del('facebook_status_max_block_len');
+  variable_del('facebook_status_special_user');
+  variable_del('facebook_status_field_length');
+  variable_del('facebook_status_clear_user');
+  variable_del('facebook_status_clear_all');
+  variable_del('facebook_status_ur_type');
+  variable_del('facebook_status_activity');
+  variable_del('facebook_status_length');
+  variable_del('facebook_status_mode');
+  variable_del('facebook_status_ajax');
 }
