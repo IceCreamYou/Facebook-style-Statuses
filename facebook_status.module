@@ -29,20 +29,37 @@ function facebook_status_help($section='') {
  * Implementation of hook_form_alter()
  */
 function facebook_status_form_alter($form_id, &$form) {
-  if ($form_id == 'block_admin_configure' && arg(4) == 'facebook_status' && arg(5) == '3') {
+  if ($form_id == 'block_admin_configure' && arg(4) == 'facebook_status' && (arg(5) == '3' || arg(5) == '4')) {
     $form['facebook_status'] = array(
       '#type' => 'fieldset',
       '#title' => t('Facebook Status Settings'),
       '#collapsible' => true,
       '#weight' => -4,
-      '#description' => t("This block will work exactly like the Facebook Status block, except that it only shows one user's status."),
+      '#tree' => TRUE,
     );
+  }
+  if ($form_id == 'block_admin_configure' && arg(4) == 'facebook_status' && arg(5) == '3') {
     $form['facebook_status']['facebook_status_special_user'] = array(
       '#type' => 'textfield',
       '#title' => t('User ID of the user whose statuses you want to display in this block'),
       '#default_value' => variable_get('facebook_status_special_user', 1),
       '#size' => 16,
       '#maxlength' => 14,
+      '#description' => t("This block will work exactly like the Facebook Status block, except that it only shows one user's status."),
+    );
+  }
+  if ($form_id == 'block_admin_configure' && arg(4) == 'facebook_status' && arg(5) == '4') {
+    $fbsur_result = db_query("SELECT plural_name, rtid FROM {user_relationship_types}");
+    while ($row = db_fetch_array($fbsur_result)) {
+      $i = $row['rtid'];
+      $fbsur[$i] = $row['plural_name'];
+    }
+    $form['fbs_misc']['facebook_status_ur_type'] = array(
+      '#type' => 'select',
+      '#title' => t('User Relationship type to use for this block'),
+      '#default_value' => variable_get('facebook_status_ur_type', 1),
+      '#description' => t("This block works exactly like the Facebook Status Recent Updates block except that it only shows the latest status updates for users with whom the currently logged in user has a relationship."),
+      '#options' => $fbsur,
     );
   }
 }
@@ -231,7 +248,7 @@ function facebook_status_update_form() {
       $xname = htmlspecialchars($uname, ENT_NOQUOTES);
     }
     else if (arg(0) == 'node' && is_numeric(arg(1))) {
-      $uuser = db_fetch_array(db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node} n ON n.uid = u.uid WHERE n.nid = %d", arg(1)));
+      $uuser = db_fetch_array(db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node} n ON n.uid = u.uid WHERE n.uid = u.uid AND n.nid = %d", arg(1)));
       $uname = $uuser['name'];
       $uuid = $uuser['uid'];
       $xname = htmlspecialchars($uname, ENT_NOQUOTES);
@@ -664,19 +681,6 @@ function facebook_status_admin() {
     '#weight' => 0,
     '#tree' => TRUE,
   );
-  if (module_exists('user_relationships')) {
-    $fbsur_result = db_query("SELECT plural_name, rtid FROM {user_relationship_types}");
-    while ($row = db_fetch_array($fbsur_result)) {
-      $i = $row['rtid'];
-      $fbsur[$i] = $row['plural_name'];
-    }
-    $form['fbs_misc']['facebook_status_ur_type'] = array(
-      '#type' => 'select',
-      '#title' => t('User Relationship type to use for the Facebook Status UR Recent Updates block'),
-      '#default_value' => variable_get('facebook_status_ur_type', 1),
-      '#options' => $fbsur,
-    );
-  }
   if (module_exists('activity')) {
     $form['fbs_misc']['facebook_status_activity'] = array(
       '#type' => 'checkbox',
@@ -887,25 +891,26 @@ function facebook_status_get_ur_status($ur_rtid = -1, $number = 0, $grouping = T
     ORDER BY status_time DESC
     ", $ur_oneway_urjoin, $ur_oneway_fbjoin, $ur_oneway_urjoin, $ur_oneway_urwhere, $ur_requires_approval, $ur_rtid, $disallow, $group_by);
 
-    $output = "<div class='facebook_status_ur_block'>";
-    $output .= "<ul>";
-    //Count by $i instead of using db_query_range() so we can exclude the current user and still end up with the right number of results.
-    //Admittedly, this is a little slower.
-    $i = 0;
-    while ($row = db_fetch_array($user_rel)) {
-      if ($row['uid'] != $user->uid) {
-        $row['status_fb'] = drupal_substr($row['status_fb'], 0, variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192)));
-        if ( drupal_strlen($row['status_fb']) == variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192)) ) {
-          $row['status_fb'] .= "...";
-        }
-        $output .= "<li>". l(htmlspecialchars($row['name'], ENT_NOQUOTES), "user/". $row['uid']) . t(" ") . htmlspecialchars($row['status_fb'], ENT_NOQUOTES) ." <div class='" . t("submitted") ."'>". format_interval(time() - $row['status_time'], 1) . t(' ago') ."</div></li>";
-        $i++;
-        if ($i >= $number) {
-          break;
+    $output = '';
+    if (db_num_rows($user_rel)) {
+      $output .= "<div class='facebook_status_ur_block'><ul>";
+      //Count by $i instead of using db_query_range() so we can exclude the current user and still end up with the right number of results.
+      $i = 0;
+      while ($row = db_fetch_array($user_rel)) {
+        if ($row['uid'] != $user->uid) {
+          $row['status_fb'] = drupal_substr($row['status_fb'], 0, variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192)));
+          if ( drupal_strlen($row['status_fb']) == variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192)) ) {
+            $row['status_fb'] .= "...";
+          }
+          $output .= "<li>". l(htmlspecialchars($row['name'], ENT_NOQUOTES), "user/". $row['uid']) . t(" ") . htmlspecialchars($row['status_fb'], ENT_NOQUOTES) ." <div class='" . t("submitted") ."'>". format_interval(time() - $row['status_time'], 1) . t(' ago') ."</div></li>";
+          $i++;
+          if ($i >= $number) {
+            break;
+          }
         }
       }
+      $output .= "</ul></div>";
     }
-    $output .= "</ul></div>";
     return $output;
   }
   else {
