@@ -1,5 +1,11 @@
 // $Id$
 
+===========
+== Notes ==
+===========
+
+Patches and bug reports welcome at http://drupal.org/project/facebook_status.
+
 =============
 == Summary ==
 =============

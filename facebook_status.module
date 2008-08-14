@@ -102,7 +102,7 @@ function facebook_status_block($op='list', $delta=0) {
         $sm = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", arg(1), 0, 1));
       }
       else if (arg(0) == 'node' && is_numeric(arg(1))) {
-        $fbs_user = db_result(db_query("SELECT uid, name FROM {users} LEFT JOIN node ON node.uid = users.uid WHERE node.nid = %d", arg(1)));
+        $fbs_user = db_result(db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node} n ON u.uid = n.uid WHERE u.uid = n.uid AND n.nid = %d", arg(1)));
         $fbs_name = htmlspecialchars($fbs_user['name'], ENT_NOQUOTES);
         $fbs_uid = $fbs_user['uid'];
         $sm = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $fbs_user['uid'], 0, 1));
@@ -159,7 +159,13 @@ function facebook_status_block($op='list', $delta=0) {
             $block_content .= l($fbs_name, "user/". $fbs_uid) ." ";
           }
         }
-        $block_content .= htmlspecialchars($sm['status_fb'], ENT_NOQUOTES) ." <span class='". t("submitted") ."'>". format_interval(time() - $sm['status_time'], 1) . t(' ago') ."</span>";
+        if (time() - $sm['status_time'] < 60) {
+          $time = t("a moment");
+        }
+        else {
+          $time = format_interval(time() - $sm['status_time'], 1);
+        }
+        $block_content .= htmlspecialchars($sm['status_fb'], ENT_NOQUOTES) ." <span class='". t("submitted") ."'>". $time . t(' ago') ."</span>";
       }
       //If the user is not allowed to have a status.
           else if (in_array(variable_get('facebook_status_clear_user', array(0)), $fbs_uid)) {
@@ -210,7 +216,13 @@ function facebook_status_block($op='list', $delta=0) {
         $c_array = facebook_status_get_status($x, variable_get('facebook_status_max_num_block_stats_all', 5));
         $block_content = "<div class='facebook_status_block_all'><ul>";
         foreach ($c_array as $row) {
-          $block_content .= "<li>". l(htmlspecialchars($row['fbs_name'], ENT_NOQUOTES), "user/". $row['fbs_uid']) . t(" ") . htmlspecialchars($row['status_fb'], ENT_NOQUOTES) ." <div class='". t("submitted") ."'>". format_interval(time() - $row['status_time'], 1) . t(' ago') ."</div></li>";
+          if (time() - $row['status_time'] < 60) {
+            $time = t("a moment");
+          }
+          else {
+            $time = format_interval(time() - $row['status_time'], 1);
+          }
+          $block_content .= "<li>". l(htmlspecialchars($row['fbs_name'], ENT_NOQUOTES), "user/". $row['fbs_uid']) . t(" ") . htmlspecialchars($row['status_fb'], ENT_NOQUOTES) ." <div class='". t("submitted") ."'>". $time . t(' ago') ."</div></li>";
         }
         $block_content .= "</ul></div>";
           }
@@ -440,7 +452,7 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
             //This means that either we've run into blank statuses or there weren't any statuses to begin with.
             //And that means that empty($result[$x])  will return TRUE.
             if (!$row['status_time']) {
-          break;
+              break;
             }
           $result[$x] = $row;
           //Adding the name to the array is a convenience, but don't forget to add a space between it and the status.
@@ -525,7 +537,7 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
     $query = db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $fbs_uid, 0, $num_results);
     $query_2 = db_query_range("SELECT * FROM (SELECT uid as fbs_uid, status_fb, status_time, sid FROM {facebook_status} ORDER BY sid DESC) as x %s ORDER BY sid DESC", $duid, 0, $num_results);
   }
-  if ( $fbs_uid > 0 && !in_array(variable_get('facebook_status_clear_user', array(0)), $fbs_uid)) {
+  if ( $fbs_uid > 0 && !in_array(variable_get('facebook_status_clear_user', array(0)), $fbs_uid) ) {
     $result = array();
     $i = 0;
     while ($row = db_fetch_array($query)) {
@@ -571,7 +583,6 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
   }
   return $result;
 }
-
 
 /**
  * FAPI function for the administrative settings page.
@@ -919,6 +930,16 @@ function facebook_status_get_ur_status($ur_rtid = -1, $number = 0, $grouping = T
 }
 
 /**
+ * Implementation of hook_user().
+ */
+function facebook_status_user($op, &$edit, &$account) {
+  if ($op == 'delete') {
+    //Remove abandoned statuses from the database on user account deletion.
+    db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
+  }
+}
+
+/**
  * Implementation of hook_activity().
  * Integration with activity.module.
  *
@@ -963,7 +984,7 @@ function facebook_status_activity($op='activity', $uid=0, $uname='', $status='',
     $uname = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
   }
   else if ($uname && !$uid) {
-    $uid = db_result(db_query("SELECT uid FROM {users} WHERE name = %s", $uname));
+    $uid = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $uname));
   }
   if (!($status && $status_time)) {
     $object = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, 0, 1));
@@ -971,12 +992,17 @@ function facebook_status_activity($op='activity', $uid=0, $uname='', $status='',
     $status_time = $object['status_time'];
   }
   else if ($status && !$status_time) {
-    $status_time = db_result(db_query_range("SELECT status_time FROM {facebook_status} WHERE uid = %d AND status_fb = %s ORDER BY sid DESC", $uid, $status, 0, 1));
+    $status_time = db_result(db_query_range("SELECT status_time FROM {facebook_status} WHERE uid = %d AND status_fb = '%s' ORDER BY sid DESC", $uid, $status, 0, 1));
   }
   else if ($status_time && !$status) {
     $status = db_result(db_query_range("SELECT status_fb FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, 0, 1));
   }
-  $status_time = format_interval($status_time);
+  if (time() - $status_time < 60) {
+    $status_time = t("a moment");
+  }
+  else {
+    $status_time = format_interval(time() - $status_time, 1);
+  }
   $target_users_roles = array(
     ACTIVITY_ALL => 'all',
     $uid => 'author'
@@ -1088,14 +1114,4 @@ function facebook_status_token_values($type, $data = NULL) {
     'status-created-time' => $object['time'],
   );
   return $values;
-}
-
-/**
- * Implementation of hook_user().
- */
-function facebook_status_user($op, &$edit, &$account) {
-  if ($op == 'delete') {
-    //Remove abandoned statuses from the database on user account deletion.
-    db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
-  }
 }
