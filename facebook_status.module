@@ -212,7 +212,7 @@ function facebook_status_block($op='list', $delta=0) {
           $x = $user->uid;
         }
       }
-          if (!in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
+      if (!in_array($x, variable_get('facebook_status_clear_user', array(0)))) {
         $c_array = facebook_status_get_status($x, variable_get('facebook_status_max_num_block_stats_all', 5));
         $block_content = "<div class='facebook_status_block_all'><ul>";
         foreach ($c_array as $row) {
@@ -225,7 +225,7 @@ function facebook_status_block($op='list', $delta=0) {
           $block_content .= "<li>". l(htmlspecialchars($row['fbs_name'], ENT_NOQUOTES), "user/". $row['fbs_uid']) . t(" ") . htmlspecialchars($row['status_fb'], ENT_NOQUOTES) ." <div class='". t("submitted") ."'>". $time . t(' ago') ."</div></li>";
         }
         $block_content .= "</ul></div>";
-          }
+      }
       $block['subject'] = "Recent Status Updates";
       $block['content'] = $block_content;
       break;
