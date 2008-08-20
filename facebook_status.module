@@ -102,10 +102,10 @@ function facebook_status_block($op='list', $delta=0) {
         $sm = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", arg(1), 0, 1));
       }
       else if (arg(0) == 'node' && is_numeric(arg(1))) {
-        $fbs_user = db_result(db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node} n ON u.uid = n.uid WHERE u.uid = n.uid AND n.nid = %d", arg(1)));
+        $fbs_user = db_fetch_array(db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node} n ON u.uid = n.uid WHERE u.uid = n.uid AND n.nid = %d", arg(1)));
         $fbs_name = htmlspecialchars($fbs_user['name'], ENT_NOQUOTES);
         $fbs_uid = $fbs_user['uid'];
-        $sm = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $fbs_user['uid'], 0, 1));
+        $sm = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $fbs_uid, 0, 1));
       }
       else {
         $fbs_name = htmlspecialchars($user->name, ENT_NOQUOTES);
@@ -115,14 +115,15 @@ function facebook_status_block($op='list', $delta=0) {
       $block_content = '<div class="facebook_status_block">';
       //This gigantic 'if' statement decides whether we can show the update form or not.  And if we don't show the form, we don't need the AJAX.
       if ( (((arg(0) == 'user' && is_numeric(arg(1)) && arg(1) == $user->uid)
-        || (arg(0) == 'node' && is_numeric(arg(1)) && db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1))) == $user->uid))
+        || (arg(0) == 'node' && is_numeric(arg(1)) && db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1))) == $user->uid)
+        || (arg(0) != 'user' && arg(0) != 'node' && !is_numeric(arg(1))))
         && user_access('edit own facebook_status')
         && !in_array($user->uid, variable_get('facebook_status_clear_user', array(0))))
         || (user_access('edit all facebook_status')
         && !in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) ) {
         $block_content .= '<div class="facebook_status_form">'. facebook_status_form_display() .'</div>';
         $x = TRUE;
-          $path = drupal_get_path('module', 'facebook_status');
+        $path = drupal_get_path('module', 'facebook_status');
         if (variable_get('facebook_status_ajax', 1)) {
           drupal_add_js($path .'/facebook_status.js');
         }
