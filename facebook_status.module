@@ -322,10 +322,6 @@ function facebook_status_update_form_submit($form, $form_state) {
       if ( user_access('edit own facebook_status') && !user_access('edit all facebook_status') ) {
   if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $user->uid) ) {
     drupal_set_message(t('Your status has been updated.'));
-    //Integration with activity.module.  This was copied from the 5.x branch and I have no idea if it still works in 6.x.
-    if (module_exists('activity') && variable_get('facebook_status_activity', 1)) {
-      facebook_status_activity('activity', $user->uid, '', $form_state['values']['name'], time());
-    }
   }
   else {
     drupal_set_message(t('An error has occurred while updating your status.  Please try again.  If the problem persists, please contact an administrator.'), 'error');
@@ -344,10 +340,6 @@ function facebook_status_update_form_submit($form, $form_state) {
   }
   if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $uid) ) {
     drupal_set_message(t('The status has been updated.'));
-    //Integration with activity.module.  This was copied from the 5.x branch and I have no idea if it still works in 6.x.
-    if (module_exists('activity') && variable_get('facebook_status_activity', 1)) {
-      facebook_status_activity('activity', $uid, '', $form_state['values']['name'], time());
-    }
   }
   else {
     drupal_set_message(t('An error has occurred while updating the status.  Please try again.'), 'error');
@@ -703,16 +695,14 @@ function facebook_status_admin() {
       '#description' => t("When enabled, status updates are recorded by the activity module.  Default is On."),
     );
   }
-/*
   $form['fbs_misc']['facebook_status_clear_user_records'] = array(
     '#type' => 'textfield',
     '#title' => t('Remove all statuses for these users'),
-    '#default_value' => variable_get('facebook_status_clear_user_records', 0),
+    '#default_value' => variable_get('facebook_status_clear_user_records_string', implode(',', variable_get('facebook_status_clear_user_records', array(0)))),
     '#size' => 72,
     '#maxlength' => 255,
-    '#description' => t("Separate each username with a comma: user1,user2,user3")
+    '#description' => t("Use zero for none.  Separate each UID with a comma: 1,2,3")
   );
- */
   $form['fbs_misc']['facebook_status_disallowed'] = array(
     '#type' => 'textfield',
     '#title' => t('Specify the UIDs of users who are not allowed to have statuses'),
@@ -770,11 +760,21 @@ function facebook_status_admin_validate($form, $form_state) {
   $temp = explode(',', variable_get('facebook_status_clear_user_string', implode(',', variable_get('facebook_status_clear_user', array(0)))));
   foreach ($temp as $value) {
     $is_user = FALSE;
-    if ( $value > 0 ) {
-      $is_user = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $value));
+    if ( $value > 0 && is_numeric($value) ) {
+      $is_user = $value;
     }
-    if (!(is_numeric($value) && $value >= 0 && ($is_user || $value == 0))) {
-      form_set_error('', t('Each value you enter in the disallowed users box must be a User ID, and each UID must be serparated by nothing more than a comma.  The UID is the number that shows up in the URL after "[domain]/user" on profile pages.'));
+    if (!($is_user || $value == 0)) {
+      form_set_error('', t('Each value you enter in the disallowed users box must be a User ID, and each UID must be serparated by nothing more than a comma.  The UID is the number that shows up in the URL after "[domain]/user/" on profile pages.'));
+    }
+  }
+  $temp = explode(',', variable_get('facebook_status_clear_user_records_string', implode(',', variable_get('facebook_status_clear_user_records', array(0)))));
+  foreach ($temp as $value) {
+    $is_user = FALSE;
+    if ( $value > 0 && is_numeric($value) ) {
+      $is_user = $value;
+    }
+    if (!($is_user || $value == 0)) {
+      form_set_error('', t('Each value you enter in the clear-user-statuses box must be a User ID, and each UID must be serparated by nothing more than a comma.  The UID is the number that shows up in the URL after "[domain]/user/" on profile pages.'));
     }
   }
 }
@@ -790,11 +790,11 @@ function facebook_status_admin_submit($form, &$form_state) {
   variable_set('facebook_status_clear_user', explode(',', variable_get('facebook_status_clear_user_string', '0')));
   if ($form_state['values']['fbs_misc']['facebook_status_clear_all'] == 'all') {
     db_query("TRUNCATE TABLE {facebook_status}");
-    drupal_set_message('All statuses cleared.');
+    drupal_set_message(t('All statuses cleared.'));
   }
   //Deletes all statuses except the most current one for each user.
   else if ($form_state['values']['fbs_misc']['facebook_status_clear_all'] == 'old') {
-    //We go through this extra process because a query can't edit a table that it's also deleting from.  Otherwise, we could use "sid NOT IN [subquery]."
+    //We go through this extra process because a query can't select from a table that it's also deleting from.  Otherwise, we could use "sid NOT IN [subquery]."
     $temp = db_query("SELECT MAX(sid) as sid FROM {facebook_status} GROUP BY uid");
     $nsids = '';
     while ($value = db_fetch_array($temp)) {
@@ -803,8 +803,17 @@ function facebook_status_admin_submit($form, &$form_state) {
     //Removes first " AND ".
     $nsids = drupal_substr($nsids, 5);
     db_query("DELETE FROM {facebook_status} WHERE %s ORDER BY sid ASC", $nsids);
-    drupal_set_message('All statuses except the most recent one were cleared for each user.');
+    drupal_set_message(t('All statuses except the most recent one were cleared for each user.'));
   }
+  variable_set('facebook_status_clear_user_records', explode(',', variable_get('facebook_status_clear_user_records_string', '0')));
+  $temp = variable_get('facebook_status_clear_user_records', explode(',', variable_get('facebook_status_clear_user_records_string', '0')));
+  foreach ($temp as $value) {
+    db_query("DELETE FROM {facebook_status} WHERE uid = %d", $value);
+    $name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $value));
+    drupal_set_message(t('All statuses were cleared for ') . $name);
+  }
+  variable_del('facebook_status_clear_user_records_string');
+  variable_del('facebook_status_clear_user_records');
 }
 
 /**
@@ -826,9 +835,7 @@ function facebook_status_menu() {
 }
 
 /**
- * Gets the latest status updates from users with whom the current user has a relationship.
- *
- * To do: allow more than one rtid.
+ * Gets the latest status updates from users with whom the current user has a relationship and themes them in a list.
  *
  * @param $ur_rtid
  *   The relationship type ID (rtid) to use when determining which users the current user relates to.
@@ -904,10 +911,6 @@ function facebook_status_get_ur_status($ur_rtid = -1, $number = 0, $grouping = T
     ", $ur_oneway_urjoin, $ur_oneway_fbjoin, $ur_oneway_urjoin, $ur_oneway_urwhere, $ur_requires_approval, $ur_rtid, $disallow, $group_by);
 
     $output = '';
-//    This 'if' function is commented out because it causes this error:
-//    Fatal error: Can't use function return value in write context in /home/[user]/domains/[domain]/public_html/sites/all/modules/facebook_status/facebook_status.module on line 906
-//    And before these comments existed, this 'if' statement was line 906.
-//    if (!empty(db_fetch_array($user_rel))) {
       $output .= "<div class='facebook_status_ur_block'><ul>";
       //Count by $i instead of using db_query_range() so we can exclude the current user and still end up with the right number of results.
       $i = 0;
@@ -925,8 +928,13 @@ function facebook_status_get_ur_status($ur_rtid = -1, $number = 0, $grouping = T
         }
       }
       $output .= "</ul></div>";
-//    }
-    return $output;
+    //An awkward workaround because we don't have a good way to check to see if there are any results.
+    if ($output != "<div class='facebook_status_ur_block'><ul></ul></div>") {
+      return $output;
+    }
+    else {
+      return '';
+    }
   }
   else {
     return FALSE;
@@ -941,182 +949,4 @@ function facebook_status_user($op, &$edit, &$account) {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
   }
-}
-
-//Everything from here down was copied from the 5.x branch and I have no idea if it will work with 6.x.
-/**
- * Implementation of hook_activity().
- * Integration with activity.module.
- *
- * If neither $status nor $status_time are specified, the latest status is used.
- * If only one is specified, the other is figured out.
- * If either or both $uid or $uname are not specified, they are figured out.
- * Passing in the variables is not necessary but facilitates optimization, since it helps avoids database queries.
- *
- * @param $op
- *   Specifies whether to record a status update or define tokens.
- * @param $uid
- *   The UID of the user whose status was updated.
- * @param $uname
- *   The username of the user whose status was updated.
- * @param $status
- *   The new status of the user whose status was updated.
- * @param $status_time
- *   The timestamp at which the relevant user's status was last updated.
- * @return
- *   If $op is 'activity' nothing is returned but a new activity record is created.
- *   If $op is 'token' an array is returned with this module's tokens inside.
- *
- * @see facebook_status_activity_info()
- */
-function facebook_status_activity($op='activity', $uid=0, $uname='', $status='', $status_time='') {
-  if (!($uid && $uname)) {
-    if ( arg(0) == 'user' && is_numeric(arg(1)) ) {
-      $uid = arg(1);
-      $uname = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
-    }
-    else if ( arg(0) == 'node' && is_numeric(arg(1)) ) {
-      $uid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
-      $uname = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
-    }
-    else {
-      global $user;
-      $uid = $user->uid;
-      $uname = $user->name;
-    }
-  }
-  else if ($uid && !$uname) {
-    $uname = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $uid));
-  }
-  else if ($uname && !$uid) {
-    $uid = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $uname));
-  }
-  if (!($status && $status_time)) {
-    $object = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, 0, 1));
-    $status = $object['status_fb'];
-    $status_time = $object['status_time'];
-  }
-  else if ($status && !$status_time) {
-    $status_time = db_result(db_query_range("SELECT status_time FROM {facebook_status} WHERE uid = %d AND status_fb = '%s' ORDER BY sid DESC", $uid, $status, 0, 1));
-  }
-  else if ($status_time && !$status) {
-    $status = db_result(db_query_range("SELECT status_fb FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, 0, 1));
-  }
-  if (time() - $status_time < 60) {
-    $status_time = t("a moment");
-  }
-  else {
-    $status_time = format_interval(time() - $status_time, 1);
-  }
-  $target_users_roles = array(
-    ACTIVITY_ALL => 'all',
-    $uid => 'author'
-  );
-  $data = array(
-    'operation' => 'update',
-    'author-uid' => $uid,
-    'author-name' => $uname,
-    'author-name-link' => l($uname, 'user/'. $uid),
-    'status' => $status,
-    'status-created-time' => $status_time,
-  );
-  switch ($op) {
-    case 'activity':
-      activity_insert('facebook_status', 'status', 'update', $data, $target_users_roles);
-      break;
-    case 'token':
-      return array(
-        'uid' => $uid,
-        'name' => $uname,
-        'status' => $status,
-        'time' => $status_time,
-      );
-      break;
-  }
-}
-
-/**
- * Implementation of hook_activity_info().
- * Continued integration with activity.module.
- *
- * @return
- *   An array of information necessary to build the activity record.
- *
- * @see facebook_status_activity()
- */
-function facebook_status_activity_info() {
-  if (variable_get('facebook_status_mode', 1)) {
-    $def_all = '[author-name-link] [status]';
-    $def_auth = 'Your status is now "[status]"';
-  }
-  else {
-    $def_all = "[author-name-link]'s status was [operation]d";
-    $def_auth = "Your status was [operation]d";
-  }
-  return array(
-    'ops' => array('update' => t('Update')),
-    'types' => array('status' => 'status'),
-    'roles' => array(
-      'author' => array(
-        '#name' => t('Author'),
-        '#description' => t('The person who created the node.'),
-        '#default' => $def_auth,
-      ),
-      // This is what corresponds to ACTIVITY_ALL
-      'all' => array(
-        '#name' => t('All'),
-        '#description' => t('Everyone with permission'),
-        '#default' => $def_all,
-      ),
-    ),
-  );
-}
-
-/**
- * Implementation of hook_token_list().
- * Token module integration.  Required for Activity to work.
- */
-function facebook_status_token_list($type = 'all') {
-  if ($type == 'facebook_status') {
-    $tokens['facebook_status'] = array(
-      'operation' => t('The verb of the operation that took place.  Always "update."'),
-      'author-uid' => t('The UID of the person whose status was updated.'),
-      'author-name' => t('The username of the person whose status was updated.'),
-      'author-name-link' => t('A link to the profile of the user whose status was updated.'),
-      'status' => t('The new status'),
-      'status-created-time' => t('The time the status was updated'),
-    );
-
-    return $tokens;
-  }
-}
-
-/**
- * Implementation of hook_token_values().
- * Token module integration.  Required for Activity to work.
- */
-function facebook_status_token_values($type, $data = NULL) {
-  //honestly I have no idea what this does, and it returns some default site tokens that aren't really necessary, but nothing works without including it.
-  static $authors;
-  if ($type == 'facebook_status' && !empty($data)) {
-    if (!isset($authors[$data['author-uid']])) {
-    $author = db_fetch_object(db_query('SELECT uid, name FROM {users} WHERE uid = %d', $data['author-uid']));
-      $authors[$data['author-uid']] = theme('username', $author);
-    }
-    $data['author'] = $authors[$data['author-uid']];
-    return $data;
-  }
-
-  //Not sure the rest of this is necessary, but everything seems to work so I'm not going to mess with it.
-  //If it's not necessary there's some code that can be removed from facebook_status_activity() related to the $op parameter.
-  $object = facebook_status_activity('token');
-  $values = array(
-    'operation' => 'update',
-    'author-uid' => $object['uid'],
-    'author-name' => $object['name'],
-    'author-name-link' => l($object['name'], 'user/'. $object['uid']),
-    'status' => $object['status'],
-    'status-created-time' => $object['time'],
-  );
-  return $values;
 }

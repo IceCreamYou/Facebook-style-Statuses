@@ -63,6 +63,7 @@ function facebook_status_uninstall() {
   // Remove tables
   drupal_uninstall_schema('facebook_status');
   variable_del('facebook_status_max_num_block_stats_all');
+  variable_del('facebook_status_clear_user_records_string');
   variable_del('facebook_status_max_num_block_stats');
   variable_del('facebook_status_clear_user_records');
   variable_del('facebook_status_max_block_len_all');
