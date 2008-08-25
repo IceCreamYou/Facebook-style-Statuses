@@ -701,16 +701,14 @@ function facebook_status_admin() {
       '#description' => t("When enabled, status updates are recorded by the activity module.  Default is On."),
     );
   }
-/*
   $form['fbs_misc']['facebook_status_clear_user_records'] = array(
     '#type' => 'textfield',
     '#title' => t('Remove all statuses for these users'),
     '#default_value' => variable_get('facebook_status_clear_user_records', 0),
     '#size' => 72,
     '#maxlength' => 255,
-    '#description' => t("Separate each username with a comma: user1,user2,user3")
+    '#description' => t("Use zero for none.  Separate each UID with a comma: 1,2,3")
   );
- */
   $form['fbs_misc']['facebook_status_disallowed'] = array(
     '#type' => 'textfield',
     '#title' => t('Specify the UIDs of users who are not allowed to have statuses'),
@@ -768,11 +766,21 @@ function facebook_status_admin_validate($form_id, $form_values) {
   $temp = explode(',', variable_get('facebook_status_clear_user_string', implode(',', variable_get('facebook_status_clear_user', array(0)))));
   foreach ($temp as $value) {
     $is_user = FALSE;
-    if ( $value > 0 ) {
-      $is_user = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $value));
+    if ( $value > 0 && is_numeric($value) ) {
+      $is_user = $value;
     }
-    if (!(is_numeric($value) && $value >= 0 && ($is_user || $value == 0))) {
-      form_set_error('', t('Each value you enter in the disallowed users box must be a User ID, and each UID must be serparated by nothing more than a comma.  The UID is the number that shows up in the URL after "[domain]/user" on profile pages.'));
+    if (!($is_user || $value == 0)) {
+      form_set_error('', t('Each value you enter in the disallowed users box must be a User ID, and each UID must be serparated by nothing more than a comma.  The UID is the number that shows up in the URL after "[domain]/user/" on profile pages.'));
+    }
+  }
+  $temp = explode(',', variable_get('facebook_status_clear_user_records_string', implode(',', variable_get('facebook_status_clear_user_records', array(0)))));
+  foreach ($temp as $value) {
+    $is_user = FALSE;
+    if ( $value > 0 && is_numeric($value) ) {
+      $is_user = $value;
+    }
+    if (!($is_user || $value == 0)) {
+      form_set_error('', t('Each value you enter in the clear-user-statuses box must be a User ID, and each UID must be serparated by nothing more than a comma.  The UID is the number that shows up in the URL after "[domain]/user/" on profile pages.'));
     }
   }
 }
@@ -788,11 +796,11 @@ function facebook_status_admin_submit($form_id, $form_values) {
   variable_set('facebook_status_clear_user', explode(',', variable_get('facebook_status_clear_user_string', '0')));
   if ($form_values['fbs_misc']['facebook_status_clear_all'] == 'all') {
     db_query("TRUNCATE TABLE {facebook_status}");
-    drupal_set_message('All statuses cleared.');
+    drupal_set_message(t('All statuses cleared.'));
   }
   //Deletes all statuses except the most current one for each user.
   else if ($form_values['fbs_misc']['facebook_status_clear_all'] == 'old') {
-    //We go through this extra process because a query can't edit a table that it's also deleting from.  Otherwise, we could use "sid NOT IN [subquery]."
+    //We go through this extra process because a query can't select from a table that it's also deleting from.  Otherwise, we could use "sid NOT IN [subquery]."
     $temp = db_query("SELECT MAX(sid) as sid FROM {facebook_status} GROUP BY uid");
     $nsids = '';
     while ($value = db_fetch_array($temp)) {
@@ -801,8 +809,17 @@ function facebook_status_admin_submit($form_id, $form_values) {
     //Removes first " AND ".
     $nsids = substr($nsids, 5);
     db_query("DELETE FROM {facebook_status} WHERE %s ORDER BY sid ASC", $nsids);
-    drupal_set_message('All statuses except the most recent one were cleared for each user.');
+    drupal_set_message(t('All statuses except the most recent one were cleared for each user.'));
   }
+  variable_set('facebook_status_clear_user_records', explode(',', variable_get('facebook_status_clear_user_records_string', '0')));
+  $temp = variable_get('facebook_status_clear_user_records', explode(',', variable_get('facebook_status_clear_user_records_string', '0')));
+  foreach ($temp as $value) {
+    db_query("DELETE FROM {facebook_status} WHERE uid = %d", $value);
+    $name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $value));
+    drupal_set_message(t('All statuses were cleared for ') . $name);
+  }
+  variable_del('facebook_status_clear_user_records_string');
+  variable_del('facebook_status_clear_user_records');
 }
 
 /**
@@ -826,9 +843,7 @@ function facebook_status_menu() {
 }
 
 /**
- * Gets the latest status updates from users with whom the current user has a relationship.
- *
- * To do: allow more than one rtid.
+ * Gets the latest status updates from users with whom the current user has a relationship and themes them in a list.
  *
  * @param $ur_rtid
  *   The relationship type ID (rtid) to use when determining which users the current user relates to.
