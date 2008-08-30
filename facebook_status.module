@@ -47,6 +47,7 @@ function facebook_status_form_alter($form_id, &$form) {
       '#maxlength' => 14,
       '#description' => t("This block will work exactly like the Facebook Status block, except that it only shows one user's status."),
     );
+    $form['#validate']['facebook_status_alter_validate'] = array();
   }
   if ($form_id == 'block_admin_configure' && arg(4) == 'facebook_status' && arg(5) == '4') {
     $fbsur_result = db_query("SELECT plural_name, rtid FROM {user_relationship_types}");
@@ -61,6 +62,20 @@ function facebook_status_form_alter($form_id, &$form) {
       '#description' => t("This block works exactly like the Facebook Status Recent Updates block except that it only shows the latest status updates for users with whom the currently logged in user has a relationship."),
       '#options' => $fbsur,
     );
+  }
+}
+
+/**
+ * Implementation of hook_validate().
+ *
+ * @see facebook_status_form_alter()
+ */
+function facebook_status_alter_validate() {
+  if (!(is_numeric($form_state['values']['facebook_status']['facebook_status_special_user']) && $form_state['values']['facebook_status']['facebook_status_special_user'] > 0)) {
+    form_set_error('', t('Please enter a single User ID in the Facebook Status UID field.  The UID of the user you enter will be used to determine which user to use for this block.'));
+  }
+  else if ( !db_result(db_query("SELECT created FROM {users} WHERE uid = %d", $form_state['values']['facebook_status']['facebook_status_special_user'])) ) {
+    form_set_error('', t('The value you have entered in the Facebook Status UID field is not a valid User ID.  The UID is the number that appears in the URL on profile pages after "/user/".'));
   }
 }
 
@@ -617,7 +632,7 @@ function facebook_status_admin() {
 
   $form['fbs_lengths'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Status length configuration'),
+    '#title' => t('Status length'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE, 
     '#weight' => -2,
@@ -660,7 +675,7 @@ function facebook_status_admin() {
 
   $form['fbs_number'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Configure number of statuses'),
+    '#title' => t('Number of statuses'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE, 
     '#weight' => -1,
@@ -701,15 +716,15 @@ function facebook_status_admin() {
       '#description' => t("When enabled, status updates are recorded by the activity module.  Default is On."),
     );
   }
-  $form['fbs_misc']['facebook_status_clear_user_records'] = array(
+  $form['fbs_misc']['facebook_status_clear_user_records_string'] = array(
     '#type' => 'textfield',
     '#title' => t('Remove all statuses for these users'),
-    '#default_value' => variable_get('facebook_status_clear_user_records', 0),
+    '#default_value' => variable_get('facebook_status_clear_user_records_string', implode(',', variable_get('facebook_status_clear_user_records', array(0)))),
     '#size' => 72,
     '#maxlength' => 255,
     '#description' => t("Use zero for none.  Separate each UID with a comma: 1,2,3")
   );
-  $form['fbs_misc']['facebook_status_disallowed'] = array(
+  $form['fbs_misc']['facebook_status_clear_user_string'] = array(
     '#type' => 'textfield',
     '#title' => t('Specify the UIDs of users who are not allowed to have statuses'),
     '#default_value' => variable_get('facebook_status_clear_user_string', implode(',', variable_get('facebook_status_clear_user', array(0)))),
@@ -717,7 +732,7 @@ function facebook_status_admin() {
     '#maxlength' => 255,
     '#description' => t("Use zero for none.  Separate each UID with a comma: 1,2,3")
   );
-  variable_del('facebook_status_clear_all');
+  variable_set('facebook_status_clear_all', 'none');
   $form['fbs_misc']['facebook_status_clear_all'] = array(
     '#type' => 'select',
     '#title' => t('Delete'),
@@ -730,6 +745,7 @@ function facebook_status_admin() {
     ),
   );
 
+  $form['#submit']['facebook_status_admin_submit'] = array();
   return system_settings_form($form);
 }
 
@@ -814,9 +830,19 @@ function facebook_status_admin_submit($form_id, $form_values) {
   variable_set('facebook_status_clear_user_records', explode(',', variable_get('facebook_status_clear_user_records_string', '0')));
   $temp = variable_get('facebook_status_clear_user_records', explode(',', variable_get('facebook_status_clear_user_records_string', '0')));
   foreach ($temp as $value) {
-    db_query("DELETE FROM {facebook_status} WHERE uid = %d", $value);
-    $name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $value));
-    drupal_set_message(t('All statuses were cleared for ') . $name);
+    if ($value != 0) {
+      db_query("DELETE FROM {facebook_status} WHERE uid = %d", $value);
+      $name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $value));
+      $message = t('All statuses were cleared for ') . $name;
+      drupal_set_message($message);
+    }
+  }
+
+  //Sets variables because the form refuses to do it for us! >:(
+  foreach ($form_values as $values) {
+    foreach ($values as $key => $value) {
+      variable_set($key, $value);
+    }
   }
   variable_del('facebook_status_clear_user_records_string');
   variable_del('facebook_status_clear_user_records');
