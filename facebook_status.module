@@ -33,7 +33,7 @@ function facebook_status_form_alter($form_id, &$form) {
     $form['facebook_status'] = array(
       '#type' => 'fieldset',
       '#title' => t('Facebook Status Settings'),
-      '#collapsible' => true,
+      '#collapsible' => TRUE,
       '#weight' => -4,
       '#tree' => TRUE,
     );
@@ -45,7 +45,7 @@ function facebook_status_form_alter($form_id, &$form) {
       '#default_value' => variable_get('facebook_status_special_user', 1),
       '#size' => 16,
       '#maxlength' => 14,
-      '#description' => t("This block will work exactly like the Facebook Status block, except that it only shows one user's status."),
+      '#description' => t("This block will work exactly like the Facebook Status block, except that it only shows one user's status.  That user is determined by the UID you enter in this field."),
     );
     $form['#validate']['facebook_status_alter_validate'] = array();
   }
@@ -70,11 +70,11 @@ function facebook_status_form_alter($form_id, &$form) {
  *
  * @see facebook_status_form_alter()
  */
-function facebook_status_alter_validate() {
-  if (!(is_numeric($form_state['values']['facebook_status']['facebook_status_special_user']) && $form_state['values']['facebook_status']['facebook_status_special_user'] > 0)) {
+function facebook_status_alter_validate($form_id, $form_values) {
+  if (!is_numeric($form_values['facebook_status']['facebook_status_special_user']) || $form_values['facebook_status']['facebook_status_special_user'] <= 0) {
     form_set_error('', t('Please enter a single User ID in the Facebook Status UID field.  The UID of the user you enter will be used to determine which user to use for this block.'));
   }
-  else if ( !db_result(db_query("SELECT created FROM {users} WHERE uid = %d", $form_state['values']['facebook_status']['facebook_status_special_user'])) ) {
+  else if ( !db_result(db_query("SELECT created FROM {users} WHERE uid = %d", $form_values['facebook_status']['facebook_status_special_user'])) ) {
     form_set_error('', t('The value you have entered in the Facebook Status UID field is not a valid User ID.  The UID is the number that appears in the URL on profile pages after "/user/".'));
   }
 }
