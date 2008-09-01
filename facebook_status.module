@@ -26,7 +26,7 @@ function facebook_status_help($section='') {
 }
 
 /**
- * Implementation of hook_form_alter()
+ * Implementation of hook_form_alter().
  */
 function facebook_status_form_alter($form_id, &$form) {
   if ($form_id == 'block_admin_configure' && arg(4) == 'facebook_status' && (arg(5) == '3' || arg(5) == '4')) {
@@ -184,7 +184,7 @@ function facebook_status_block($op='list', $delta=0) {
         $block_content .= htmlspecialchars($sm['status_fb'], ENT_NOQUOTES) ." <span class='". t("submitted") ."'>". $time . t(' ago') ."</span>";
       }
       //If the user is not allowed to have a status.
-          else if (in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
+      else if (in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
         //If the status form is not the user's own, use different strings than if it is the user's own.
         if ( $fbs_uid != $user->uid ) {
           $block_content .= t('@username is not allowed to have a status.', array('@username' => $fbs_name));
@@ -590,7 +590,8 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
     else {
       $fbs_name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $fbs_uid));
     }
-    $result = array(
+    $result = array();
+    $result[0] = array(
       'status_fb' => t("Error: this user is not allowed to have a status."),
       'status_time' => 0,
       'fbs_name' => $fbs_name,
@@ -823,7 +824,7 @@ function facebook_status_admin_submit($form_id, $form_values) {
       $nsids .= " AND sid != ". $value['sid'];
     }
     //Removes first " AND ".
-    $nsids = substr($nsids, 5);
+    $nsids = drupal_substr($nsids, 5);
     db_query("DELETE FROM {facebook_status} WHERE %s ORDER BY sid ASC", $nsids);
     drupal_set_message(t('All statuses except the most recent one were cleared for each user.'));
   }
@@ -839,10 +840,13 @@ function facebook_status_admin_submit($form_id, $form_values) {
   }
 
   //Sets variables because the form refuses to do it for us! >:(
-  foreach ($form_values as $values) {
-    foreach ($values as $key => $value) {
-      variable_set($key, $value);
-    }
+  $values = array();
+  $values['fbs_general'] = $form_values['fbs_general'];
+  $values['fbs_lengths'] = $form_values['fbs_lengths'];
+  $values['fbs_number'] = $form_values['fbs_number'];
+  $values['fbs_misc'] = $form_values['fbs_misc'];
+  foreach ($values as $key => $value) {
+    variable_set($key, $value);
   }
   variable_del('facebook_status_clear_user_records_string');
   variable_del('facebook_status_clear_user_records');
