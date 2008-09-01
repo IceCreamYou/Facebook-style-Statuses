@@ -828,10 +828,10 @@ function facebook_status_admin_submit($form, &$form_state) {
 
   //Sets variables because the form refuses to do it for us! >:(
   $values = array();
-  $values['fbs_general'] = $form_values['fbs_general'];
-  $values['fbs_lengths'] = $form_values['fbs_lengths'];
-  $values['fbs_number'] = $form_values['fbs_number'];
-  $values['fbs_misc'] = $form_values['fbs_misc'];
+  $values['fbs_general'] = $form_state['values']['fbs_general'];
+  $values['fbs_lengths'] = $form_state['values']['fbs_lengths'];
+  $values['fbs_number'] = $form_state['values']['fbs_number'];
+  $values['fbs_misc'] = $form_state['values']['fbs_misc'];
   foreach ($values as $key => $value) {
     variable_set($key, $value);
   }
