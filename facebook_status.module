@@ -1177,16 +1177,6 @@ function facebook_status_token_values($type, $data = NULL) {
 }
 
 /**
- * Implementation of hook_user().
- */
-function facebook_status_user($op, &$edit, &$account) {
-  if ($op == 'delete') {
-    //Remove abandoned statuses from the database on user account deletion.
-    db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
-  }
-}
-
-/**
  * Integration with Advanced Forum.
  */
 function facebook_status_advf($account) {
