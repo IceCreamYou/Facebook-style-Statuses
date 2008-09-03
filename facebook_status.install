@@ -77,5 +77,6 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_activity');
   variable_del('facebook_status_length');
   variable_del('facebook_status_mode');
+  variable_del('facebook_status_advf');
   variable_del('facebook_status_ajax');
 }
