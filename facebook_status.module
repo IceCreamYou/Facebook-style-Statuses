@@ -624,7 +624,7 @@ function facebook_status_admin() {
     '#default_value' => variable_get('facebook_status_ajax', 1),
     '#description' => t("With this enabled, users who have permission to edit statuses can click on the status to see the edit box drop down.  This minimizes the space that Facebook Status takes up.  Default is On."),
   );
-  $fbsur_result = db_query("SELECT plural_name, rtid FROM {user_relationship_types} WHERE requires_approval = 1");
+  $fbsur_result = db_query("SELECT plural_name, rtid FROM {user_relationship_types}");
   while ($row = db_fetch_array($fbsur_result)) {
     $i = $row['rtid'];
     $fbsur[$i] = $row['plural_name'];
@@ -1003,7 +1003,13 @@ function facebook_status_advf($account) {
       $friends = TRUE;
     }
     else {
-      $friends = db_result(db_query("SELECT COUNT(requester_id) FROM {user_relationships} WHERE (requester_id = %d OR requestee_id = %d) AND (requester_id = %d OR requestee_id = %d) AND rtid = %d AND approved = 1", $account->uid, $account->uid, $user->uid, $user->uid, variable_get('facebook_status_advf', -2)));
+      $approve = db_result(db_query("SELECT requires_approval FROM {user_relationship_types} WHERE rtid = %d", variable_get('facebook_status_advf', -2)));
+      if ($approve) {
+        $friends = db_result(db_query("SELECT COUNT(requester_id) FROM {user_relationships} WHERE (requester_id = %d OR requestee_id = %d) AND (requester_id = %d OR requestee_id = %d) AND rtid = %d AND approved = 1", $account->uid, $account->uid, $user->uid, $user->uid, variable_get('facebook_status_advf', -2)));
+      }
+      else {
+        $friends = db_result(db_query("SELECT COUNT(requester_id) FROM {user_relationships} WHERE (requester_id = %d OR requestee_id = %d) AND (requester_id = %d OR requestee_id = %d) AND rtid = %d", $account->uid, $account->uid, $user->uid, $user->uid, variable_get('facebook_status_advf', -2)));
+      }
     }
   }
   else {
