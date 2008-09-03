@@ -745,7 +745,7 @@ function facebook_status_admin() {
       'old' => 'All but the latest status update for each user',
     ),
   );
-  if (module_exists('advanced_forum') {
+  if (module_exists('advanced_forum') && module_exists('user_relationships')) {
     $fbsur_result = db_query("SELECT plural_name, rtid FROM {user_relationship_types}");
     $fbsur = array();
     while ($row = db_fetch_array($fbsur_result)) {
