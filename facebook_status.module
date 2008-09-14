@@ -287,8 +287,7 @@ function facebook_status_update_form() {
     else {
       $xname = htmlspecialchars($user->name, ENT_NOQUOTES);
     }
-    //This needs to be done here instead of in the actual #title so it can be turned off if Facebook Mode is off.
-    $xname = ": " . $xname;
+    $xname .= ' ';
   }
   else {
     $xname = '';
@@ -299,7 +298,8 @@ function facebook_status_update_form() {
   //This is relevant for the #maxlength attribute; do not set a #maxlength larger than the column can hold.
   $form['name'] = array(
     '#type' => 'textfield',
-    '#title' => t("Status") . $xname,
+    '#title' => t("Status"),
+    '#field_prefix' => $xname,
     '#size' => variable_get('facebook_status_field_length', 30),
     '#maxlength' => variable_get('facebook_status_length', 192),
     '#description' => t("Please enter your status.  Remember that it will not update unless you click 'Save.'"),
