@@ -110,16 +110,15 @@ function facebook_status_block($op='list', $delta=0) {
       //Get the information before we decide whether to show the update form so we can check to make sure we don't show the form to people it shouldn't be shown to.
       //It doesn't matter whether the user is allowed to have a status because if the user isn't allowed, the status just won't show up (we address this later on).
       if (arg(0) == 'user' && is_numeric(arg(1))) {
-        $uname = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", arg(1)));
-        //htmlspecialchars instead of the usual check_plain because names sometimes have quotes in them.
-        $fbs_name = htmlspecialchars($uname, ENT_NOQUOTES);
+        $user2 = user_load(array('uid' => arg(1)));
+        $fbs_name = htmlspecialchars($user2->name, ENT_NOQUOTES);
         $fbs_uid = arg(1);
         $sm = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", arg(1), 0, 1));
       }
       else if (arg(0) == 'node' && is_numeric(arg(1))) {
-        $fbs_user = db_fetch_array(db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node} n ON u.uid = n.uid WHERE u.uid = n.uid AND n.nid = %d", arg(1)));
-        $fbs_name = htmlspecialchars($fbs_user['name'], ENT_NOQUOTES);
-        $fbs_uid = $fbs_user['uid'];
+        $fbs_uid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
+        $user2 = user_load(array('uid' => $fbs_uid));
+        $fbs_name = htmlspecialchars($user2->name, ENT_NOQUOTES);
         $sm = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $fbs_uid, 0, 1));
       }
       else {
@@ -147,8 +146,8 @@ function facebook_status_block($op='list', $delta=0) {
       //We're just going to assume that this user isn't on the list of users who aren't allowed to have statuses.  If this user is on that list, we'll set the updated time to now and the status to an error.
       if ($delta == 3) {
         $fbs_uid = variable_get('facebook_status_special_user', 1);
-        $uname = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $fbs_uid));
-        $fbs_name = htmlspecialchars($uname, ENT_NOQUOTES);
+        $user2 = user_load(array('uid' => $fbs_uid));
+        $fbs_name = htmlspecialchars($user2->name, ENT_NOQUOTES);
           if (in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
             $sm['status_fb'] = t("Error: this user is not allowed to have a status.");
             if (user_access('access administration pages')) {
@@ -272,14 +271,13 @@ function facebook_status_update_form() {
   global $user;
   if (variable_get('facebook_status_mode', 1)) {
     if (arg(0) == 'user' && is_numeric(arg(1))) {
-      $uname = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", arg(1)));
-      $xname = htmlspecialchars($uname, ENT_NOQUOTES);
+      $user2 = user_load(array('uid' => arg(1)));
+      $xname = htmlspecialchars($user2->name, ENT_NOQUOTES);
     }
     else if (arg(0) == 'node' && is_numeric(arg(1))) {
-      $uuser = db_fetch_array(db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {node} n ON n.uid = u.uid WHERE n.uid = u.uid AND n.nid = %d", arg(1)));
-      $uname = $uuser['name'];
-      $uuid = $uuser['uid'];
-      $xname = htmlspecialchars($uname, ENT_NOQUOTES);
+      $uuid = db_fetch_array(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
+      $user2 = user_load(array('uid' => $uuid));
+      $xname = htmlspecialchars($user2->name, ENT_NOQUOTES);
       if (user_access('edit all facebook_status') && $uuid != $user->uid) {
         $xname = l($xname, "user/". $uuid);
       }
@@ -466,7 +464,8 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
             }
           $result[$x] = $row;
           //Adding the name to the array is a convenience, but don't forget to add a space between it and the status.
-          $result[$x]['fbs_name'] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $fbs_uid));
+          $user2 = user_load(array('uid' => $fbs_uid));
+          $result[$x]['fbs_name'] = $user2->name;
           $result[$x]['fbs_uid'] = $fbs_uid;
         }
       }
@@ -553,7 +552,8 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
     while ($row = db_fetch_array($query)) {
       $result[$i] = $row;
       //Adding the name to the array is a convenience, but don't forget to add a space between it and the status.
-      $result[$i]['fbs_name'] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $fbs_uid));
+      $user2 = user_load(array('uid' => $fbs_uid));
+      $result[$i]['fbs_name'] = $user2->name;
       $result[$i]['fbs_uid'] = $fbs_uid;
       $i++;
     }
@@ -572,7 +572,8 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
         }
         $result[$i] = $row;
         //Adding the name to the array is a convenience, but don't forget to add a space between it and the status.
-        $result[$i]['fbs_name'] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $result[$i]['fbs_uid']));
+        $user2 = user_load(array('uid' => $result[$i]['fbs_uid']));
+        $result[$i]['fbs_name'] = $user2->name;
         $i++;
       }
     }
@@ -582,7 +583,8 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
       $fbs_name = t("Anonymous");
     }
     else {
-      $fbs_name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $fbs_uid));
+      $user2 = user_load(array('uid' => $fbs_uid));
+      $fbs_name = $user2->name;
     }
     $result = array();
     $result[0] = array(
@@ -837,7 +839,8 @@ function facebook_status_admin_submit($form, &$form_state) {
   foreach ($temp as $value) {
     if ($value != 0) {
       db_query("DELETE FROM {facebook_status} WHERE uid = %d", $value);
-      $name = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $value));
+      $user2 = user_load(array('uid' => $value));
+      $name = $user2->name;
       $message = t('All statuses were cleared for ') . $name;
       drupal_set_message($message);
     }
@@ -955,6 +958,8 @@ function facebook_status_get_ur_status($ur_rtid = -1, $number = 0, $grouping = T
       //Count by $i instead of using db_query_range() so we can exclude the current user and still end up with the right number of results.
       $i = 0;
       while ($row = db_fetch_array($user_rel)) {
+        $user2 = user_load(array('uid' => $row['uid']));
+        $row['name'] = $user2->name;
         if ($row['uid'] != $user->uid) {
           $row['status_fb'] = drupal_substr($row['status_fb'], 0, variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192)));
           if ( drupal_strlen($row['status_fb']) == variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192)) ) {
