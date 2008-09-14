@@ -43,8 +43,8 @@ function facebook_status_form_alter($form_id, &$form) {
       '#type' => 'textfield',
       '#title' => t('User ID of the user whose statuses you want to display in this block'),
       '#default_value' => variable_get('facebook_status_special_user', 1),
-      '#size' => 16,
-      '#maxlength' => 14,
+      '#size' => 12,
+      '#maxlength' => 11,
       '#description' => t("This block will work exactly like the Facebook Status block, except that it only shows one user's status.  That user is determined by the UID you enter in this field."),
     );
     $form['#validate']['facebook_status_alter_validate'] = array();
