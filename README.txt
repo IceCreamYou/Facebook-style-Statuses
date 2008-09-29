@@ -1,17 +1,5 @@
 // $Id$
 
-===========
-== Notes ==
-===========
-
-The 6.x version of this module has been largely copied from the 6.x version and
-may contain some bugs due to the code not being written expressely for Drupal 
-6.x.  This is especially true of the integration with other modules such as 
-User Relationships, Activity, and Token.  Please be cautious when using these 
-features and be sure to test them thoroughly before using them on a production 
-site.  Patches and bug reports are welcome at
-http://drupal.org/project/facebook_status
-
 =============
 == Summary ==
 =============
@@ -34,10 +22,9 @@ settings page, the form can be automatically shown and hidden via AJAX when a
 user with permission to see the form clicks on the status text.  The default 
 text that appears in the textfield is the user's latest status.
 
-There is also has support for the Activity module.  This allows a more Facebook
+There is also support for the Notice Feed module.  This allows a more Facebook
 -style "mini-feed" if desired, and also allows status updates to be displayed 
-with updates from other parts of the site.  Though significantly less useful, 
-support for the Token module (required by Activity) is also available.
+with updates from other parts of the site.
 
 ============
 == Blocks ==
@@ -181,8 +168,7 @@ Visit the module page for more information and details about upcoming features.
 
 Module Page: http://drupal.org/project/facebook_status
 User Relationships: http://drupal.org/project/user_relationships
-Activity: http://drupal.org/project/activity
-Token: http://drupal.org/project/token
+Notice Feed: http://drupal.org/project/notice
 
 Enable Module: http://example.com/?q=admin/build/modules
 Enable Blocks: http://example.com/?q=admin/build/block

@@ -130,7 +130,8 @@ function facebook_status_block($op='list', $delta=0) {
       //This gigantic 'if' statement decides whether we can show the update form or not.  And if we don't show the form, we don't need the AJAX.
       if ( (((arg(0) == 'user' && is_numeric(arg(1)) && arg(1) == $user->uid)
         || (arg(0) == 'node' && is_numeric(arg(1)) && db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1))) == $user->uid)
-        || (arg(0) != 'user' && arg(0) != 'node' && !is_numeric(arg(1))))
+        || (arg(0) != 'user' && arg(0) != 'node' && !is_numeric(arg(1)))
+        || (drupal_is_front_page()))
         && user_access('edit own facebook_status')
         && !in_array($user->uid, variable_get('facebook_status_clear_user', array(0))))
         || (user_access('edit all facebook_status')
@@ -180,7 +181,11 @@ function facebook_status_block($op='list', $delta=0) {
         else {
           $time = format_interval(time() - $sm['status_time'], 1);
         }
-        $block_content .= htmlspecialchars($sm['status_fb'], ENT_NOQUOTES) ." <span class='". t("submitted") ."'>". $time . t(' ago') ."</span>";
+        $block_content .= htmlspecialchars($sm['status_fb'], ENT_NOQUOTES);
+        if ($x) {
+          $block_content .= '</a>';
+        }
+        $block_content .= t(" <span class='submitted'>!time ago</span>", array('!time' => $time));
       }
       //If the user is not allowed to have a status.
       else if (in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
@@ -191,10 +196,10 @@ function facebook_status_block($op='list', $delta=0) {
         else {
           $block_content .= t('You are not allowed to have a status.');
         }
-                if (user_access('access administration pages')) {
-                  $sm['status_fb'] .= l(t('  Change this'), 'admin/settings/facebook_status');
-            }
-          }
+        if (user_access('access administration pages')) {
+          $block_content .= l(t('  Change this'), 'admin/settings/facebook_status');
+        }
+      }
       //If the user has not posted a status.
       else {
         //If the status form is not the user's own, use different strings than if it is the user's own.
@@ -204,9 +209,9 @@ function facebook_status_block($op='list', $delta=0) {
         else {
           $block_content .= t('You do not yet have a status');
         }
-      }
-      if ($x) {
-        $block_content .= '</a>';
+        if ($x) {
+          $block_content .= '</a>';
+        }
       }
       $block_content .= '</div></div>';
       $block['subject'] = 'Status';
@@ -275,7 +280,7 @@ function facebook_status_update_form() {
       $xname = htmlspecialchars($user2->name, ENT_NOQUOTES);
     }
     else if (arg(0) == 'node' && is_numeric(arg(1))) {
-      $uuid = db_fetch_array(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
+      $uuid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
       $user2 = user_load(array('uid' => $uuid));
       $xname = htmlspecialchars($user2->name, ENT_NOQUOTES);
       if (user_access('edit all facebook_status') && $uuid != $user->uid) {
@@ -285,10 +290,11 @@ function facebook_status_update_form() {
     else {
       $xname = htmlspecialchars($user->name, ENT_NOQUOTES);
     }
-    $xname .= ' ';
+    $title = '';
   }
   else {
     $xname = '';
+    $title = t("Status");
   }
   $status = facebook_status_get_status();
   //Warning: the status column in the {facebook_status} table only holds 255 bytes.
@@ -296,8 +302,8 @@ function facebook_status_update_form() {
   //This is relevant for the #maxlength attribute; do not set a #maxlength larger than the column can hold.
   $form['name'] = array(
     '#type' => 'textfield',
-    '#title' => t("Status"),
-    '#field_prefix' => $xname,
+    '#title' => $title,
+    '#field_prefix' => '<span style="float: left;">'. $xname .'&nbsp; </span>',
     '#size' => variable_get('facebook_status_field_length', 30),
     '#maxlength' => variable_get('facebook_status_length', 192),
     '#description' => t("Please enter your status.  Remember that it will not update unless you click 'Save.'"),
@@ -334,6 +340,9 @@ function facebook_status_update_form_submit($form, &$form_state) {
       //Note that this first part is only for people who can edit their own status, so we don't need to check whose database records to update.
       if ( user_access('edit own facebook_status') && !user_access('edit all facebook_status') ) {
   if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $user->uid) ) {
+    if (module_exists('notice')) {
+      fbs_notice_insert($user->uid);
+    }
     drupal_set_message(t('Your status has been updated.'));
   }
   else {
@@ -352,6 +361,9 @@ function facebook_status_update_form_submit($form, &$form_state) {
     $uid = $user->uid;
   }
   if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $uid) ) {
+    if (module_exists('notice')) {
+      fbs_notice_insert($user->uid);
+    }
     drupal_set_message(t('The status has been updated.'));
   }
   else {
@@ -1031,4 +1043,35 @@ function facebook_status_advf($account) {
     $output = '<p class="submitted">'. check_plain($status[0]['fbs_name']) .' '. htmlspecialchars($status[0]['status_fb'], ENT_NOQUOTES) .'</p>';
     return $output;
   }
+}
+
+/*
+ * NoticeFeed Integration.
+ */
+function fbs_notice_insert($uid) {
+  if (module_exists("notice")) {
+    $new_id = db_last_insert_id('facebook_status', 'sid');
+    $notice_array = array(
+      'nb_type' => NOTICE_NORMAL,
+      'module_type' => "facebook_status",
+      'source_uid' => $uid,
+      'prime_id' => $new_id,
+      'op' => "facebook_status_add",
+    );
+    noticeapi_notice_add("facebook_status", $notice_array);
+  }
+}
+
+function facebook_status_notice($op, $type, $record) {
+  switch ($op) {
+    case 'feed':
+      $sql = "SELECT * FROM {facebook_status} WHERE sid = %d";
+      $record2 = db_fetch_object(db_query($sql, $record->prime_id));
+      $output = '<div class="notice-'. $record->module_type .'">';
+      $user = user_load(array('uid' => $record2->uid));
+      $output .= t('%user has a new status.', array('%user' => $user->name));
+      $output .= '</div>';
+      return $output;
+      break;
+  };
 }
