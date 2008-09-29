@@ -130,7 +130,8 @@ function facebook_status_block($op='list', $delta=0) {
       //This gigantic 'if' statement decides whether we can show the update form or not.  And if we don't show the form, we don't need the AJAX.
       if ( (((arg(0) == 'user' && is_numeric(arg(1)) && arg(1) == $user->uid)
         || (arg(0) == 'node' && is_numeric(arg(1)) && db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1))) == $user->uid)
-        || (arg(0) != 'user' && arg(0) != 'node' && !is_numeric(arg(1))))
+        || (arg(0) != 'user' && arg(0) != 'node' && !is_numeric(arg(1)))
+        || (drupal_is_front_page()))
         && user_access('edit own facebook_status')
         && !in_array($user->uid, variable_get('facebook_status_clear_user', array(0))))
         || (user_access('edit all facebook_status')
@@ -180,7 +181,11 @@ function facebook_status_block($op='list', $delta=0) {
         else {
           $time = format_interval(time() - $sm['status_time'], 1);
         }
-        $block_content .= htmlspecialchars($sm['status_fb'], ENT_NOQUOTES) ." <span class='". t("submitted") ."'>". $time . t(' ago') ."</span>";
+        $block_content .= htmlspecialchars($sm['status_fb'], ENT_NOQUOTES);
+        if ($x) {
+          $block_content .= '</a>';
+        }
+        $block_content .= t(" <span class='submitted'>!time ago</span>", array('!time' => $time));
       }
       //If the user is not allowed to have a status.
       else if (in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
@@ -191,10 +196,10 @@ function facebook_status_block($op='list', $delta=0) {
         else {
           $block_content .= t('You are not allowed to have a status.');
         }
-                if (user_access('access administration pages')) {
-                  $sm['status_fb'] .= l(t('  Change this'), 'admin/settings/facebook_status');
-            }
-          }
+        if (user_access('access administration pages')) {
+          $block_content .= l(t('  Change this'), 'admin/settings/facebook_status');
+        }
+      }
       //If the user has not posted a status.
       else {
         //If the status form is not the user's own, use different strings than if it is the user's own.
@@ -204,9 +209,9 @@ function facebook_status_block($op='list', $delta=0) {
         else {
           $block_content .= t('You do not yet have a status');
         }
-      }
-      if ($x) {
-        $block_content .= '</a>';
+        if ($x) {
+          $block_content .= '</a>';
+        }
       }
       $block_content .= '</div></div>';
       $block['subject'] = 'Status';
@@ -275,7 +280,7 @@ function facebook_status_update_form() {
       $xname = htmlspecialchars($user2->name, ENT_NOQUOTES);
     }
     else if (arg(0) == 'node' && is_numeric(arg(1))) {
-      $uuid = db_fetch_array(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
+      $uuid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
       $user2 = user_load(array('uid' => $uuid));
       $xname = htmlspecialchars($user2->name, ENT_NOQUOTES);
       if (user_access('edit all facebook_status') && $uuid != $user->uid) {
@@ -285,10 +290,11 @@ function facebook_status_update_form() {
     else {
       $xname = htmlspecialchars($user->name, ENT_NOQUOTES);
     }
-    $xname .= ' ';
+    $title = '';
   }
   else {
     $xname = '';
+    $title = t("Status");
   }
   $status = facebook_status_get_status();
   //Warning: the status column in the {facebook_status} table only holds 255 bytes.
@@ -296,8 +302,8 @@ function facebook_status_update_form() {
   //This is relevant for the #maxlength attribute; do not set a #maxlength larger than the column can hold.
   $form['name'] = array(
     '#type' => 'textfield',
-    '#title' => t("Status"),
-    '#field_prefix' => $xname,
+    '#title' => $title,
+    '#field_prefix' => '<span style="float: left;">'. $xname .'&nbsp; </span>',
     '#size' => variable_get('facebook_status_field_length', 30),
     '#maxlength' => variable_get('facebook_status_length', 192),
     '#description' => t("Please enter your status.  Remember that it will not update unless you click 'Save.'"),
