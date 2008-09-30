@@ -1013,6 +1013,9 @@ function facebook_status_user($op, &$edit, &$account) {
  */
 function facebook_status_advf($account) {
   global $user;
+  if (!$account->uid) {
+    return;
+  }
   if ($account->uid != $user->uid && module_exists('user_relationships')) {
     //Any relationship.
     if (variable_get('facebook_status_advf', -2) == -1) {
@@ -1037,10 +1040,12 @@ function facebook_status_advf($account) {
   }
   if ($user->uid && $friends) {
     $status = facebook_status_get_status($account->uid);
+    $so = '';
     if (drupal_strlen($status[0]['status_fb']) > 32) {
+      $so = ' title="'. check_plain($status[0]['fbs_name']) .' '. htmlspecialchars($status[0]['status_fb'], ENT_NOQUOTES) .'"';
       $status[0]['status_fb'] = drupal_substr($status[0]['status_fb'], 0, 32) .'...';
     }
-    $output = '<p class="submitted">'. check_plain($status[0]['fbs_name']) .' '. htmlspecialchars($status[0]['status_fb'], ENT_NOQUOTES) .'</p>';
+    $output = '<p class="submitted"'. $so .'>'. check_plain($status[0]['fbs_name']) .' '. htmlspecialchars($status[0]['status_fb'], ENT_NOQUOTES) .'</p>';
     return $output;
   }
 }
