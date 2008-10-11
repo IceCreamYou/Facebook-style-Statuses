@@ -28,10 +28,17 @@ settings page, the form can be automatically shown and hidden via AJAX when a
 user with permission to see the form clicks on the status text.  The default 
 text that appears in the textfield is the user's latest status.
 
-There is also has support for the Activity module.  This allows a more Facebook
--style "mini-feed" if desired, and also allows status updates to be displayed 
+There is also support for the Activity module.  This allows a more Facebook
+-style "mini-feed" if desired, and so allows status updates to be displayed 
 with updates from other parts of the site.  Though significantly less useful, 
 support for the Token module (required by Activity) is also available.
+
+This module further integrates with Advanced Forum and User Relationships.  In 
+Advanced Forum-themed comments, the user's status will appear beneath the 
+user's picture.  For User Relationships, a block is provided to display the 
+recent status updates of users with whom the current user has a relationship.  
+In addition, translation strings (integration with i18n) are comprehensively 
+available.
 
 ============
 == Blocks ==
@@ -80,10 +87,6 @@ users' statuses will be in the format "IceCreamYou is happy."  With Facebook
 Mode off, the module becomes a place for thought blurbs: for example, it could 
 be used as a quote of the day of sorts.
 
-At this time, submission of the status update form is not controlled by AJAX. 
-As a temporary solution, check out the JavaScript Tools project and use the 
-Ajax Submit submodule if you need this feature.
-
 This module does not, and will not, sync Drupal status updates with Facebook's,
 and it is not affiliated with Facebook in any way.
 
@@ -121,12 +124,18 @@ they wanted to create a separate block for the user's status and for the status
 update form. This does not include an access check, so use it with 
 user_access().
 
-(C) facebook_status_get_ur_status($ur_rtid, $number)
+(C) facebook_status_get_ur_status($ur_rtid, $number, $grouping)
     Returns the latest status updates from users with whom the current user has
-a relationship. Only one status update is returned per user. If ur_rtid is not 
-passed, this function uses the default relationship specified on the Facebook 
-Status settings page. $number controls the number of statuses returned; if it 
-is not passed, it defaults to the setting on the Facebook Status settings page.
+a relationship. If $grouping is TRUE, only one status update is returned per 
+user; if FALSE, all statuses are returned for the relevant users. If $ur_rtid 
+is not passed, this function uses the default relationship specified on the 
+Facebook Status settings page. $number controls the number of statuses 
+returned; if it is not passed, it defaults to the setting on the Facebook 
+Status settings page.
+
+(D) facebook_status_list_render($fbs_list)
+    Returns themed HTML for a list of status updates.  $fbs_list is an array in
+the form returned by facebook_status_get_status().
 
 
 ==================
