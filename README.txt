@@ -100,7 +100,8 @@ developers that would like to take a look.
 
 For anyone who doesn't want to delve that deeply, this module provides simple 
 functions you can use to take advantage of its functionality from anywhere you 
-can use PHP.
+can use PHP.  For more information, see the function descriptions in
+facebook_status.module.
 
 (A) facebook_status_get_status($fbs_uid, $num_results)
     Returns an array of arrays. Each sub-array contains information about a 
@@ -124,7 +125,7 @@ they wanted to create a separate block for the user's status and for the status
 update form. This does not include an access check, so use it with 
 user_access().
 
-(C) facebook_status_get_ur_status($ur_rtid, $number, $grouping)
+(C) facebook_status_get_rel_status($ur_rtid, $number, $grouping)
     Returns the latest status updates from users with whom the current user has
 a relationship. If $grouping is TRUE, only one status update is returned per 
 user; if FALSE, all statuses are returned for the relevant users. If $ur_rtid 
@@ -143,7 +144,7 @@ the form returned by facebook_status_get_status().
 ==================
 
    1. Install this module as usual (FTP the files to sites/all/modules, enable 
-        at admin/build/modules).
+        at admin/build/modules).  See http://drupal.org/node/70151 for help.
 
    2. If you want, go to admin/settings/facebook_status to change some minor 
         settings. The defaults should work for most people.

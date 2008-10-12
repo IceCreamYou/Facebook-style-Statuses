@@ -239,8 +239,9 @@ function facebook_status_block($op='list', $delta=0) {
       //This module_exists() may not be necessary because $block[4]["info"] is also wrapped in module_exists().
       if (module_exists('user_relationships')) {
         $subject = db_result(db_query("SELECT plural_name FROM {user_relationship_types} WHERE rtid = %d", variable_get('facebook_status_ur_type', 1)));
+        $content = facebook_status_get_rel_status();
         $block['subject'] = $subject . t("' Recent Status Updates");
-        $block['content'] = facebook_status_get_rel_status();
+        $block['content'] = '<div class="facebook_status_block_rel">'. facebook_status_list_render($content) .'</div>';
       }
       break;
     }
@@ -249,9 +250,9 @@ function facebook_status_block($op='list', $delta=0) {
 
 }
 
-function facebook_status_get_rel_status() {
+function facebook_status_get_rel_status($ur_rtid = -1, $number = 0, $grouping = TRUE) {
   if (module_exists('user_relationships')) {
-    return facebook_status_get_ur_status();
+    return facebook_status_get_ur_status($ur_rtid, $number, $grouping);
   }
   return;
 }
@@ -421,6 +422,7 @@ function facebook_status_update_form_validate($form_id, $form_values) {
 /**
  * Gets user statuses.
  * Warning: the status is not escaped, so developers still need to do validation to make sure there are no XSS attacks.
+ * For optimal performance when finding the status for a single user, cast the user's uid to an array before calling this function.
  *
  * @param $fbs_uid
  *   Can be either a numeric value or an array.
@@ -443,10 +445,6 @@ function facebook_status_update_form_validate($form_id, $form_values) {
  *   The top-level array holds all the sub-arrays: effectively, it is a list of different status updates.
  */
 function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
-  //There are easier ways to do the basic procedures when $fbs_uid is an array, but they don't allow the same flexibility.
-  //This method can be slow on large sites, so developers may want to write custom queries if this becomes a problem.
-  //For example PHP that should help you build your custom page or block, visit http://www.icecreamyou.com/fbs_example.txt
-  //Note that the example assumes that $fbs_uid is an array containing UIDs.
   if (is_array($fbs_uid)) {
     $fbsu_array = $fbs_uid;
     $result = array();
@@ -509,8 +507,8 @@ function facebook_status_get_status($fbs_uid = 0, $num_results = 1) {
     return $final;
   }
 
-  //TO DO: remove this section and instead convert $fbs_uid to an array if it is numeric.
   //This section is for numeric values of $fbs_uid.
+  //We do it separately instead of casting $fbs_uid to an array in order to handle special cases (where $fbs_uid < 1).
   $result = array();
   if ( !$fbs_uid || !is_numeric($fbs_uid) ) {
     if ( arg(0) == 'user' && is_numeric(arg(1)) ) {
@@ -886,7 +884,7 @@ function facebook_status_menu($may_cache) {
 }
 
 /**
- * Gets a user's friends, sends them to facebook_status_get_status(), and ultimately returns themed HTML for a list of those users' statuses.
+ * Gets a user's friends and sends them to facebook_status_get_status().  For use with facebook_status_get_rel_status mainly.
  *
  * @param $ur_rtid
  *   The relationship type ID (rtid) to use when determining which users the current user relates to.
@@ -898,7 +896,7 @@ function facebook_status_menu($may_cache) {
  *   If TRUE, only one status update is returned per user.
  *   If FALSE, all available updates are returned per user.
  * @return
- *   Themed HTML listing status updates from users with whom the current user has a certain relationship.
+ *   An array of arrays per the return value of facebook_status_get_status().  Only status updates from users with whom the current user has a certain relationship are returned.
  */
 function facebook_status_get_ur_status($ur_rtid = -1, $number = 0, $grouping = TRUE) {
   if (!is_numeric($number) || $number < 0) {
@@ -954,8 +952,7 @@ function facebook_status_get_ur_status($ur_rtid = -1, $number = 0, $grouping = T
     else {
       $number = abs($number);
     }
-    $statuses = facebook_status_get_status($uid_list, $number);
-    return facebook_status_list_render($statuses);
+    return facebook_status_get_status($uid_list, $number);
   }
   else {
     return;
