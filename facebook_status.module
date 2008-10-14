@@ -1193,14 +1193,16 @@ function facebook_status_advf($account) {
   }
   if ($user->uid && $friends) {
     $status = facebook_status_get_status($account->uid);
-    $so = '';
-    $user2 = user_load(array('uid' => $status[0]['fbs_uid']));
-    if (drupal_strlen($status[0]['status_fb']) > 32) {
-      $so = ' title="'. check_plain($user2->name .' '. $status[0]['status_fb']) .'"';
-      $status[0]['status_fb'] = drupal_substr($status[0]['status_fb'], 0, 32) .'...';
+    if ($status[0]['status_fb']) {
+      $so = '';
+      $user2 = user_load(array('uid' => $account->uid));
+      if (drupal_strlen($status[0]['status_fb']) > 32) {
+        $so = ' title="'. check_plain($user2->name .' '. $status[0]['status_fb']) .'"';
+        $status[0]['status_fb'] = drupal_substr($status[0]['status_fb'], 0, 32) .'...';
+      }
+      $output = '<p class="submitted"'. $so .'>'. theme_username($user2) .' '. check_plain($status[0]['status_fb']) .'</p>';
+      return $output;
     }
-    $output = '<p class="submitted"'. $so .'>'. theme_username($user2) .' '. check_plain($status[0]['status_fb']) .'</p>';
-    return $output;
   }
 }
 
