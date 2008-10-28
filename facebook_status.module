@@ -354,8 +354,15 @@ function facebook_status_update_form_submit($form_id, $form_values) {
   else {
     $uid = $user->uid;
   }
+  if ($uid != $user->uid) {
+    $user2 = user_load(array('uid' => $uid));
+    $message = t("!name's status has been updated.", array('!name' => theme_username($user2)));
+  }
+  else {
+    $message = t('Your status has been updated.');
+  }
   if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_values['name'], time(), $uid) ) {
-    drupal_set_message(t('The status has been updated.'));
+    drupal_set_message($message);
     if (module_exists('activity') && variable_get('facebook_status_activity', 1)) {
       facebook_status_activity('activity', $uid, '', $form_values['name'], time());
     }
