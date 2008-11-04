@@ -1,7 +1,9 @@
 <?php
+// $Id$
+
 /**
  * @file
- *   This file provides a preprocess function for the author pane used by  
+ *   This file provides a preprocess function for the author pane used by
  *   Advanced Forum and Advanced Profile Kit.
  */
 

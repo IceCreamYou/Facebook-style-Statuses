@@ -118,11 +118,11 @@ negative value for $num_results, which cause only one update for each user to
 be returned instead of all of them; the maximum number of results returned will
 be the reciprocal of $num_results.
 
-(B) facebook_status_form_display()
+(B) facebook_status_form_display($uid)
     Prints the status update form. Developers could use this, for instance, if 
 they wanted to create a separate block for the user's status and for the status
-update form. This does not include an access check, so use it with 
-user_access().
+update form. If no UID is passed, it decides which one to use automatically.  
+Output is fully themed like the Facebook Status block.
 
 (C) facebook_status_get_rel_status($ur_rtid, $number, $grouping)
     Returns the latest status updates from users with whom the current user has
