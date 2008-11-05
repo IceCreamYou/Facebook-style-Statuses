@@ -325,10 +325,7 @@ function facebook_status_display_form($uid = 0, $delta = 0) {
   //If the user has not posted a status.
   else {
     //If the status form is not the user's own, use different strings than if it is the user's own.
-    //We redeclare $user so that this logic is handled correctly even when this function is called with a UID.
-    $user = array();
-    global $user;
-    if ( $fbs_uid != $user->uid ) {
+    if ( $fbs_uid != $user->uid || $uid ) {
       $block_content .= t('@username does not yet have a status', array('@username' => $fbs_name));
     }
     else {
