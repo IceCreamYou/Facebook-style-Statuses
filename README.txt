@@ -118,7 +118,7 @@ negative value for $num_results, which cause only one update for each user to
 be returned instead of all of them; the maximum number of results returned will
 be the reciprocal of $num_results.
 
-(B) facebook_status_form_display($uid)
+(B) facebook_status_display_b($uid)
     Prints the status update form. Developers could use this, for instance, if 
 they wanted to create a separate block for the user's status and for the status
 update form. If no UID is passed, it decides which one to use automatically.  
