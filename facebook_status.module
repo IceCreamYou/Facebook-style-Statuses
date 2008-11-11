@@ -103,7 +103,7 @@ function facebook_status_block($op='list', $delta=0) {
     case 0:
     case 3:
       $block['subject'] = 'Status';
-      $block['content'] = facebook_status_display_b(0, $delta);
+      $block['content'] = facebook_status_display_b(NULL, 0, $delta);
       break;
     case 1:
       $x = -1;
@@ -160,7 +160,7 @@ function facebook_status_get_rel_status($ur_rtid = -1, $number = 0, $grouping = 
  * @see facebook_status_update_submit()
  * @see facebook_status_update_validate()
  */
-function facebook_status_update($uid = 0) {
+function facebook_status_update($form_state = NULL, $uid = 0) {
   if (!$uid) {
     global $user;
   }
@@ -213,14 +213,14 @@ function facebook_status_update($uid = 0) {
 /**
  * Renders themed HTML for the status update form.
  */
-function facebook_status_form_display($uid = 0) {
-  return drupal_get_form('facebook_status_update', $uid);
+function facebook_status_form_display($form_state = NULL, $uid = 0) {
+  return drupal_get_form('facebook_status_update', $form_state, $uid);
 }
 
 /**
  * Themes status update form block.
  */
-function facebook_status_display_b($uid = 0, $delta = 0) {
+function facebook_status_display_b($form_state = NULL, $uid = 0, $delta = 0) {
   global $user;
   if (!$uid) {
     $account = $user;
@@ -260,7 +260,7 @@ function facebook_status_display_b($uid = 0, $delta = 0) {
     && !in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) ) && !$uid)
     || ((($uid == $user->uid && user_access('edit own facebook_status')) || (user_access('edit all facebook_status') && $uid))
     && !in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0))))) {
-    $block_content .= '<div class="facebook_status_form">'. facebook_status_form_display($uid) .'</div>';
+    $block_content .= '<div class="facebook_status_form">'. facebook_status_form_display($form_state, $uid) .'</div>';
     $x = TRUE;
     $path = drupal_get_path('module', 'facebook_status');
     if (variable_get('facebook_status_ajax', 1)) {
