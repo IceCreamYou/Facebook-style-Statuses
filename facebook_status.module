@@ -627,7 +627,7 @@ function facebook_status_admin() {
     '#type' => 'fieldset',
     '#title' => t('General settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE, 
+    '#collapsed' => TRUE,
     '#weight' => -3,
     '#tree' => TRUE,
   );
@@ -648,7 +648,7 @@ function facebook_status_admin() {
     '#type' => 'fieldset',
     '#title' => t('Status length'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE, 
+    '#collapsed' => TRUE,
     '#weight' => -2,
     '#tree' => TRUE,
   );
@@ -691,7 +691,7 @@ function facebook_status_admin() {
     '#type' => 'fieldset',
     '#title' => t('Number of statuses'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE, 
+    '#collapsed' => TRUE,
     '#weight' => -1,
     '#tree' => TRUE,
   );
@@ -718,7 +718,7 @@ function facebook_status_admin() {
     '#type' => 'fieldset',
     '#title' => t('Miscellaneous'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE, 
+    '#collapsed' => TRUE,
     '#weight' => 0,
     '#tree' => TRUE,
   );
@@ -1067,41 +1067,23 @@ function facebook_status_user($op, &$edit, &$account) {
  * @see facebook_status_activity_info()
  */
 function facebook_status_activity($op='activity', $uid=0, $uname='', $status='', $status_time='') {
-  if (!($uid && $uname)) {
+  if (!$uid) {
     if ( arg(0) == 'user' && is_numeric(arg(1)) ) {
       $uid = arg(1);
-      $user2 = user_load(array('uid' => arg(1)));
-      $uname = $user2->name;
     }
     else if ( arg(0) == 'node' && is_numeric(arg(1)) ) {
       $uid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
-      $user2 = user_load(array('uid' => $uid));
-      $uname = $user2->name;
     }
     else {
       global $user;
       $uid = $user->uid;
-      $uname = $user->name;
     }
   }
-  else if ($uid && !$uname) {
-    $user2 = user_load(array('uid' => $uid));
-    $uname = $user2->name;
-  }
-  else if ($uname && !$uid) {
-    $uid = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $uname));
-  }
-  if (!($status && $status_time)) {
-    $object = db_fetch_array(db_query_range("SELECT status_fb, status_time FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, 0, 1));
-    $status = $object['status_fb'];
-    $status_time = $object['status_time'];
-  }
-  else if ($status && !$status_time) {
-    $status_time = db_result(db_query_range("SELECT status_time FROM {facebook_status} WHERE uid = %d AND status_fb = '%s' ORDER BY sid DESC", $uid, $status, 0, 1));
-  }
-  else if ($status_time && !$status) {
-    $status = db_result(db_query_range("SELECT status_fb FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, 0, 1));
-  }
+  $account = user_load(array('uid' => $uid));
+  $sobj = facebook_status_get_status($uid);
+  $uname = $account->uid;
+  $status = $sobj[0]['status_fb'];
+  $status_time = $sobj[0]['status_time'];
   if (time() - $status_time < 60) {
     $status_time = t("a moment");
   }
@@ -1114,6 +1096,7 @@ function facebook_status_activity($op='activity', $uid=0, $uname='', $status='',
   );
   $data = array(
     'operation' => 'update',
+    'author-theme' => theme_username($account),
     'author-uid' => $uid,
     'author-name' => $uname,
     'author-name-link' => l($uname, 'user/'. $uid),
@@ -1180,6 +1163,7 @@ function facebook_status_token_list($type = 'all') {
   if ($type == 'facebook_status') {
     $tokens['facebook_status'] = array(
       'operation' => t('The verb of the operation that took place.  Always "update."'),
+      'author-theme' => t('The themed username of the person whose status was updated.  Usually the same as [author-name-link].'),
       'author-uid' => t('The UID of the person whose status was updated.'),
       'author-name' => t('The username of the person whose status was updated.'),
       'author-name-link' => t('A link to the profile of the user whose status was updated.'),
@@ -1208,8 +1192,10 @@ function facebook_status_token_values($type, $data = NULL) {
   }
 
   $object = facebook_status_activity('token');
+  $account = user_load(array('uid' => $object['uid']));
   $values = array(
     'operation' => 'update',
+    'author-theme' => theme_username($account),
     'author-uid' => $object['uid'],
     'author-name' => $object['name'],
     'author-name-link' => l($object['name'], 'user/'. $object['uid']),
