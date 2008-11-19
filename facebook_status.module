@@ -132,8 +132,12 @@ function facebook_status_block($op='list', $delta=0) {
       if (module_exists('user_relationships')) {
         $subject = db_result(db_query("SELECT plural_name FROM {user_relationship_types} WHERE rtid = %d", variable_get('facebook_status_ur_type', 1)));
         $content = facebook_status_get_rel_status();
+        $content = facebook_status_list_render($content);
+        if ($content) {
+          $content = '<div class="facebook_status_block_rel">'. $content .'</div>';
+        }
         $block['subject'] = $subject . t("' Recent Status Updates");
-        $block['content'] = '<div class="facebook_status_block_rel">'. facebook_status_list_render($content) .'</div>';
+        $block['content'] = $content;
       }
       break;
     }
@@ -170,7 +174,7 @@ function facebook_status_update_form($uid = 0) {
   if (variable_get('facebook_status_mode', 1)) {
     if (arg(0) == 'user' && is_numeric(arg(1)) && !$uid) {
       $user2 = user_load(array('uid' => arg(1)));
-      $xname = check_plain($user2->name);
+      $xname = theme_username($user2);
     }
     else if (arg(0) == 'node' && is_numeric(arg(1)) && !$uid) {
       $uuid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
@@ -181,7 +185,7 @@ function facebook_status_update_form($uid = 0) {
       }
     }
     else if (!$uid) {
-      $xname = check_plain($user->name);
+      $xname = theme_username($user);
     }
     else {
       $xname = theme_username($user);
@@ -1021,13 +1025,17 @@ function facebook_status_list_render($fbs_list) {
           $time = format_interval(time() - $row['status_time'], 1);
         }
         $status = $row['status_fb'];
-        if (drupal_strlen($row['status_fb']) > variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) {
-          $status = drupal_substr($row['status_fb'], 0, variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) .'...';
+        if ($status) {
+          if (drupal_strlen($row['status_fb']) > variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) {
+            $status = drupal_substr($row['status_fb'], 0, variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) .'...';
+          }
+          $list[] = t("<span class='fbs_list_item' title='@username @status_long'> !user @status_short <div class='submitted'>!time ago</div></span>", array('@username' => $user2->name, '@status_long' => $row['status_fb'], '!user' => theme_username($user2), '@status_short' => $status, '!time' => $time, 1));
         }
-        $list[] = t("<span class='fbs_list_item' title='@username @status_long'> !user @status_short <div class='submitted'>!time ago</div></span>", array('@username' => $user2->name, '@status_long' => $row['status_fb'], '!user' => theme_username($user2), '@status_short' => $status, '!time' => $time, 1));
       }
     }
-    return theme_item_list($list, NULL, 'ul', array('div' => 'facebook_status_list_block'));
+    if ($list) {
+      return theme_item_list($list, NULL, 'ul', array('div' => 'facebook_status_list_block'));
+    }
   }
 }
 
@@ -1185,7 +1193,7 @@ function facebook_status_token_values($type, $data = NULL) {
   if ($type == 'facebook_status' && !empty($data)) {
     if (!isset($authors[$data['author-uid']])) {
     $author = db_fetch_object(db_query('SELECT uid, name FROM {users} WHERE uid = %d', $data['author-uid']));
-      $authors[$data['author-uid']] = theme('username', $author);
+      $authors[$data['author-uid']] = theme_username($author);
     }
     $data['author'] = $authors[$data['author-uid']];
     return $data;
