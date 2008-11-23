@@ -174,21 +174,21 @@ function facebook_status_update($form_state = NULL, $uid = 0) {
   if (variable_get('facebook_status_mode', 1)) {
     if (arg(0) == 'user' && is_numeric(arg(1)) && !$uid) {
       $user2 = user_load(array('uid' => arg(1)));
-      $xname = theme_username($user2);
+      $xname = theme('username', $user2);
     }
     else if (arg(0) == 'node' && is_numeric(arg(1)) && !$uid) {
       $uuid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
       $user2 = user_load(array('uid' => $uuid));
       $xname = check_plain($user2->name);
       if ($uuid != $user->uid) {
-        $xname = theme_username($user2);
+        $xname = theme('username', $user2);
       }
     }
     else if (!$uid) {
-      $xname = theme_username($user);
+      $xname = theme('username', $user);
     }
     else {
-      $xname = theme_username($user);
+      $xname = theme('username', $user);
     }
     $title = '';
   }
@@ -390,7 +390,7 @@ function facebook_status_update_submit($form, &$form_state) {
   }
   if ($uid != $user->uid) {
     $user2 = user_load(array('uid' => $uid));
-    $message = t("!name's status has been updated.", array('!name' => theme_username($user2)));
+    $message = t("!name's status has been updated.", array('!name' => theme('username', $user2)));
   }
   else {
     $message = t('Your status has been updated.');
@@ -1017,7 +1017,7 @@ function facebook_status_list_render($fbs_list) {
           if (drupal_strlen($row['status_fb']) > variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) {
             $status = drupal_substr($row['status_fb'], 0, variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) .'...';
           }
-          $list[] = t("<span class='fbs_list_item' title='@username @status_long'> !user @status_short <div class='submitted'>!time ago</div></span>", array('@username' => $user2->name, '@status_long' => $row['status_fb'], '!user' => theme_username($user2), '@status_short' => $status, '!time' => $time, 1));
+          $list[] = t("<span class='fbs_list_item' title='@username @status_long'> !user @status_short <div class='submitted'>!time ago</div></span>", array('@username' => $user2->name, '@status_long' => $row['status_fb'], '!user' => theme('username', $user2), '@status_short' => $status, '!time' => $time, 1));
         }
       }
     }
@@ -1034,6 +1034,12 @@ function facebook_status_user($op, &$edit, &$account) {
   if ($op == 'delete') {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
+  }
+  if ($op == 'load') {
+    $status = facebook_status_get_status($account->uid);
+    $s['status_fb'] = $status[0]['status_fb'];
+    $s['status_time'] = $status[0]['status_time'];
+    $account->facebook_status = $s;
   }
 }
 
@@ -1058,7 +1064,7 @@ function facebook_status_advf($account) {
         $so = ' title="'. check_plain($user2->name .' '. $status[0]['status_fb']) .'"';
         $status[0]['status_fb'] = drupal_substr($status[0]['status_fb'], 0, 32) .'...';
       }
-      $output = '<p class="submitted"'. $so .'>'. theme_username($user2) .' '. check_plain($status[0]['status_fb']) .'</p>';
+      $output = '<p class="submitted"'. $so .'>'. theme('username', $user2) .' '. check_plain($status[0]['status_fb']) .'</p>';
       return $output;
     }
   }
