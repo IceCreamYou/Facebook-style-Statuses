@@ -174,21 +174,21 @@ function facebook_status_update_form($uid = 0) {
   if (variable_get('facebook_status_mode', 1)) {
     if (arg(0) == 'user' && is_numeric(arg(1)) && !$uid) {
       $user2 = user_load(array('uid' => arg(1)));
-      $xname = theme_username($user2);
+      $xname = theme('username', $user2);
     }
     else if (arg(0) == 'node' && is_numeric(arg(1)) && !$uid) {
       $uuid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
       $user2 = user_load(array('uid' => $uuid));
       $xname = check_plain($user2->name);
       if ($uuid != $user->uid) {
-        $xname = theme_username($user2);
+        $xname = theme('username', $user2);
       }
     }
     else if (!$uid) {
-      $xname = theme_username($user);
+      $xname = theme('username', $user);
     }
     else {
-      $xname = theme_username($user);
+      $xname = theme('username', $user);
     }
     $title = '';
   }
@@ -367,7 +367,7 @@ function facebook_status_update_form_submit($form_id, $form_values) {
   if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_values['name'], time(), $user->uid) ) {
     drupal_set_message(t('Your status has been updated.'));
     if (module_exists('activity') && variable_get('facebook_status_activity', 1)) {
-      facebook_status_activity('activity', $user->uid, '', $form_values['name'], time());
+      facebook_status_activity('activity', $user->uid);
     }
   }
   else {
@@ -390,7 +390,7 @@ function facebook_status_update_form_submit($form_id, $form_values) {
   }
   if ($uid != $user->uid) {
     $user2 = user_load(array('uid' => $uid));
-    $message = t("!name's status has been updated.", array('!name' => theme_username($user2)));
+    $message = t("!name's status has been updated.", array('!name' => theme('username', $user2)));
   }
   else {
     $message = t('Your status has been updated.');
@@ -398,7 +398,7 @@ function facebook_status_update_form_submit($form_id, $form_values) {
   if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_values['name'], time(), $uid) ) {
     drupal_set_message($message);
     if (module_exists('activity') && variable_get('facebook_status_activity', 1)) {
-      facebook_status_activity('activity', $uid, '', $form_values['name'], time());
+      facebook_status_activity('activity', $uid);
     }
   }
   else {
@@ -1029,7 +1029,7 @@ function facebook_status_list_render($fbs_list) {
           if (drupal_strlen($row['status_fb']) > variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) {
             $status = drupal_substr($row['status_fb'], 0, variable_get('facebook_status_max_block_len', variable_get('facebook_status_length', 192))) .'...';
           }
-          $list[] = t("<span class='fbs_list_item' title='@username @status_long'> !user @status_short <div class='submitted'>!time ago</div></span>", array('@username' => $user2->name, '@status_long' => $row['status_fb'], '!user' => theme_username($user2), '@status_short' => $status, '!time' => $time, 1));
+          $list[] = t("<span class='fbs_list_item' title='@username @status_long'> !user @status_short <div class='submitted'>!time ago</div></span>", array('@username' => $user2->name, '@status_long' => $row['status_fb'], '!user' => theme('username', $user2), '@status_short' => $status, '!time' => $time, 1));
         }
       }
     }
@@ -1047,34 +1047,29 @@ function facebook_status_user($op, &$edit, &$account) {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
   }
+  if ($op == 'load') {
+    $status = facebook_status_get_status($account->uid);
+    $s['status_fb'] = $status[0]['status_fb'];
+    $s['status_time'] = $status[0]['status_time'];
+    $account->facebook_status = $s;
+  }
 }
 
 /**
  * Implementation of hook_activity().
  * Integration with activity.module.
  *
- * If neither $status nor $status_time are specified, the latest status is used.
- * If only one is specified, the other is figured out.
- * If either or both $uid or $uname are not specified, they are figured out.
- * Passing in the variables is not necessary but facilitates optimization, since it helps avoids database queries.
- *
  * @param $op
  *   Specifies whether to record a status update or define tokens.
  * @param $uid
  *   The UID of the user whose status was updated.
- * @param $uname
- *   The username of the user whose status was updated.
- * @param $status
- *   The new status of the user whose status was updated.
- * @param $status_time
- *   The timestamp at which the relevant user's status was last updated.
  * @return
  *   If $op is 'activity' nothing is returned but a new activity record is created.
  *   If $op is 'token' an array is returned with this module's tokens inside.
  *
  * @see facebook_status_activity_info()
  */
-function facebook_status_activity($op='activity', $uid=0, $uname='', $status='', $status_time='') {
+function facebook_status_activity($op='activity', $uid=0) {
   if (!$uid) {
     if ( arg(0) == 'user' && is_numeric(arg(1)) ) {
       $uid = arg(1);
@@ -1087,9 +1082,9 @@ function facebook_status_activity($op='activity', $uid=0, $uname='', $status='',
       $uid = $user->uid;
     }
   }
-  $account = user_load(array('uid' => $uid));
+  $acc = user_load(array('uid' => $uid));
   $sobj = facebook_status_get_status($uid);
-  $uname = $account->uid;
+  $uname = $acc->name;
   $status = $sobj[0]['status_fb'];
   $status_time = $sobj[0]['status_time'];
   if (time() - $status_time < 60) {
@@ -1104,7 +1099,7 @@ function facebook_status_activity($op='activity', $uid=0, $uname='', $status='',
   );
   $data = array(
     'operation' => 'update',
-    'author-theme' => theme_username($account),
+    'author-theme' => theme('username', $acc),
     'author-uid' => $uid,
     'author-name' => $uname,
     'author-name-link' => l($uname, 'user/'. $uid),
@@ -1193,7 +1188,7 @@ function facebook_status_token_values($type, $data = NULL) {
   if ($type == 'facebook_status' && !empty($data)) {
     if (!isset($authors[$data['author-uid']])) {
     $author = db_fetch_object(db_query('SELECT uid, name FROM {users} WHERE uid = %d', $data['author-uid']));
-      $authors[$data['author-uid']] = theme_username($author);
+      $authors[$data['author-uid']] = theme('username', $author);
     }
     $data['author'] = $authors[$data['author-uid']];
     return $data;
@@ -1203,7 +1198,7 @@ function facebook_status_token_values($type, $data = NULL) {
   $account = user_load(array('uid' => $object['uid']));
   $values = array(
     'operation' => 'update',
-    'author-theme' => theme_username($account),
+    'author-theme' => theme('username', $account),
     'author-uid' => $object['uid'],
     'author-name' => $object['name'],
     'author-name-link' => l($object['name'], 'user/'. $object['uid']),
@@ -1234,7 +1229,7 @@ function facebook_status_advf($account) {
         $so = ' title="'. check_plain($user2->name .' '. $status[0]['status_fb']) .'"';
         $status[0]['status_fb'] = drupal_substr($status[0]['status_fb'], 0, 32) .'...';
       }
-      $output = '<p class="submitted"'. $so .'>'. theme_username($user2) .' '. check_plain($status[0]['status_fb']) .'</p>';
+      $output = '<p class="submitted"'. $so .'>'. theme('username', $user2) .' '. check_plain($status[0]['status_fb']) .'</p>';
       return $output;
     }
   }
