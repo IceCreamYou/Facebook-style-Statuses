@@ -127,12 +127,14 @@ Output is fully themed like the Facebook Status block.
 
 (C) facebook_status_get_rel_status($ur_rtid, $number, $grouping)
     Returns the latest status updates from users with whom the current user has
-a relationship. If $grouping is TRUE, only one status update is returned per 
-user; if FALSE, all statuses are returned for the relevant users. If $ur_rtid 
-is not passed, this function uses the default relationship specified on the 
-Facebook Status settings page. $number controls the number of statuses 
-returned; if it is not passed, it defaults to the setting on the Facebook 
-Status settings page.
+a relationship in the same form as facebook_status_get_status. If $grouping is 
+TRUE, only one status update is returned per user; if FALSE, all statuses are 
+returned for the relevant users. If $ur_rtid is -2 or not passed, this function
+uses the default relationship specified on the Facebook Status settings page. 
+If it is -1, all relationship types will be used.  It can also be an array with
+RTIDs as keys, if multiple relationship types are needed. $number controls the 
+number of statuses returned; if it is not passed, it defaults to the setting on
+the Facebook Status settings page.
 
 (D) facebook_status_list_render($fbs_list)
     Returns themed HTML for a list of status updates.  $fbs_list is an array in
