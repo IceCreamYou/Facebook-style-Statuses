@@ -1051,8 +1051,16 @@ function facebook_status_user($op, &$edit, &$account) {
 
 /**
  * Integration with Advanced Forum.
+ *
+ * @param $account
+ *   The user object for the user whose status is being displayed.
+ * @param $name
+ *   A boolean specifying whether to include the themed username in the result.
+ * @see facebook_status_advf_rel()
+ * @return
+ *   A status themed for display on the Advanced Forum panel.
  */
-function facebook_status_advf($account) {
+function facebook_status_advf($account, $name = TRUE) {
   global $user;
   if (!$account->uid) {
     return;
@@ -1065,12 +1073,16 @@ function facebook_status_advf($account) {
     $status = facebook_status_get_status($account->uid);
     if ($status[0]['status_fb']) {
       $so = '';
-      $user2 = user_load(array('uid' => $account->uid));
       if (drupal_strlen($status[0]['status_fb']) > 32) {
-        $so = ' title="'. check_plain($user2->name .' '. $status[0]['status_fb']) .'"';
+        $so = ' title="'. check_plain($account->name .' '. $status[0]['status_fb']) .'"';
         $status[0]['status_fb'] = drupal_substr($status[0]['status_fb'], 0, 32) .'...';
       }
-      $output = '<p class="submitted"'. $so .'>'. theme('username', $user2) .' '. check_plain($status[0]['status_fb']) .'</p>';
+      if ($name) {
+        $output = '<p class="submitted"'. $so .'>'. theme('username', $account) .' '. check_plain($status[0]['status_fb']) .'</p>';
+      }
+      else {
+        $output = '<p class="submitted"'. $so .'> '. check_plain($status[0]['status_fb']) .'</p>';
+      }
       return $output;
     }
   }
