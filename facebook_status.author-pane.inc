@@ -11,8 +11,9 @@
  * Implementation of hook_preprocess_author_pane().
  */
 function facebook_status_preprocess_author_pane(&$variables) {
-  $account_id = $variables['account']->uid;
-  if ($account_id != 0) {
-    $variables['facebook_status'] = facebook_status_advf($account_id);
+  if ($variables['account']->uid != 0) {
+    //TRUE includes the themed username; FALSE is just the status.
+    $variables['facebook_status'] = facebook_status_advf($variables['account'], TRUE);
+    $variables['facebook_status_status'] = facebook_status_advf($variables['account'], FALSE);
   }
 }
