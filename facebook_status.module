@@ -86,7 +86,12 @@ function facebook_status_alter_validate($form, &$form_state) {
 function facebook_status_perm() {
   //Note that, since all this module does is provide blocks, there is no need for an 'access facebook_status' permission because access can be set in the blocks' settings.
   //However, statuses displayed via author_pane (if installed) are not on blocks, and so need their own permission.
-  return array('edit own facebook_status', 'edit all facebook_status', 'view author_pane status');
+  if (module_exists('author_pane')) {
+    return array('edit own facebook_status', 'edit all facebook_status', 'view author_pane status');
+  }
+  else {
+    return array('edit own facebook_status', 'edit all facebook_status');
+  }
 }
 
 /**
@@ -1070,7 +1075,7 @@ function facebook_status_advf($account, $name = TRUE) {
   if ($account->uid != $user->uid) {
     $friends = facebook_status_advf_rel($account);
   }
-  if (user_access('view author_pane status') && $friends) {
+  if ((user_access('view author_pane status') || !module_exists('author_pane')) && $friends) {
     $status = facebook_status_get_status($account->uid);
     if ($status[0]['status_fb']) {
       $so = '';
