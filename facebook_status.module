@@ -84,8 +84,9 @@ function facebook_status_alter_validate($form_id, $form_values) {
  * Implementation of hook_perm().
  */
 function facebook_status_perm() {
-  //Note that, since all this module does is provide a block, there is no need for an 'access facebook_status' permission because access can be set in the block's settings.
-  return array('edit own facebook_status', 'edit all facebook_status');
+  //Note that, since all this module does is provide blocks, there is no need for an 'access facebook_status' permission because access can be set in the blocks' settings.
+  //However, statuses displayed via author_pane (if installed) are not on blocks, and so need their own permission.
+  return array('edit own facebook_status', 'edit all facebook_status', 'view author_pane status');
 }
 
 /**
@@ -1234,7 +1235,7 @@ function facebook_status_advf($account, $name = TRUE) {
   if ($account->uid != $user->uid) {
     $friends = facebook_status_advf_rel($account);
   }
-  if ($user->uid && $friends) {
+  if (user_access('view author_pane status') && $friends) {
     $status = facebook_status_get_status($account->uid);
     if ($status[0]['status_fb']) {
       $so = '';
@@ -1243,10 +1244,10 @@ function facebook_status_advf($account, $name = TRUE) {
         $status[0]['status_fb'] = drupal_substr($status[0]['status_fb'], 0, 32) .'...';
       }
       if ($name) {
-        $output = '<p class="submitted"'. $so .'>'. theme('username', $account) .' '. check_plain($status[0]['status_fb']) .'</p>';
+        $output = '<span class="submitted"'. $so .'>'. theme('username', $account) .' '. check_plain($status[0]['status_fb']) .'</span>';
       }
       else {
-        $output = '<p class="submitted"'. $so .'> '. check_plain($status[0]['status_fb']) .'</p>';
+        $output = '<span class="submitted"'. $so .'> '. check_plain($status[0]['status_fb']) .'</span>';
       }
       return $output;
     }
