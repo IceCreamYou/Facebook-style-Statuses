@@ -324,7 +324,7 @@ function facebook_status_display_b($form_state = NULL, $uid = 0, $delta = 0) {
   //If AJAX mode is off and the status is editable, there's no reason to show the status outside of the textfield.
   if (!(!variable_get('facebook_status_ajax', 1) && $x)) {
     $block_content .= '<div class="facebook_status_status">';
-    if ($sm['status_time'] && !in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
+    if ($sm['status_time'] && $sm['status_fb'] && !in_array($fbs_uid, variable_get('facebook_status_clear_user', array(0)))) {
       if (variable_get('facebook_status_mode', 1)) {
         //If the status is not edit-able, make the user's name a link to that user's profile.
         //if ($x || (arg(0) == 'user' && is_numeric(arg(1)))) {
@@ -368,14 +368,14 @@ function facebook_status_display_b($form_state = NULL, $uid = 0, $delta = 0) {
       if ( $fbs_uid != $account->uid || $uid ) {
         //Ugly hack to make the text look linked.
         $fbs_name .= '<a class="facebook_status_ajax_clickable_text">';
-        $block_content .= t('!username does not yet have a status', array('!username' => $fbs_name));
+        $block_content .= t('!username does not have a status', array('!username' => $fbs_name));
       }
       else {
         if ($x) {
           //If the form is going to show up (i.e. if a user can edit their status) then apply 'a' formatting to the status so it looks clickable so users are aware that the form will appear using AJAX.
           $block_content .= '<a class="facebook_status_ajax_clickable_text">';
         }
-        $block_content .= t('You do not yet have a status');
+        $block_content .= t('You do not have a status');
       }
       if ($x) {
         $block_content .= '</a>';
