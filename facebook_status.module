@@ -1177,7 +1177,13 @@ function facebook_status_activity($op='activity', $uid=0) {
   );
   switch ($op) {
     case 'activity':
-      activity_insert('facebook_status', 'status', 'update', $data, $target_users_roles);
+      //The function activity_delete() only exists in Activity 5.4.x (and not 5.3.x) so we can use it to figure out which version of the API to use.
+      if (function_exists('activity_delete')) {
+        activity_insert($uid, 'facebook_status', 'status', 'update', $data, $target_users_roles);
+      }
+      else {
+        activity_insert('facebook_status', 'status', 'update', $data, $target_users_roles);
+      }
       break;
     case 'token':
       return array(
