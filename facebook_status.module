@@ -420,8 +420,8 @@ function facebook_status_update_submit($form, &$form_state) {
     }
     if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $user->uid) ) {
       drupal_set_message(t('Your status has been updated.'));
-      if (module_exists('notice')) {
-        fbs_notice_insert($user->uid);
+      if (module_exists('activity')) {
+        facebook_status_activity('activity', $user->uid);
       }
       //Save status to user object.
       if (variable_get('facebook_status_in_user_object', 0)) {
@@ -470,8 +470,8 @@ function facebook_status_update_submit($form, &$form_state) {
     }
     if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $uid) ) {
       drupal_set_message($message);
-      if (module_exists('notice')) {
-        fbs_notice_insert($user->uid);
+      if (module_exists('activity')) {
+        facebook_status_activity('activity', $user->uid);
       }
     }
     else {
@@ -1246,4 +1246,156 @@ function theme_facebook_status_item($account, $status_long, $status_short, $time
   else {
     return t("<span class='fbs_list_item' title='@status_long'> !user @status_short <div class='submitted'>!time</div></span>", array('@username' => $account->name, '@status_long' => $status_long, '!user' => theme('username', $account), '@status_short' => $status_short, '!time' => $time));
   }
+}
+
+/**
+ * Integration with activity.module.
+ *
+ * @param $op
+ *   Specifies whether to record a status update or define tokens.
+ * @param $uid
+ *   The UID of the user whose status was updated.
+ * @return
+ *   If $op is 'activity' nothing is returned but a new activity record is created.
+ *   If $op is 'token' an array is returned with this module's tokens inside.
+ *
+ * @see facebook_status_activity_info()
+ */
+function facebook_status_activity($op='activity', $uid=0) {
+  if (!$uid) {
+    if ( arg(0) == 'user' && is_numeric(arg(1)) ) {
+      $uid = arg(1);
+    }
+    else if ( arg(0) == 'node' && is_numeric(arg(1)) ) {
+      $uid = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(1)));
+    }
+    else {
+      global $user;
+      $uid = $user->uid;
+    }
+  }
+  $acc = user_load(array('uid' => $uid));
+  $sobj = facebook_status_get_status($uid);
+  $uname = $acc->name;
+  $status = $sobj[0]['status_fb'];
+  $status_time = $sobj[0]['status_time'];
+  if (time() - $status_time < 60) {
+    $status_time = t("a moment");
+  }
+  else {
+    $status_time = format_interval(time() - $status_time, 1);
+  }
+  $target_users_roles = array(
+    ACTIVITY_ALL => 'all',
+    $uid => 'author'
+  );
+  $data = array(
+    'operation' => 'update',
+    'author-theme' => theme('username', $acc),
+    'author-uid' => $uid,
+    'author-name' => $uname,
+    'author-name-link' => l($uname, 'user/'. $uid),
+    'status' => $status,
+    'status-created-time' => $status_time,
+  );
+  switch ($op) {
+    case 'activity':
+      activity_insert($uid, 'facebook_status', 'status', 'update', $data, $target_users_roles);
+      break;
+    case 'token':
+      return array(
+        'uid' => $uid,
+        'name' => $uname,
+        'status' => $status,
+        'time' => $status_time,
+      );
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_activity_info().
+ * Continued integration with activity.module.
+ *
+ * @return
+ *   An array of information necessary to build the activity record.
+ *
+ * @see facebook_status_activity()
+ */
+function facebook_status_activity_info() {
+  if (variable_get('facebook_status_mode', 1)) {
+    $def_all = '[author-name-link] [status]';
+    $def_auth = 'Your status is now "[status]"';
+  }
+  else {
+    $def_all = "[author-name-link]'s status was [operation]d";
+    $def_auth = "Your status was [operation]d";
+  }
+  return array(
+    'ops' => array('update' => t('Update')),
+    'types' => array('status' => 'status'),
+    'roles' => array(
+      'author' => array(
+        '#name' => t('Author'),
+        '#description' => t('The person who created the node.'),
+        '#default' => $def_auth,
+      ),
+      // This is what corresponds to ACTIVITY_ALL
+      'all' => array(
+        '#name' => t('All'),
+        '#description' => t('Everyone with permission'),
+        '#default' => $def_all,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_token_list().
+ * Token module integration.  Required for Activity to work.
+ */
+function facebook_status_token_list($type = 'all') {
+  if ($type == 'facebook_status') {
+    $tokens['facebook_status'] = array(
+      'operation' => t('The verb of the operation that took place.  Always "update."'),
+      'author-theme' => t('The themed username of the person whose status was updated.  Usually the same as [author-name-link].'),
+      'author-uid' => t('The UID of the person whose status was updated.'),
+      'author-name' => t('The username of the person whose status was updated.'),
+      'author-name-link' => t('A link to the profile of the user whose status was updated.'),
+      'status' => t('The new status'),
+      'status-created-time' => t('The time the status was updated'),
+    );
+
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_token_values().
+ * Token module integration.  Required for Activity to work.
+ */
+function facebook_status_token_values($type, $data = NULL) {
+  //honestly I have no idea what this does, and it returns some default site tokens that aren't really necessary, but nothing works without including it.
+  static $authors;
+  if ($type == 'facebook_status' && !empty($data)) {
+    if (!isset($authors[$data['author-uid']])) {
+    $author = db_fetch_object(db_query('SELECT uid, name FROM {users} WHERE uid = %d', $data['author-uid']));
+      $authors[$data['author-uid']] = theme('username', $author);
+    }
+    $data['author'] = $authors[$data['author-uid']];
+    return $data;
+  }
+
+  $object = facebook_status_activity('token');
+  $account = user_load(array('uid' => $object['uid']));
+  $values = array(
+    'operation' => 'update',
+    'author-theme' => theme('username', $account),
+    'author-uid' => $object['uid'],
+    'author-name' => $object['name'],
+    'author-name-link' => l($object['name'], 'user/'. $object['uid']),
+    'status' => $object['status'],
+    'status-created-time' => $object['time'],
+  );
+  return $values;
 }
