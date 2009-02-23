@@ -420,7 +420,7 @@ function facebook_status_update_submit($form, &$form_state) {
     }
     if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $user->uid) ) {
       drupal_set_message(t('Your status has been updated.'));
-      if (module_exists('activity')) {
+      if (module_exists('activity') && trim($form_state['values']['name'])) {
         facebook_status_activity('activity', $user->uid);
       }
       //Save status to user object.
@@ -470,7 +470,7 @@ function facebook_status_update_submit($form, &$form_state) {
     }
     if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $uid) ) {
       drupal_set_message($message);
-      if (module_exists('activity')) {
+      if (module_exists('activity') && trim($form_state['values']['name'])) {
         facebook_status_activity('activity', $user->uid);
       }
     }
