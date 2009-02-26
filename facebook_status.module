@@ -424,11 +424,13 @@ function facebook_status_update_submit($form, &$form_state) {
         facebook_status_activity('activity', $user->uid);
       }
       //Save status to user object.
+/*
       if (variable_get('facebook_status_in_user_object', 0)) {
         $s = array();
         $s['facebook_status'] = array('status_fb' => $form_state['values']['name'], 'status_time' => time());
         user_save($user, $s);
       }
+ */
     }
     else {
       drupal_set_message(t('An error has occurred while updating your status.  Please try again.  If the problem persists, please contact an administrator.'), 'error');
@@ -463,11 +465,13 @@ function facebook_status_update_submit($form, &$form_state) {
       return;
     }
     //Save status to user object.
+/*
     if (variable_get('facebook_status_in_user_object', 0)) {
       $s = array();
       $s['facebook_status'] = array('status_fb' => $form_state['values']['name'], 'status_time' => time());
       user_save($account, $s);
     }
+ */
     if ( db_query("INSERT INTO {facebook_status} (status_fb, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['name'], time(), $uid) ) {
       drupal_set_message($message);
       if (module_exists('activity') && trim($form_state['values']['name'])) {
@@ -1290,13 +1294,13 @@ function facebook_status_activity($op='activity', $uid=0) {
     $uid => 'author'
   );
   $data = array(
-    'operation' => 'update',
-    'author-theme' => theme('username', $acc),
-    'author-uid' => $uid,
-    'author-name' => $uname,
-    'author-name-link' => l($uname, 'user/'. $uid),
-    'status' => $status,
-    'status-created-time' => $status_time,
+    'fbss-operation' => 'update',
+    'fbss-author-theme' => theme('username', $acc),
+    'fbss-author-uid' => $uid,
+    'fbss-author-name' => $uname,
+    'fbss-author-name-link' => l($uname, 'user/'. $uid),
+    'fbss-status' => $status,
+    'fbss-status-created-time' => $status_time,
   );
   switch ($op) {
     case 'activity':
@@ -1324,12 +1328,12 @@ function facebook_status_activity($op='activity', $uid=0) {
  */
 function facebook_status_activity_info() {
   if (variable_get('facebook_status_mode', 1)) {
-    $def_all = '[author-name-link] [status]';
-    $def_auth = 'Your status is now "[status]"';
+    $def_all = '[fbss-author-name-link] [fbss-status]';
+    $def_auth = 'Your status is now "[fbss-status]"';
   }
   else {
-    $def_all = "[author-name-link]'s status was [operation]d";
-    $def_auth = "Your status was [operation]d";
+    $def_all = "[fbss-author-name-link]'s status was [fbss-operation]d";
+    $def_auth = "Your status was [fbss-operation]d";
   }
   return array(
     'ops' => array('update' => t('Update')),
@@ -1357,13 +1361,13 @@ function facebook_status_activity_info() {
 function facebook_status_token_list($type = 'all') {
   if ($type == 'facebook_status') {
     $tokens['facebook_status'] = array(
-      'operation' => t('The verb of the operation that took place.  Always "update."'),
-      'author-theme' => t('The themed username of the person whose status was updated.  Usually the same as [author-name-link].'),
-      'author-uid' => t('The UID of the person whose status was updated.'),
-      'author-name' => t('The username of the person whose status was updated.'),
-      'author-name-link' => t('A link to the profile of the user whose status was updated.'),
-      'status' => t('The new status'),
-      'status-created-time' => t('The time the status was updated'),
+      'fbss-operation' => t('The verb of the operation that took place.  Always "update."'),
+      'fbss-author-theme' => t('The themed username of the person whose status was updated.  Usually the same as [author-name-link].'),
+      'fbss-author-uid' => t('The UID of the person whose status was updated.'),
+      'fbss-author-name' => t('The username of the person whose status was updated.'),
+      'fbss-author-name-link' => t('A link to the profile of the user whose status was updated.'),
+      'fbss-status' => t('The new status'),
+      'fbss-status-created-time' => t('The time the status was updated'),
     );
 
     return $tokens;
@@ -1378,24 +1382,24 @@ function facebook_status_token_values($type, $data = NULL) {
   //honestly I have no idea what this does, and it returns some default site tokens that aren't really necessary, but nothing works without including it.
   static $authors;
   if ($type == 'facebook_status' && !empty($data)) {
-    if (!isset($authors[$data['author-uid']])) {
-    $author = db_fetch_object(db_query('SELECT uid, name FROM {users} WHERE uid = %d', $data['author-uid']));
-      $authors[$data['author-uid']] = theme('username', $author);
+    if (!isset($authors[$data['fbss-author-uid']])) {
+    $author = db_fetch_object(db_query('SELECT uid, name FROM {users} WHERE uid = %d', $data['fbss-author-uid']));
+      $authors[$data['fbss-author-uid']] = theme('username', $author);
     }
-    $data['author'] = $authors[$data['author-uid']];
+    $data['author'] = $authors[$data['fbss-author-uid']];
     return $data;
   }
 
   $object = facebook_status_activity('token');
   $account = user_load(array('uid' => $object['uid']));
   $values = array(
-    'operation' => 'update',
-    'author-theme' => theme('username', $account),
-    'author-uid' => $object['uid'],
-    'author-name' => $object['name'],
-    'author-name-link' => l($object['name'], 'user/'. $object['uid']),
-    'status' => $object['status'],
-    'status-created-time' => $object['time'],
+    'fbss-operation' => 'update',
+    'fbss-author-theme' => theme('username', $account),
+    'fbss-author-uid' => $object['uid'],
+    'fbss-author-name' => $object['name'],
+    'fbss-author-name-link' => l($object['name'], 'user/'. $object['uid']),
+    'fbss-status' => $object['status'],
+    'fbss-status-created-time' => $object['time'],
   );
   return $values;
 }
