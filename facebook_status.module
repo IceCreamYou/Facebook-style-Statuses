@@ -366,8 +366,10 @@ function facebook_status_display_form($uid = 0, $delta = 0) {
     else {
       //If the status form is not the user's own, use different strings than if it is the user's own.
       if ( $fbs_uid != $account->uid || $uid ) {
-        //Ugly hack to make the text look linked.
-        $fbs_name .= '<a class="facebook_status_ajax_clickable_text">';
+        if ($x) {
+          //Ugly hack to make the text look linked.
+          $fbs_name .= '<a class="facebook_status_ajax_clickable_text">';
+        }
         $block_content .= t('!username does not have a status', array('!username' => $fbs_name));
       }
       else {
