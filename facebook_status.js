@@ -20,8 +20,8 @@ if (Drupal.jsEnabled) {
     $('div.facebook_status_block').find('input#edit-name').keypress(function() {
       facebook_status_count = 0;
     });
-    //Set to original value on unfocus if field is empty.
-    $('div.facebook_status_block').find('input#edit-name').blur(function() {
+    //Set to original value if field is empty and the textfield is closed.
+    $('div.facebook_status_block').find('div.facebook_status_status').click(function() {
       if ($('div.facebook_status_block').find('input#edit-name').val() == "") {
         facebook_status_value = facebook_status_original_value;
         $('div.facebook_status_block').find('input#edit-name').val(facebook_status_value);
