@@ -1111,10 +1111,27 @@ function facebook_status_list_render($fbs_list) {
 /**
  * Implementation of hook_user().
  */
-function facebook_status_user($op, &$edit, &$account) {
+function facebook_status_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'delete') {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
+  }
+  if ($op == 'view') {
+    if (!isset($account->content['facebook_status'])) {
+      $account->content['facebook_status'] = array();
+    }
+    $account->content['facebook_status'] += array(
+      '#type' => 'user_profile_category',
+      '#attributes' => array('class' => 'facebook_status-profile-category'),
+      '#weight' => -5,
+      '#title' => t('Status'),
+    );
+    $account->content['facebook_status']['status'] = array(
+      '#type' => 'user_profile_item',
+      '#title' => t(''),
+      '#value' => facebook_status_display_b(NULL, $account->uid, 0), //facebook_status_form_display($account->uid) in Drupal 5
+      '#attributes' => array('class' => 'facebook_status profile'),
+    );
   }
 }
 
