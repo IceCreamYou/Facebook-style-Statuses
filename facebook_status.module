@@ -1128,6 +1128,13 @@ function facebook_status_user($op, &$edit, &$account) {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
   }
+  if ($op == 'view') {
+    $items['status'] = array('title' => t('Status'),
+      'value' => facebook_status_display_form($account->uid),
+      'class' => 'facebook_status profile',
+    );
+    return array(t('Status') => $items);
+  }
 }
 
 /**
