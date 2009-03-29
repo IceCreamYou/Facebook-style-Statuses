@@ -1,52 +1,129 @@
 <?php
 // $Id$
-//facebook_status.install
+
+/**
+ * @file
+ *   Allows users to have a "status."
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function facebook_status_schema() {
+  $schema = array();
+  $schema['facebook_status'] = array(
+    'fields' => array(
+      'sid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'indexes' => array(
+      'uid' => array('uid')
+    ),
+    'primary key' => array('sid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
 function facebook_status_install() {
+  //Create tables.
+  drupal_install_schema('facebook_status');
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6200() {
+  //Update old variables to new variable names.
+  variable_set('facebook_status_concat', variable_get('facebook_status_mode', 1));
+  variable_set('facebook_status_slide', variable_get('facebook_status_ajax', 1));
+  variable_set('facebook_status_size', variable_get('facebook_status_field_length', 32));
+  $exclude = array();
+  $exclude_list = variable_get('facebook_status_clear_user', array());
+  foreach ($exclude_list as $excluded) {
+    if ($excluded != 0) {
+      $exclude[] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $excluded));
+    }
+  }
+  $exclude_string = implode(', ', $exclude);
+  variable_set('facebook_status_exclude', $exclude_string);
+  $new_special = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", variable_get('facebook_status_special_user', 1)));
+  variable_set('facebook_status_special_user', $new_special);
+
+  //Rename column.
   $result = array();
+  //Technically, Oracle and MSSQL are not supported.
   switch ($GLOBALS['db_type']) {
     case 'mysqli':
     case 'mysql':
-      $result[] = db_query("CREATE TABLE {facebook_status} (
-        sid int(10) NOT NULL auto_increment,
-        status_time int(10) NOT NULL default '0',
-        status_fb varchar(255) NOT NULL default '',
-        uid int(10) NOT NULL default '0',
-        PRIMARY KEY  (sid)
-        ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
-
+      $result[] = update_sql("ALTER TABLE {facebook_status} CHANGE COLUMN status_fb status varchar(255) NOT NULL DEFAULT ''");
       break;
-
     case 'pgsql':
-      $result[] = db_query("CREATE TABLE {facebook_status} (
-        sid SERIAL,
-        status_time integer NOT NULL default '0',
-        status_fb varchar(255) NOT NULL default '',
-        uid integer NOT NULL default '0',
-        PRIMARY KEY  (sid)
-        );");
-    
+    case 'oracle':
+      $result[] = update_sql('ALTER TABLE {facebook_status} RENAME COLUMN status_fb TO status');
       break;
-
-        case 'mssql':
-      $result[] = db_query("CREATE TABLE {facebook_status} (
-        sid int NOT NULL IDENTITY(1,1),
-        status_time int NOT NULL default '0',
-        status_fb varchar(255) NOT NULL default '',
-        uid int NOT NULL default '0',
-        PRIMARY KEY (sid)
-        );");
-
+    case 'mssql':
+      $result[] = update_sql("EXEC sp_rename '{facebook_status}.status_fb', 'status', 'COLUMN'");
       break;
   }
 
-  if (count($result) != count(array_filter($result))) {
-    drupal_set_message(t('The installation of the Facebook Status module was unsuccessful.'), 'error');
-  }
+  //Delete old variables.
+  variable_del('facebook_status_max_num_block_stats_all');
+  variable_del('facebook_status_clear_user_records_string');
+  variable_del('facebook_status_max_num_block_stats');
+  variable_del('facebook_status_clear_user_records');
+  variable_del('facebook_status_max_block_len_all');
+  variable_del('facebook_status_clear_user_string');
+  variable_del('facebook_status_max_block_len');
+  variable_del('facebook_status_field_length');
+  variable_del('facebook_status_clear_user');
+  variable_del('facebook_status_clear_all');
+  variable_del('facebook_status_ur_type');
+  variable_del('facebook_status_activity');
+  variable_del('facebook_status_mode');
+  variable_del('facebook_status_advf');
+  variable_del('facebook_status_ajax');
+
+  return $result;
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {
-  db_query('DROP TABLE {facebook_status}');
+  //Remove tables.
+  drupal_uninstall_schema('facebook_status');
+  //Remove variables.
+  variable_del('facebook_status_special_user');
+  variable_del('facebook_status_description');
+  variable_del('facebook_status_exclude');
+  variable_del('facebook_status_default');
+  variable_del('facebook_status_concat');
+  variable_del('facebook_status_length');
+  variable_del('facebook_status_legacy');
+  variable_del('facebook_status_slide');
+  variable_del('facebook_status_size');
+  variable_del('facebook_status_title');
 }
