@@ -117,7 +117,6 @@ function facebook_status_uninstall() {
   drupal_uninstall_schema('facebook_status');
   //Remove variables.
   variable_del('facebook_status_special_user');
-  variable_del('facebook_status_description');
   variable_del('facebook_status_exclude');
   variable_del('facebook_status_default');
   variable_del('facebook_status_concat');

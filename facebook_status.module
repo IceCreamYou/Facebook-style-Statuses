@@ -168,8 +168,11 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  * @param $account
  *   The $user object of the user who owns the status.
  * @param $status
- *   The relevant status text.  If not passed, gets the last status for the
- *   relevant user.  If there is none, uses a default message.
+ *   Usually the relevant status text. Can also be an object with properties
+ *   status and status_time. If not passed, gets the last status for the
+ *   relevant user. If there is none, uses a default message. It's usually
+ *   better not to pass this parameter or to pass an empty string since blank
+ *   statuses are automatically taken care of that way.
  * @param $format_long
  *   If TRUE, themes the username; this usually makes it a link.
  *   If FALSE, uses the unthemed (and thus unlinked) username, and abbreviates
@@ -184,12 +187,12 @@ function theme_facebook_status_item($account, $status = '', $format_long = TRUE)
     return FALSE;
   }
   $name = theme('username', $account);
-  if (!$theme_name) {
+  if (!$format_long) {
     $name = check_plain($account->name);
   }
+  $status_orig = facebook_status_get_status($account->uid);
+  $status_time = $status_orig[0]->status_time;
   if (!$status) {
-    global $user;
-    $status_orig = facebook_status_get_status($user->uid);
     $status = $status_orig[0]->status;
     if (!$status) {
       if (variable_get('facebook_status_concat', 1) == 0) {
@@ -200,19 +203,36 @@ function theme_facebook_status_item($account, $status = '', $format_long = TRUE)
       }
     }
   }
+  if (is_object($status)) {
+    $status_time = $status->status_time;
+    $status = $status->status;
+  }
+  $time = theme('facebook_status_time', $status_time);
   $output = '';
   if (variable_get('facebook_status_concat', 1)) {
     if (_facebook_status_possessive($status)) {
-      $output = t('!user@status', array('!user' => $name, '@status' => $status));
+      $output = t('!user@status %time', array('!user' => $name, '@status' => $status, '%time' => $time));
     }
     else {
-      $output = t('!user @status', array('!user' => $name, '@status' => $status));
+      $output = t('!user @status %time', array('!user' => $name, '@status' => $status, '%time' => $time));
     }
   }
   else {
-    $output = t('@fbsstatus', array('!user' => $name, '@fbsstatus' => $status));
+    $output = t('@fbsstatus %time', array('!user' => $name, '@fbsstatus' => $status, '%time' => $time));
   }
   if (!$format_long && drupal_strlen(trim(html_entity_decode($output, ENT_NOQUOTES))) > variable_get('facebook_status_size', 32)) {
+    //Do not include the time in the fieldset title since it could be abbreviated.
+    if (variable_get('facebook_status_concat', 1)) {
+      if (_facebook_status_possessive($status)) {
+        $output = t('!user@status', array('!user' => $name, '@status' => $status, '%time' => $time));
+      }
+      else {
+        $output = t('!user @status', array('!user' => $name, '@status' => $status, '%time' => $time));
+      }
+    }
+    else {
+      $output = t('@fbsstatus', array('!user' => $name, '@fbsstatus' => $status, '%time' => $time));
+    }
     $output = drupal_substr(trim(html_entity_decode($output)), 0, variable_get('facebook_status_size', 32) - 1) .'&hellip;';
   }
   return $output;
@@ -237,7 +257,28 @@ function theme_facebook_status_form_display($account) {
     return drupal_get_form('_facebook_status_status', $account);
   }
   else {
-    return theme('facebook_status_item', $account, $status[0]->status);
+    return theme('facebook_status_item', $account);
+  }
+}
+
+/**
+ * Returns a formatted string showing the time the status was submitted.
+ *
+ * @param $status_time
+ *   The Unix timestamp for when the relevant status was updated.
+ * @return
+ *   If the status was submitted within the last hour, returns a "time ago"
+ *   date. If not, returns a normal (small) date. If zero, returns FALSE.
+ */
+function theme_facebook_status_time($status_time) {
+  if (!$status_time) {
+    return FALSE;
+  }
+  if (time() - $status_time < 60 * 60) {
+    return format_interval($status_time, 1);
+  }
+  else {
+    return format_date($status_time, 'small');
   }
 }
 
@@ -505,7 +546,6 @@ function _facebook_status_status($form_state, $account) {
   //Hidden options.  Not on the settings page.
   $title = check_plain(variable_get('facebook_status_title', ''));
   $maxlength = variable_get('facebook_status_length', 192);
-  $description = check_plain(variable_get('facebook_status_description', ''));
   //Because this text will appear exactly as-is in the textfield, we can't use a full check_plain() or filter_xss().
   //We also translate a blank string so that the default text can be in different languages without having the restriction of being preset.
   $default = str_replace('"', '', variable_get('facebook_status_default', t('@fbssdefault', array('@fbssdefault' => ''))));
@@ -521,6 +561,7 @@ function _facebook_status_status($form_state, $account) {
   if ($status->status_time) {
     $default = $status->status;
   }
+  $description = theme('facebook_status_time', $status->status_time);
 
   $slide = FALSE;
   if (variable_get('facebook_status_slide', 1)) {
@@ -530,7 +571,7 @@ function _facebook_status_status($form_state, $account) {
   //In the 1.x branch it was separately handled, which presented problems.
   $form['facebook_status'] = array(
     '#type' => 'fieldset',
-    '#title' => theme('facebook_status_item', $account, $status->status, FALSE),
+    '#title' => theme('facebook_status_item', $account, '', FALSE),
     '#collapsible' => $slide,
     '#collapsed' => $slide,
     '#tree' => TRUE,
@@ -689,13 +730,7 @@ function facebook_status_token_list($type = 'all') {
 function facebook_status_token_values($type, $data = NULL, $options = array()) {
   if ($type == 'facebook_status' && !empty($data)) {
     $status_time = $data['status_time'];
-    if ($status_time < 60 * 60) {
-      $time = format_interval($status_time);
-    }
-    else {
-      $time = format_date($status_time, 'small');
-    }
-    $data['status-time'] = $time;
+    $data['status-time'] = theme('facebook_status_time', $status_time);
     return $data;
   }
 }
