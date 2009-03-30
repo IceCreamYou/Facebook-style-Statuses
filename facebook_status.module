@@ -146,12 +146,17 @@ function facebook_status_theme($existing, $type, $theme, $path) {
       'arguments' => array(
         'account' => NULL,
         'status' => '',
-        'theme_name' => TRUE,
+        'format_long' => TRUE,
       ),
     ),
     'facebook_status_form_display' => array(
       'arguments' => array(
         'account' => NULL,
+      ),
+    ),
+    'facebook_status_time' => array(
+      'arguments' => array(
+        'status_time' => time(),
       ),
     ),
   );
