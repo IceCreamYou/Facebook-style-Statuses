@@ -124,5 +124,4 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_legacy');
   variable_del('facebook_status_slide');
   variable_del('facebook_status_size');
-  variable_del('facebook_status_title');
 }

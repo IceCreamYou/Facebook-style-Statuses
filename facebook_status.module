@@ -118,7 +118,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d', $account->uid);
   }
-  if ($op == 'view') {
+  if ($op == 'view' && !_facebook_status_exclude($account)) {
     if (!isset($account->content['facebook_status'])) {
       $account->content['facebook_status'] = array();
     }
@@ -178,21 +178,21 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  *   relevant user. If there is none, uses a default message. It's usually
  *   better not to pass this parameter or to pass an empty string since blank
  *   statuses are automatically taken care of that way.
- * @param $format_long
+ * @param $linked
  *   If TRUE, themes the username; this usually makes it a link.
- *   If FALSE, uses the unthemed (and thus unlinked) username, and abbreviates
- *   the status. This is really for fieldset titles.
+ *   If FALSE, uses the unthemed (and thus unlinked) username so that the result
+ *   can be placed within linked text.
  * @return
  *   HTML to display the themed status or FALSE if the current user does not
  *   have permission to view the status.
  */
-function theme_facebook_status_item($account, $status = '', $format_long = TRUE) {
+function theme_facebook_status_item($account, $status = '', $linked = TRUE) {
   global $user;
   if (!user_access('view all statuses', $user)) {
     return FALSE;
   }
   $name = theme('username', $account);
-  if (!$format_long) {
+  if (!$linked) {
     $name = check_plain($account->name);
   }
   $status_orig = facebook_status_get_status($account->uid);
@@ -213,34 +213,17 @@ function theme_facebook_status_item($account, $status = '', $format_long = TRUE)
     $status = $status->status;
   }
   $time = theme('facebook_status_time', $status_time);
-  $output = '';
   if (variable_get('facebook_status_concat', 1)) {
     if (_facebook_status_possessive($status)) {
-      $output = t('!user@status %time', array('!user' => $name, '@status' => $status, '%time' => $time));
+      return t('!user@status %time', array('!user' => $name, '@status' => $status, '%time' => $time));
     }
     else {
-      $output = t('!user @status %time', array('!user' => $name, '@status' => $status, '%time' => $time));
+      return t('!user @status %time', array('!user' => $name, '@status' => $status, '%time' => $time));
     }
   }
   else {
-    $output = t('@fbsstatus %time', array('!user' => $name, '@fbsstatus' => $status, '%time' => $time));
+    return t('@fbsstatus %time', array('!user' => $name, '@fbsstatus' => $status, '%time' => $time));
   }
-  if (!$format_long && drupal_strlen(trim(html_entity_decode($output, ENT_NOQUOTES))) > variable_get('facebook_status_size', 32)) {
-    //Do not include the time in the fieldset title since it could be abbreviated.
-    if (variable_get('facebook_status_concat', 1)) {
-      if (_facebook_status_possessive($status)) {
-        $output = t('!user@status', array('!user' => $name, '@status' => $status, '%time' => $time));
-      }
-      else {
-        $output = t('!user @status', array('!user' => $name, '@status' => $status, '%time' => $time));
-      }
-    }
-    else {
-      $output = t('@fbsstatus', array('!user' => $name, '@fbsstatus' => $status, '%time' => $time));
-    }
-    $output = drupal_substr(trim(html_entity_decode($output)), 0, variable_get('facebook_status_size', 32) - 1) .'&hellip;';
-  }
-  return $output;
 }
 
 /**
@@ -259,7 +242,7 @@ function theme_facebook_status_form_display($account) {
   }
   $can_edit = _facebook_status_can_edit($account);
   if ($can_edit) {
-    return drupal_get_form('_facebook_status_status', $account);
+    return '<div id="facebook_status_update">'. drupal_get_form('_facebook_status_status', $account) .'</div>';
   }
   else {
     return theme('facebook_status_item', $account);
@@ -279,8 +262,13 @@ function theme_facebook_status_time($status_time) {
   if (!$status_time) {
     return FALSE;
   }
-  if (time() - $status_time < 60 * 60) {
-    return format_interval($status_time, 1);
+  if (time() - $status_time < 60) {
+    return t('a moment ago');
+  }
+  else if (time() - $status_time < 60 * 60) {
+    //!time and not @time because this is usually run through check_plain() later as part of theme_placeholder().
+    //It doesn't really matter though since the text is created by format_interval() and thus should already be safe.
+    return t('!time ago', array('!time' => format_interval(time() - $status_time, 1)));
   }
   else {
     return format_date($status_time, 'small');
@@ -549,7 +537,6 @@ function _facebook_status_user_autocomplete($string = '') {
  */
 function _facebook_status_status($form_state, $account) {
   //Hidden options.  Not on the settings page.
-  $title = check_plain(variable_get('facebook_status_title', ''));
   $maxlength = variable_get('facebook_status_length', 192);
   //Because this text will appear exactly as-is in the textfield, we can't use a full check_plain() or filter_xss().
   //We also translate a blank string so that the default text can be in different languages without having the restriction of being preset.
@@ -566,33 +553,31 @@ function _facebook_status_status($form_state, $account) {
   if ($status->status_time) {
     $default = $status->status;
   }
-  $description = theme('facebook_status_time', $status->status_time);
+  $description = '';
 
-  $slide = FALSE;
   if (variable_get('facebook_status_slide', 1)) {
-    $slide = TRUE;
-  }
-  //The fieldset is part of the form so that it updates easily on JSON submits.
-  //In the 1.x branch it was separately handled, which presented problems.
-  $form['facebook_status'] = array(
-    '#type' => 'fieldset',
-    '#title' => theme('facebook_status_item', $account, '', FALSE),
-    '#collapsible' => $slide,
-    '#collapsed' => $slide,
-    '#tree' => TRUE,
+    $path = drupal_get_path('module', 'facebook_status');
+    drupal_add_js($path .'/facebook_status.js');
+    $form['facebook_status'] = array(
+      '#value' => '<a href="#" class="facebook_status_slide">'. theme('facebook_status_item', $account, '', FALSE) .'</a>',
     );
-  $form['facebook_status']['status'] = array(
+  }
+  else {
+    $description = theme('facebook_status_time', $status->status_time);
+  }
+  $form['status'] = array(
     '#type' => 'textfield',
-    '#title' => $title,
+    '#description' => $description,
     '#field_prefix' => $prefix,
     '#size' => variable_get('facebook_status_size', 32),
     '#maxlength' => $maxlength,
-    '#description' => $description,
     '#default_value' => $default,
+    '#prefix' => '<span class="facebook_status_hide">',
   );
-  $form['facebook_status']['submit'] = array(
+  $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
+    '#suffix' => '</span>',
   );
   $form_state['#account'] = $account;
   return $form;
@@ -603,10 +588,11 @@ function _facebook_status_status($form_state, $account) {
  */
 function _facebook_status_status_submit($form, &$form_state) {
   global $user;
+  $new_status = trim($form_state['values']['status']);
   $account = $form_state['#account'];
   //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
   $time = time();
-  if (trim($form_state['values']['facebook_status']['status']) === '') {
+  if ($new_status === '') {
     $time = 0;
   }
   //Choose "your" or "user's" depending on whether the editing user is the owner of the status.
@@ -616,15 +602,15 @@ function _facebook_status_status_submit($form, &$form_state) {
   }
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = facebook_status_get_status($account->uid);
-  if (trim($form_state['values']['facebook_status']['status']) != trim($status[0]->status)) {
-    db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $form_state['values']['facebook_status']['status'], $time, $account->uid);
+  if ($new_status != $status[0]->status) {
+    db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
     //Invokes hook_facebook_status_update($status_owner_object, &$status).
-    module_invoke_all('facebook_status_update', $account, $form_state['values']['facebook_status']['status']);
+    module_invoke_all('facebook_status_update', $account, $new_status);
   }
   //Trigger integration.
   module_invoke_all('facebook_status', 'submitted', $user);
   //Activity integration.
-  facebook_status_activity($account, $form_state['values']['facebook_status']['status']);
+  facebook_status_activity($account, $new_status);
   drupal_set_message(t('!possessive status has been updated.', array('!possessive' => $your)));
 }
 

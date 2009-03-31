@@ -34,7 +34,7 @@ function facebook_status_admin($form_state) {
     '#title' => t('Exclude users'),
     '#description' => t('Disallow these users from having statuses. Type in usernames separated by commas, following the rules of taxonomy autocomplete fields.'),
     '#default_value' => variable_get('facebook_status_exclude', ''),
-    '#maxlength' => 0,
+    '#maxlength' => 1000,
     '#autocomplete_path' => 'facebook_status/autocomplete',
   );
   $form['facebook_status_size'] = array(
@@ -66,12 +66,6 @@ function facebook_status_admin_validate($form, &$form_state) {
   $exclude = implode(', ', $exclude_final);
   form_set_value($form['facebook_status_exclude'], $exclude, $form_state);
 
-/**
- * Not quite sure what I originally intended this to do, but apparently I left off in the middle of it.
-  if ($form_state['values']['facebook_status_exclude']) {
-    form_set_error('facebook_status_exclude', t('
-  }
- */
   $size = $form_state['values']['facebook_status_size'];
   if (!is_numeric($size) || $size < 1 || $size != round($size)) {
     form_set_error('facebook_status_size', t('The size of the status update field must be a positive integer!'));
