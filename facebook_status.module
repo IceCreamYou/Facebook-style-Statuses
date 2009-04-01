@@ -755,3 +755,14 @@ function facebook_status_activity($account, $status) {
   );
   activity_insert($account->uid, 'facebook_status', 'status', 'update', $data, $target_users_roles);
 }
+
+//==================
+//VIEWS INTEGRATION.
+//==================
+
+/**
+ * Implementation of hook_views_api().
+ */
+function facebook_status_views_api() {
+  return array('api' => 2);
+}
