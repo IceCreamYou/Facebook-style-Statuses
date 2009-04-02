@@ -6,12 +6,6 @@
  *   Allows users to have a "status."
  */
 
-/**
- * TODO list:
- * - Views integration
- * - JavaScript
- */
-
 //=============
 //DRUPAL HOOKS.
 //=============
@@ -57,7 +51,7 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
     return $block;
   }
   else if ($op == 'view' && $delta == 'facebook_status') {
-    $account = facebook_status_choose_owner(variable_get('facebook_status_legacy', array('user')));
+    $account = facebook_status_choose_owner(FALSE);
     $block['subject'] = t('Status');
     $block['content'] = theme('facebook_status_form_display', $account);
     return $block;
@@ -146,12 +140,12 @@ function facebook_status_theme($existing, $type, $theme, $path) {
       'arguments' => array(
         'account' => NULL,
         'status' => '',
-        'format_long' => TRUE,
+        'linked' => TRUE,
       ),
     ),
     'facebook_status_form_display' => array(
       'arguments' => array(
-        'account' => NULL,
+        'account' => FALSE,
       ),
     ),
     'facebook_status_time' => array(
@@ -188,7 +182,7 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  */
 function theme_facebook_status_item($account, $status = '', $linked = TRUE) {
   global $user;
-  if (!user_access('view all statuses', $user)) {
+  if (!user_access('view all statuses', $user) && $user->uid != $account->uid) {
     return FALSE;
   }
   $name = theme('username', $account);
@@ -230,12 +224,16 @@ function theme_facebook_status_item($account, $status = '', $linked = TRUE) {
  * Returns the status update form.
  *
  * @param $account
- *   The user whose status form should be displayed.
+ *   The user whose status form should be displayed, or FALSE to have the module
+ *   detect the relevant user automatically according to the settings.
  * @return
  *   HTML to display the status update form or FALSE if the user cannot have a
  *   status.
  */
-function theme_facebook_status_form_display($account) {
+function theme_facebook_status_form_display($account = FALSE) {
+  if ($account === FALSE) {
+    $account = facebook_status_choose_owner(FALSE);
+  }
   $excluded = _facebook_status_exclude($account);
   if ($excluded) {
     return FALSE;
@@ -299,8 +297,8 @@ function theme_facebook_status_time($status_time) {
  *   An array of status objects.
  *   If the user has no statuses, or may not have statuses, returns FALSE.
  */
-function facebook_status_get_status($uid, $count = 1, $instance = -1) {
-  $excluded = _facebook_status_exclude($account);
+function facebook_status_get_status($uid = 0, $count = 1, $instance = -1) {
+  $excluded = _facebook_status_exclude(user_load(array('uid' => $uid)));
   if ($excluded) {
     return FALSE;
   }
@@ -309,12 +307,13 @@ function facebook_status_get_status($uid, $count = 1, $instance = -1) {
     $uid = $user->uid;
   }
   //Greater than or equal to zero.  This means $instance = 0 can retrieve all statuses starting with the first one.
+  //Note that the above is true even though we exclude statuses where status_time == 0 because only blank statuses have status_time == 0.
   if ($instance >= 0) {
     if ($count == 0) {
-      $result = db_query("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d ORDER BY sid DESC", $uid, $instance);
+      $result = db_query("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d AND status_time <> 0 ORDER BY sid DESC", $uid, $instance);
     }
     else {
-      $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d ORDER BY sid DESC", $uid, $instance, 0, $count);
+      $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d AND status_time <> 0 ORDER BY sid DESC", $uid, $instance, 0, $count);
     }
   }
   else {
@@ -329,7 +328,7 @@ function facebook_status_get_status($uid, $count = 1, $instance = -1) {
     if ($total + $instance < 0) {
       $offset = 0;
     }
-    $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, $offset, $count);
+    $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time <> 0 ORDER BY sid DESC", $uid, $offset, $count);
   }
   $statuses = array();
   while ($sid = db_fetch_array($result)) {
@@ -348,26 +347,72 @@ function facebook_status_get_status($uid, $count = 1, $instance = -1) {
  * Returns statuses for multiple users.
  *
  * @param $uids
- *   An array of User IDs for users whose statuses will be returned.
+ *   An array of User IDs for users whose statuses will be returned. If empty,
+ *   all users' statuses will be considered.
  * @param $total
  *   The maximum number of statuses to return.
- *   If zero, all relevant statuse are returned ($count still matters).
+ *   If zero, all relevant statuses are returned (but $count still matters).
  * @param $count
  *   The maximum number of statuses to include for each user.
  *   If zero, all relevant statuses are returned for each user.
  * @return
- *   An array of status objects keyed by status ID.
+ *   An array of status objects.
  */
-function facebook_status_get_statuses($uids, $total = 0, $count = 1) {
-  foreach ($uids as $uid) {
-    $status_orig = facebook_status_get_status($uid, $count);
-    $status = $status_orig[0];
-    if ($status && trim($status->status)) {
-      $statuses[$status->sid] = $status;
+function facebook_status_get_statuses($uids = array(), $total = 0, $count = 1) {
+  $statuses = array();
+  if (empty($uids)) {
+    //Handle separately for speed.
+    if ($count == 1) {
+      if ($total == 0) {
+        $result = db_query("SELECT sid, uid FROM (SELECT sid, uid FROM {facebook_status} WHERE status_time <> 0 ORDER BY sid DESC) x GROUP BY uid ORDER BY sid DESC");
+      }
+      else {
+        $result = db_query_range("SELECT sid, uid FROM (SELECT sid, uid FROM {facebook_status} WHERE status_time <> 0 ORDER BY sid DESC) x GROUP BY uid ORDER BY sid DESC", 0, $total);
+      }
+    }
+    else if ($count == 0) {
+      if ($total == 0) {
+        $result = db_query("SELECT sid, uid FROM {facebook_status} WHERE status_time <> 0 ORDER BY sid DESC");
+      }
+      else {
+        $result = db_query_range("SELECT sid, uid FROM {facebook_status} WHERE status_time <> 0 ORDER BY sid DESC", 0, $total);
+      }
+    }
+    else {
+      //Get all users who may possibly have posted the relevant statuses and pass them back in. The results will be limited later.
+      $result = db_query_range("SELECT uid FROM (SELECT uid FROM {facebook_status} WHERE status_time <> 0 ORDER BY sid DESC) x GROUP BY uid ORDER BY sid DESC", 0, $total);
+      $uids = array();
+      while ($uid = db_fetch_array($result)) {
+        if ($uid['uid']) {
+          $uids[] = $uid['uid'];
+        }
+      }
+      facebook_status_get_statuses($uids, $total, $count);
+      return;
+    }
+    while ($sid = db_fetch_array($result)) {
+      if ($sid['sid'] && !_facebook_status_exclude(user_load(array('uid' => $sid['uid'])))) {
+        $status = facebook_status_load($sid['sid']);
+        $statuses[$status->sid] = $status;
+      }
+    }
+    krsort($statuses);
+  }
+  else {
+    foreach ($uids as $uid) {
+      $status_orig = facebook_status_get_status($uid, $count);
+      $status = $status_orig[0];
+      if ($status && trim($status->status)) {
+        $statuses[$status->sid] = $status;
+      }
+    }
+    krsort($statuses);
+    if (!empty($statuses) && $total != 0) {
+      $statuses = array_slice($statuses, 0, $total);
     }
   }
-  krsort($statuses);
-  return $statuses;
+  //array_values() indexes numerically.
+  return array_values($statuses);
 }
 
 /**
@@ -407,11 +452,15 @@ function facebook_status_load($sid) {
  *   $legacy['user'] == TRUE, then on profile pages the owner of the profile
  *   will be returned.  If $legacy['node'] == TRUE, then on nodes the author of
  *   the node will be returned.  Everywhere else, or if $legacy has no value in
- *   the 'user' or 'node' keys, the current user will be returned.
+ *   the 'user' or 'node' keys, the current user will be returned. If $legacy is
+ *   FALSE, the module's settings will be applied.
  * @return
  *   The $user object for the user whose status should be shown.
  */
 function facebook_status_choose_owner($legacy = array()) {
+  if ($legacy === FALSE) {
+    $legacy = variable_get('facebook_status_legacy', array('user'));
+  }
   if ($legacy['user'] && arg(0) == 'user' && is_numeric(arg(1))) {
     return user_load(array('uid' => arg(1)));
   }
@@ -441,7 +490,7 @@ function facebook_status_choose_owner($legacy = array()) {
 function _facebook_status_can_edit($author = FALSE) {
   global $user;
   if (!$author) {
-    $author = facebook_status_choose_owner(variable_get('facebook_status_legacy', array('user')));
+    $author = facebook_status_choose_owner(FALSE);
   }
   if (($user->uid == $author->uid && user_access('edit own status')) || user_access('edit all statuses')) {
     return TRUE;

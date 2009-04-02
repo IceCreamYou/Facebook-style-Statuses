@@ -14,7 +14,7 @@
  */
 
 /**
- * Implementation of hook_views_data()
+ * Implementation of hook_views_data().
  */
 function facebook_status_views_data() {
   //Basic table information.
