@@ -640,10 +640,10 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   }
   $description = '';
 
+  $path = drupal_get_path('module', 'facebook_status');
   $slider = '';
   if (variable_get('facebook_status_slide', 1)) {
     if (!$form_state['#js_exists']) {
-      $path = drupal_get_path('module', 'facebook_status');
       drupal_add_js($path .'/facebook_status.js');
     }
     $slider = '<a href="#status" name="status" class="facebook_status_slide">'. theme('facebook_status_item', $account, '', FALSE) .'</a>';
@@ -651,7 +651,7 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   else {
     $description = theme('facebook_status_time', $status->status_time);
   }
-  //TODO: styles should be set in the theme.
+  drupal_add_css($path .'/facebook_status.css');
   $form['status'] = array(
     '#type' => 'textfield',
     '#description' => $description,
@@ -660,7 +660,6 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
     '#maxlength' => $maxlength,
     '#default_value' => $default,
     '#prefix' => $slider .'<span class="facebook_status_hide">',
-    '#attributes' => array('style' => 'float: left; margin-right: 4px; margin-top: 4px;'),
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -673,7 +672,6 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
       'effect' => 'fade',
       'method' => 'replace',
     ),
-    '#attributes' => array('style' => 'float: left; margin-top: 4px;'),
   );
   $form_state['#account'] = $account;
   $_SESSION['#fbss-uid'] = $account->uid;
@@ -703,7 +701,13 @@ function _facebook_status_status_submit($form, &$form_state) {
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = facebook_status_get_status($account->uid);
   if ($new_status != $status[0]->status && $account->uid) {
-    db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
+    //If a new status is submitted within 12 seconds of the old one, we assume the user didn't mean to post the first one, and write over it.
+    if (time() - $status[0]->status_time < 12) {
+      db_query_range("UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE uid = %d ORDER BY sid DESC", $new_status, $time, $account->uid, 0, 1);
+    }
+    else {
+      db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
+    }
     //Invokes hook_facebook_status_update($status_owner_object, &$status).
     module_invoke_all('facebook_status_update', $account, $new_status);
   }
@@ -740,7 +744,13 @@ function facebook_status_save_js() {
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = facebook_status_get_status($account->uid);
   if ($new_status != $status[0]->status) {
-    db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
+    //If a new status is submitted within 12 seconds of the old one, we assume the user didn't mean to post the first one, and write over it.
+    if (time() - $status[0]->status_time < 12) {
+      db_query("UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE uid = %d ORDER BY sid DESC LIMIT 1", $new_status, $time, $account->uid);
+    }
+    else {
+      db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
+    }
     //Invokes hook_facebook_status_update($status_owner_object, &$status).
     module_invoke_all('facebook_status_update', $account, $new_status);
   }
