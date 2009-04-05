@@ -38,6 +38,14 @@ function facebook_status_menu() {
     'access arguments' => array('access administration pages'),
     'type' => MENU_CALLBACK,
   );
+  $items['facebook_status/js/%user'] = array(
+    'title' => 'Save status update form',
+    'page callback' => 'facebook_status_save_js',
+    'page arguments' => array(2),
+    'access callback' => '_facebook_status_can_edit',
+    'access arguments' => array(2),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -122,10 +130,12 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
       '#weight' => -5,
       '#title' => t('Status'),
     );
+    //Hidden setting. Not available on the settings page.
+    $size = variable_get('facebook_status_size_long', 72);
     $account->content['facebook_status']['status'] = array(
       '#type' => 'user_profile_item',
       '#title' => '',
-      '#value' => theme('facebook_status_form_display', $account),
+      '#value' => theme('facebook_status_form_display', $account, $size),
       '#attributes' => array('class' => 'facebook_status profile'),
     );
   }
@@ -189,7 +199,7 @@ function theme_facebook_status_item($account, $status = '', $linked = TRUE) {
   if (!$linked) {
     $name = check_plain($account->name);
   }
-  $status_orig = facebook_status_get_status($account->uid);
+  $status_orig = facebook_status_get_status($account->uid, 1, -1, FALSE);
   $status_time = $status_orig[0]->status_time;
   if (!$status) {
     $status = $status_orig[0]->status;
@@ -226,11 +236,13 @@ function theme_facebook_status_item($account, $status = '', $linked = TRUE) {
  * @param $account
  *   The user whose status form should be displayed, or FALSE to have the module
  *   detect the relevant user automatically according to the settings.
+ * @param $size
+ *   The size of the status update textfield, or FALSE to use the setting.
  * @return
  *   HTML to display the status update form or FALSE if the user cannot have a
  *   status.
  */
-function theme_facebook_status_form_display($account = FALSE) {
+function theme_facebook_status_form_display($account = FALSE, $size = FALSE) {
   if ($account === FALSE) {
     $account = facebook_status_choose_owner(FALSE);
   }
@@ -240,7 +252,7 @@ function theme_facebook_status_form_display($account = FALSE) {
   }
   $can_edit = _facebook_status_can_edit($account);
   if ($can_edit) {
-    return '<div id="facebook_status_update">'. drupal_get_form('_facebook_status_status', $account) .'</div>';
+    return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('_facebook_status_status', $account, $size) .'</div>';
   }
   else {
     return theme('facebook_status_item', $account);
@@ -293,11 +305,13 @@ function theme_facebook_status_time($status_time) {
  *   If negative and there are fewer than abs($instance) statuses available,
  *   the counting starts with the first one.
  *   If zero, gets $count statuses starting with the first one.
+ * @param $exclude_blank
+ *   If TRUE, blank statuses will not be included.  If FALSE, they will be.
  * @return
  *   An array of status objects.
  *   If the user has no statuses, or may not have statuses, returns FALSE.
  */
-function facebook_status_get_status($uid = 0, $count = 1, $instance = -1) {
+function facebook_status_get_status($uid = 0, $count = 1, $instance = -1, $exclude_blank = TRUE) {
   $excluded = _facebook_status_exclude(user_load(array('uid' => $uid)));
   if ($excluded) {
     return FALSE;
@@ -310,10 +324,20 @@ function facebook_status_get_status($uid = 0, $count = 1, $instance = -1) {
   //Note that the above is true even though we exclude statuses where status_time == 0 because only blank statuses have status_time == 0.
   if ($instance >= 0) {
     if ($count == 0) {
-      $result = db_query("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d AND status_time <> 0 ORDER BY sid DESC", $uid, $instance);
+      if ($exclude_blank) {
+        $result = db_query("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d AND status_time <> 0 ORDER BY sid DESC", $uid, $instance);
+      }
+      else {
+        $result = db_query("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d ORDER BY sid DESC", $uid, $instance);
+      }
     }
     else {
-      $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d AND status_time <> 0 ORDER BY sid DESC", $uid, $instance, 0, $count);
+      if ($exclude_blank) {
+        $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d AND status_time <> 0 ORDER BY sid DESC", $uid, $instance, 0, $count);
+      }
+      else {
+        $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time > %d ORDER BY sid DESC", $uid, $instance, 0, $count);
+      }
     }
   }
   else {
@@ -328,7 +352,12 @@ function facebook_status_get_status($uid = 0, $count = 1, $instance = -1) {
     if ($total + $instance < 0) {
       $offset = 0;
     }
-    $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time <> 0 ORDER BY sid DESC", $uid, $offset, $count);
+    if ($exclude_blank) {
+      $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d AND status_time <> 0 ORDER BY sid DESC", $uid, $offset, $count);
+    }
+    else {
+      $result = db_query_range("SELECT sid FROM {facebook_status} WHERE uid = %d ORDER BY sid DESC", $uid, $offset, $count);
+    }
   }
   $statuses = array();
   while ($sid = db_fetch_array($result)) {
@@ -345,6 +374,7 @@ function facebook_status_get_status($uid = 0, $count = 1, $instance = -1) {
 
 /**
  * Returns statuses for multiple users.
+ * Assumes blank statuses shouldn't be returned.
  *
  * @param $uids
  *   An array of User IDs for users whose statuses will be returned. If empty,
@@ -495,6 +525,7 @@ function _facebook_status_can_edit($author = FALSE) {
   if (($user->uid == $author->uid && user_access('edit own status')) || user_access('edit all statuses')) {
     return TRUE;
   }
+  return FALSE;
 }
 
 /**
@@ -581,15 +612,20 @@ function _facebook_status_user_autocomplete($string = '') {
  *
  * @param $account
  *   The $user object for the user whose status will be shown.
+ * @param $size
+ *   The size of the status update textfield, or FALSE to use the setting.
  * @return
  *   A $form object.
  */
-function _facebook_status_status($form_state, $account) {
-  //Hidden options.  Not on the settings page.
+function _facebook_status_status(&$form_state, $account, $size = FALSE) {
+  if (!$size) {
+    $size = variable_get('facebook_status_size', 32);
+  }
+  //Hidden option.  Not on the settings page.
   $maxlength = variable_get('facebook_status_length', 192);
   //Because this text will appear exactly as-is in the textfield, we can't use a full check_plain() or filter_xss().
   //We also translate a blank string so that the default text can be in different languages without having the restriction of being preset.
-  $default = str_replace('"', '', variable_get('facebook_status_default', t('@fbssdefault', array('@fbssdefault' => ''))));
+  $default = str_replace('"', '', t('@fbssdefault', array('@fbssdefault' => '')));
 
   if (variable_get('facebook_status_concat', 1)) {
     $prefix = '<span style="float: left;">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
@@ -597,38 +633,50 @@ function _facebook_status_status($form_state, $account) {
   else {
     $prefix = '';
   }
-  $status = facebook_status_get_status($account->uid);
+  $status = facebook_status_get_status($account->uid, 1, -1, FALSE);
   $status = $status[0];
   if ($status->status_time) {
     $default = $status->status;
   }
   $description = '';
 
+  $slider = '';
   if (variable_get('facebook_status_slide', 1)) {
-    $path = drupal_get_path('module', 'facebook_status');
-    drupal_add_js($path .'/facebook_status.js');
-    $form['facebook_status'] = array(
-      '#value' => '<a href="#" class="facebook_status_slide">'. theme('facebook_status_item', $account, '', FALSE) .'</a>',
-    );
+    if (!$form_state['#js_exists']) {
+      $path = drupal_get_path('module', 'facebook_status');
+      drupal_add_js($path .'/facebook_status.js');
+    }
+    $slider = '<a href="#status" name="status" class="facebook_status_slide">'. theme('facebook_status_item', $account, '', FALSE) .'</a>';
   }
   else {
     $description = theme('facebook_status_time', $status->status_time);
   }
+  //TODO: styles should be set in the theme.
   $form['status'] = array(
     '#type' => 'textfield',
     '#description' => $description,
     '#field_prefix' => $prefix,
-    '#size' => variable_get('facebook_status_size', 32),
+    '#size' => $size,
     '#maxlength' => $maxlength,
     '#default_value' => $default,
-    '#prefix' => '<span class="facebook_status_hide">',
+    '#prefix' => $slider .'<span class="facebook_status_hide">',
+    '#attributes' => array('style' => 'float: left; margin-right: 4px; margin-top: 4px;'),
   );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
     '#suffix' => '</span>',
+    '#submit' => array('_facebook_status_status_submit'),
+    '#ahah' => array(
+      'path' => 'facebook_status/js/'. $account->uid .'/'. $size,
+      'wrapper' => 'facebook_status_update',
+      'effect' => 'fade',
+      'method' => 'replace',
+    ),
+    '#attributes' => array('style' => 'float: left; margin-top: 4px;'),
   );
   $form_state['#account'] = $account;
+  $_SESSION['#fbss-uid'] = $account->uid;
   return $form;
 }
 
@@ -636,9 +684,12 @@ function _facebook_status_status($form_state, $account) {
  * Submit function for the status update form.
  */
 function _facebook_status_status_submit($form, &$form_state) {
+  $account = $form_state['#account'];
+  if (!$account->uid) {
+    $account = user_load(array('uid' => $_SESSION['#fbss-uid']));
+  }
   global $user;
   $new_status = trim($form_state['values']['status']);
-  $account = $form_state['#account'];
   //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
   $time = time();
   if ($new_status === '') {
@@ -651,7 +702,7 @@ function _facebook_status_status_submit($form, &$form_state) {
   }
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = facebook_status_get_status($account->uid);
-  if ($new_status != $status[0]->status) {
+  if ($new_status != $status[0]->status && $account->uid) {
     db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
     //Invokes hook_facebook_status_update($status_owner_object, &$status).
     module_invoke_all('facebook_status_update', $account, $new_status);
@@ -663,6 +714,50 @@ function _facebook_status_status_submit($form, &$form_state) {
   drupal_set_message(t('!possessive status has been updated.', array('!possessive' => $your)));
 }
 
+/**
+ * Saves statuses via AHAH.
+ */
+function facebook_status_save_js() {
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form = form_get_cache($_POST['form_build_id'], $form_state);
+  $form_state['values'] = $_POST;
+  $form['#post'] = $_POST;
+  $account = user_load(array('uid' => arg(2)));
+  $form_state['#js_exists'] = TRUE;
+  $size = arg(3);
+  if (!is_numeric($size) || round($size) != $size || $size < 1) {
+    $size = variable_get('facebook_status_size', 32);
+  }
+
+  //Save the status.
+  global $user;
+  $new_status = trim($form_state['values']['status']);
+  //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
+  $time = time();
+  if ($new_status === '') {
+    $time = 0;
+  }
+  //Pretend to have set a new status if the submitted status is exactly the same as the old one.
+  $status = facebook_status_get_status($account->uid);
+  if ($new_status != $status[0]->status) {
+    db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
+    //Invokes hook_facebook_status_update($status_owner_object, &$status).
+    module_invoke_all('facebook_status_update', $account, $new_status);
+  }
+  //Trigger integration.
+  module_invoke_all('facebook_status', 'submitted', $user);
+  //Activity integration.
+  facebook_status_activity($account, $new_status);
+
+  //Cache the form so it can be manipulated later if necessary.
+  form_set_cache($_POST['form_build_id'], $form, $form_state);
+
+  //Get HTML for the replacement form.
+  $form = drupal_rebuild_form('_facebook_status_status', $form_state, array('_facebook_status_status', $account, $size));
+  $output = theme('status_messages') . drupal_render_form('_facebook_status_status', $form);
+
+  drupal_json(array('status' => TRUE, 'data' => $output));
+}
 
 //====================
 //TRIGGER INTEGRATION.

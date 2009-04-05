@@ -90,8 +90,8 @@ function facebook_status_update_6200() {
   }
 
   //Delete old variables.
-  variable_del('facebook_status_max_num_block_stats_all');
   variable_del('facebook_status_clear_user_records_string');
+  variable_del('facebook_status_max_num_block_stats_all');
   variable_del('facebook_status_max_num_block_stats');
   variable_del('facebook_status_clear_user_records');
   variable_del('facebook_status_max_block_len_all');
@@ -100,8 +100,8 @@ function facebook_status_update_6200() {
   variable_del('facebook_status_field_length');
   variable_del('facebook_status_clear_user');
   variable_del('facebook_status_clear_all');
-  variable_del('facebook_status_ur_type');
   variable_del('facebook_status_activity');
+  variable_del('facebook_status_ur_type');
   variable_del('facebook_status_mode');
   variable_del('facebook_status_advf');
   variable_del('facebook_status_ajax');
@@ -117,6 +117,7 @@ function facebook_status_uninstall() {
   drupal_uninstall_schema('facebook_status');
   //Remove variables.
   variable_del('facebook_status_special_user');
+  variable_del('facebook_status_size_long');
   variable_del('facebook_status_exclude');
   variable_del('facebook_status_default');
   variable_del('facebook_status_concat');
