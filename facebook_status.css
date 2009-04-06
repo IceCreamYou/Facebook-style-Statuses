@@ -1,0 +1,10 @@
+form#-facebook-status-status input#edit-status {
+  float: left;
+  margin-right: 4px;
+  margin-top: 4px;
+}
+
+form#-facebook-status-status input#edit-submit {
+  float: left;
+  margin-top: 4px;
+}
