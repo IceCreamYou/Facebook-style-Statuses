@@ -27,10 +27,16 @@ function facebook_status_views_data() {
       'field' => 'uid',
     ),
   );
+  $data['facebook_status']['table']['join'] = array(
+    'users' => array(
+      'left_field' => 'uid',
+      'field' => 'uid',
+    ),
+  );
 
   //Advertise this table as a possible base table.
   $data['facebook_status']['table']['base'] = array(
-    'field' => 'sid',
+    'field' => 'uid',
     'title' => t('Facebook-style Statuses Updates'),
     'help' => t('Stores status updates.'),
     'weight' => 10,
@@ -104,4 +110,39 @@ function facebook_status_views_data() {
   );
 
   return $data;
+}
+
+/**
+ * Implementation of hook_views_data_alter().
+ */
+function facebook_status_views_data_alter(&$data) {
+  $data['facebook_status']['users'] = array(
+    'group' => t('Facebook-style Statuses'),
+    'relationship' => array(
+      'title' => t('Users'),
+      'label' => t('Users'),
+      'help' => t('Add a relationship to gain access to information related to the users who submitted the relevant statuses.'),
+      'relationship table' => 'facebook_status',
+      'relationship field' => 'uid',
+      'base' => 'users',
+      'field' => 'uid',
+      'handler' => 'facebook_status_views_handler_relationship',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_views_handlers().
+ */
+function facebook_status_views_handlers() {
+  return array(
+    'info' => array(
+      'path' => drupal_get_path('module', 'facebook_status'),
+    ),
+    'handlers' => array(
+      'facebook_status_views_handler_relationship' => array(
+        'parent' => 'views_handler_relationship',
+      ),
+    ),
+  );
 }
