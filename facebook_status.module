@@ -265,7 +265,7 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE) {
  * @param $status_time
  *   The Unix timestamp for when the relevant status was updated.
  * @return
- *   If the status was submitted within the last hour, returns a "time ago"
+ *   If the status was submitted within the last 3 days, returns a "time ago"
  *   date. If not, returns a normal (small) date. If zero, returns FALSE.
  */
 function theme_facebook_status_time($status_time) {
@@ -275,7 +275,7 @@ function theme_facebook_status_time($status_time) {
   if (time() - $status_time < 60) {
     return t('a moment ago');
   }
-  else if (time() - $status_time < 60 * 60) {
+  else if (time() - $status_time < 60 * 60 * 24 * 3) {
     //!time and not @time because this is usually run through check_plain() later as part of theme_placeholder().
     //It doesn't really matter though since the text is created by format_interval() and thus should already be safe.
     return t('!time ago', array('!time' => format_interval(time() - $status_time, 1)));
