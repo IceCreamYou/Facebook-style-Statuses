@@ -7,13 +7,6 @@
  */
 
 /**
- * @defgroup views_facebook_status_module facebook_status.module handlers
- *
- * Includes the ability to create views of just the facebook_status table.
- * @{
- */
-
-/**
  * Implementation of hook_views_data().
  */
 function facebook_status_views_data() {
@@ -109,6 +102,35 @@ function facebook_status_views_data() {
     ),
   );
 
+  //Declares the most recent status update for the relevant user.
+  $data['users']['latest_update'] = array(
+    'title' => t('Latest Status Update'),
+    'help' => t('The text of the latest Facebook-style Status update.'),
+    'field' => array(
+      'handler' => 'facebook_status_views_handler_field_latest_update',
+      'click sortable' => TRUE,
+    ),
+  );
+
+  //Declares the time for the most recent status update for the relevant user.
+  $data['users']['latest_update_time'] = array(
+    'title' => t('Latest Status Update Time'),
+    'help' => t('The time that the latest Facebook-style Status update was posted.'),
+    'field' => array(
+      'handler' => 'facebook_status_views_handler_field_latest_update_date',
+      'click sortable' => TRUE,
+    ),
+  );
+
+  //Allow sorting on the Status ID.
+  $data['users']['latest_update_sid'] = array(
+    'title' => t('Latest Status Update Status ID'),
+    'help' => t('The Status ID of the latest Facebook-style Status update.'),
+    'sort' => array(
+      'handler' => 'facebook_status_views_handler_sort_latest_update',
+    ),
+  );
+
   return $data;
 }
 
@@ -142,6 +164,12 @@ function facebook_status_views_handlers() {
     'handlers' => array(
       'facebook_status_views_handler_relationship' => array(
         'parent' => 'views_handler_relationship',
+      ),
+      'facebook_status_views_handler_field_latest_update' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_latest_update_date' => array(
+        'parent' => 'views_handler_field_date',
       ),
     ),
   );

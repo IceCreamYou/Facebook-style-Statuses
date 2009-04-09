@@ -1,3 +1,11 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Provides a default View for the Facebook-style Statuses module.
+ */
+
 /**
  * Implementation of hook_views_default_views().
  */
