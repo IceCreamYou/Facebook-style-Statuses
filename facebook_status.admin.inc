@@ -26,7 +26,7 @@ function facebook_status_admin($form_state) {
     '#type' => 'checkboxes',
     '#title' => t('Legacy Mode'),
     '#description' => t('On nodes and/or user profiles, use the status of the author of the node or owner of the profile, respectively, in the status block.'),
-    '#default_value' => variable_get('facebook_status_legacy', array('user')),
+    '#default_value' => variable_get('facebook_status_legacy', array('user' => 'user')),
     '#options' => array('node' => t('Nodes'), 'user' => t('User profiles')),
   );
   $form['facebook_status_exclude'] = array(

@@ -54,6 +54,17 @@ function facebook_status_views_data() {
     ),
   );
 
+  //Alias for Status ID to add an extra filter.
+  $data['facebook_status']['sid_extra'] = array(
+    'title' => t('Last Status per User'),
+    'help' => t('Shows only the last status update for each user'),
+    'filter' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_views_handler_filter',
+      'label' => t('Last Status per User'),
+    ),
+  );
+
   //Declares the User ID column.
   $data['facebook_status']['uid'] = array(
     'title' => t('User ID'),
@@ -165,11 +176,8 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_relationship' => array(
         'parent' => 'views_handler_relationship',
       ),
-      'facebook_status_views_handler_field_latest_update' => array(
-        'parent' => 'views_handler_field',
-      ),
-      'facebook_status_views_handler_field_latest_update_date' => array(
-        'parent' => 'views_handler_field_date',
+      'facebook_status_views_handler_filter' => array(
+        'parent' => 'views_handler_filter_boolean_operator',
       ),
     ),
   );

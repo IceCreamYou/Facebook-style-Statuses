@@ -54,8 +54,8 @@ function facebook_status_menu() {
  */
 function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
   if ($op == 'list') {
-    $block['facebook_status']['info'] = t('Facebook Status');
-    $block['facebook_status_single']['info'] = t('Facebook Status Individual User');
+    $block['facebook_status']['info'] = t('Facebook-style Statuses');
+    $block['facebook_status_single']['info'] = t('Facebook-style Statuses Individual User');
     return $block;
   }
   else if ($op == 'view' && $delta == 'facebook_status') {
@@ -489,13 +489,13 @@ function facebook_status_load($sid) {
  */
 function facebook_status_choose_owner($legacy = array()) {
   if ($legacy === FALSE) {
-    $legacy = variable_get('facebook_status_legacy', array('user'));
+    $legacy = variable_get('facebook_status_legacy', array('user' => 'user'));
   }
   if ($legacy['user'] && arg(0) == 'user' && is_numeric(arg(1))) {
     return user_load(array('uid' => arg(1)));
   }
   else if ($legacy['node'] && arg(0) == 'node' && is_numeric(arg(1))) {
-    $node = node_load(array('nid' => arg(1)));
+    $node = menu_get_object();
     return user_load(array('uid' => $node->uid));
   }
   else {
@@ -651,7 +651,9 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   else {
     $description = theme('facebook_status_time', $status->status_time);
   }
-  drupal_add_css($path .'/facebook_status.css');
+  if (!$form_state['#js_exists']) {
+    drupal_add_css($path .'/facebook_status.css');
+  }
   $form['status'] = array(
     '#type' => 'textfield',
     '#description' => $description,
@@ -666,12 +668,12 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
     '#value' => t('Save'),
     '#suffix' => '</span>',
     '#submit' => array('_facebook_status_status_submit'),
-    '#ahah' => array(
-      'path' => 'facebook_status/js/'. $account->uid .'/'. $size,
-      'wrapper' => 'facebook_status_update',
-      'effect' => 'fade',
-      'method' => 'replace',
-    ),
+  );
+  $form['submit']['#ahah'] = array(
+    'path' => 'facebook_status/js/'. $account->uid .'/'. $size,
+    'wrapper' => 'facebook_status_update',
+    'effect' => 'fade',
+    'method' => 'replace',
   );
   $form_state['#account'] = $account;
   $_SESSION['#fbss-uid'] = $account->uid;

@@ -1,6 +1,11 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ *   A relationship handler which makes Users and FBSS work together nicely.
+ */
+
 class facebook_status_views_handler_relationship extends views_handler_relationship {
   function option_definition() {
     $options = parent::option_definition();
