@@ -628,7 +628,7 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   $default = str_replace('"', '', t('@fbssdefault', array('@fbssdefault' => '')));
 
   if (variable_get('facebook_status_concat', 1)) {
-    $prefix = '<span style="float: left;">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
+    $prefix = '<span style="float: left;" class="facebook_status_hide">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
   }
   else {
     $prefix = '';
@@ -654,6 +654,7 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   if (!$form_state['#js_exists']) {
     drupal_add_css($path .'/facebook_status.css');
   }
+  $form['slider'] = array('#prefix' => '<span id="facebook_status_replace">', '#value' => $slider);
   $form['status'] = array(
     '#type' => 'textfield',
     '#description' => $description,
@@ -661,17 +662,18 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
     '#size' => $size,
     '#maxlength' => $maxlength,
     '#default_value' => $default,
-    '#prefix' => $slider .'<span class="facebook_status_hide">',
+    '#attributes' => array('class' => 'facebook_status_hide'),
+    '#suffix' => '</span>',
   );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
-    '#suffix' => '</span>',
     '#submit' => array('_facebook_status_status_submit'),
+    '#attributes' => array('class' => 'facebook_status_hide'),
   );
   $form['submit']['#ahah'] = array(
     'path' => 'facebook_status/js/'. $account->uid .'/'. $size,
-    'wrapper' => 'facebook_status_update',
+    'wrapper' => 'facebook_status_replace',
     'effect' => 'fade',
     'method' => 'replace',
   );
@@ -705,51 +707,6 @@ function _facebook_status_status_submit($form, &$form_state) {
   if ($new_status != $status[0]->status && $account->uid) {
     //If a new status is submitted within 12 seconds of the old one, we assume the user didn't mean to post the first one, and write over it.
     if (time() - $status[0]->status_time < 12) {
-      db_query_range("UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE uid = %d ORDER BY sid DESC", $new_status, $time, $account->uid, 0, 1);
-    }
-    else {
-      db_query("INSERT INTO {facebook_status} (status, status_time, uid) VALUES('%s', %d, %d)", $new_status, $time, $account->uid);
-    }
-    //Invokes hook_facebook_status_update($status_owner_object, &$status).
-    module_invoke_all('facebook_status_update', $account, $new_status);
-  }
-  //Trigger integration.
-  if (module_exists('trigger')) {
-    module_invoke_all('facebook_status', 'submitted', $user);
-  }
-  //Activity integration.
-  facebook_status_activity($account, $new_status);
-  drupal_set_message(t('!possessive status has been updated.', array('!possessive' => $your)));
-}
-
-/**
- * Saves statuses via AHAH.
- */
-function facebook_status_save_js() {
-  $form_state = array('storage' => NULL, 'submitted' => FALSE);
-  $form = form_get_cache($_POST['form_build_id'], $form_state);
-  $form_state['values'] = $_POST;
-  $form['#post'] = $_POST;
-  $account = user_load(array('uid' => arg(2)));
-  $form_state['#js_exists'] = TRUE;
-  $size = arg(3);
-  if (!is_numeric($size) || round($size) != $size || $size < 1) {
-    $size = variable_get('facebook_status_size', 32);
-  }
-
-  //Save the status.
-  global $user;
-  $new_status = trim($form_state['values']['status']);
-  //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
-  $time = time();
-  if ($new_status === '') {
-    $time = 0;
-  }
-  //Pretend to have set a new status if the submitted status is exactly the same as the old one.
-  $status = facebook_status_get_status($account->uid);
-  if ($new_status != $status[0]->status) {
-    //If a new status is submitted within 12 seconds of the old one, we assume the user didn't mean to post the first one, and write over it.
-    if (time() - $status[0]->status_time < 12) {
       db_query("UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE uid = %d ORDER BY sid DESC LIMIT 1", $new_status, $time, $account->uid);
     }
     else {
@@ -764,14 +721,47 @@ function facebook_status_save_js() {
   }
   //Activity integration.
   facebook_status_activity($account, $new_status);
+  if (!$form_state['#js_exists']) {
+    drupal_set_message(t('!possessive status has been updated.', array('!possessive' => $your)));
+  }
+}
 
-  //Cache the form so it can be manipulated later if necessary.
-  form_set_cache($_POST['form_build_id'], $form, $form_state);
+/**
+ * Saves statuses via AHAH.
+ */
+function facebook_status_save_js() {
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $form_state['post'] = $form['#post'] = $_POST;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+  //Custom parameter that lets us know whether the AHAH has already been run.
+  $form_state['#js_exists'] = TRUE;
+
+  $account = user_load(array('uid' => arg(2)));
+  $size = arg(3);
+  if (!is_numeric($size) || round($size) != $size || $size < 1) {
+    $size = variable_get('facebook_status_size', 32);
+  }
+
+  //Oddly, $args is not always an array.
+  $form_id = '_facebook_status_status';
+  $args = $form['#parameters'];
+  if (is_array($args)) {
+    $form_id = array_shift($args);
+  }
 
   //Get HTML for the replacement form.
-  $form = drupal_rebuild_form('_facebook_status_status', $form_state, array('_facebook_status_status', $account, $size));
-  $output = theme('status_messages') . drupal_render_form('_facebook_status_status', $form);
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, array('_facebook_status_status', $account, $size));
+  $new_form['slider'] = $form['slider'];
+  $new_form['status'] = $form['status'];
+  //Prevent duplicate wrappers.
+  unset($form['slider']['#prefix']);
+  unset($form['status']['#suffix']);
+  $output = theme('status_messages') . drupal_render_form($form_id, $new_form);
 
+  //Return the results.
   drupal_json(array('status' => TRUE, 'data' => $output));
 }
 

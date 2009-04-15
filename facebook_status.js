@@ -2,8 +2,8 @@ Drupal.behaviors.facebookStatus = function (context) {
   facebook_status_count = 1;
   facebook_status_original_value = $('div#facebook_status_update').find('input#edit-status').val();
   //Show or hide status form.
-  $('div#facebook_status_update').find('span.facebook_status_hide').hide().end().find('a.facebook_status_slide').click(function() {
-    $('span.facebook_status_hide').slideToggle();
+  $('div#facebook_status_update').find('.facebook_status_hide').hide().end().find('a.facebook_status_slide').click(function() {
+    $('.facebook_status_hide').slideToggle();
   });
   $('div#facebook_status_update').find('input#edit-status').focus(function() {
     facebook_status_form_clear();
