@@ -1,10 +1,24 @@
-form#-facebook-status-status input#edit-status {
-  float: left;
-  margin-right: 4px;
-  margin-top: 4px;
+/* $Id$ */
+
+#-facebook_status-status, #-facebook_status-status-1 {
+  margin: 0 0 2em;
 }
 
-form#-facebook-status-status input#edit-submit {
+#-facebook-status-status #edit-status-wrapper, #-facebook-status-status-1 #edit-status-1-wrapper {
+  margin: 0;
+}
+
+#-facebook-status-status .field-prefix, #-facebook-status-status-1 .field-prefix {
   float: left;
-  margin-top: 4px;
+  margin-top: 0.25em;
+}
+
+#-facebook-status-status #edit-status, #-facebook-status-status-1 #edit-status-1 {
+  float: left;
+  margin: 0.25em 0.5em 0 0;
+}
+
+#-facebook-status-status #edit-fbss-submit, #-facebook-status-status-1 #edit-fbss-submit-1 {
+  float: left;
+  margin: 0.25em 0 0 0;
 }

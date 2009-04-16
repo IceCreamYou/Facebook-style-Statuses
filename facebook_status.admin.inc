@@ -19,7 +19,7 @@ function facebook_status_admin($form_state) {
   $form['facebook_status_slide'] = array(
     '#type' => 'checkbox',
     '#title' => t('Slide Effect'),
-    '#description' => t('Slides the status update form into a fieldset to reduce the space it takes up.'),
+    '#description' => t('Slides the status update form into a fieldset to reduce the space it takes up. Has no effect on user pages.'),
     '#default_value' => variable_get('facebook_status_slide', 1),
   );
   $form['facebook_status_legacy'] = array(

@@ -1,3 +1,5 @@
+// $Id$
+
 Drupal.behaviors.facebookStatus = function (context) {
   facebook_status_count = 1;
   facebook_status_original_value = $('div#facebook_status_update').find('input#edit-status').val();

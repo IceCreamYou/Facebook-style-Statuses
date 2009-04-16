@@ -423,7 +423,7 @@ function facebook_status_views_default_views() {
   $handler->override_option('filters', array(
     'sid_extra' => array(
       'operator' => '=',
-      'value' => '1',
+      'value' => '0',
       'group' => '0',
       'exposed' => FALSE,
       'expose' => array(

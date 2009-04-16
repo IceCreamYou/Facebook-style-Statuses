@@ -29,7 +29,7 @@ function facebook_status_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('facebook_status_admin'),
     'access arguments' => array('access administration pages'),
-    'description' => 'Allows administrators to adjust certain display settings for Facebook Status.',
+    'description' => 'Allows administrators to adjust certain display settings for Facebook-style Statuses.',
     'file' => 'facebook_status.admin.inc',
   );
   $items['facebook_status/autocomplete'] = array(
@@ -55,25 +55,23 @@ function facebook_status_menu() {
 function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
   if ($op == 'list') {
     $block['facebook_status']['info'] = t('Facebook-style Statuses');
-    $block['facebook_status_single']['info'] = t('Facebook-style Statuses Individual User');
     return $block;
   }
   else if ($op == 'view' && $delta == 'facebook_status') {
-    $account = facebook_status_choose_owner(FALSE);
+    if (variable_get('facebook_status_special_user', '')) {
+      $account = user_load(array('name' => variable_get('facebook_status_special_user', '')));
+    }
+    else {
+      $account = facebook_status_choose_owner(FALSE);
+    }
     $block['subject'] = t('Status');
     $block['content'] = theme('facebook_status_form_display', $account);
     return $block;
   }
-  else if ($op == 'view' && $delta == 'facebook_status_single') {
-    $account = user_load(array('name' => variable_get('facebook_status_special_user', '')));
-    $block['subject'] = t('Status');
-    $block['content'] = theme('facebook_status_form_display', $account);
-    return $block;
-  }
-  else if ($op == 'configure' && $delta == 'facebook_status_single') {
+  else if ($op == 'configure' && $delta == 'facebook_status') {
     $form['facebook_status'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Facebook Status Settings'),
+      '#title' => t('Facebook-style Statuses Settings'),
       '#collapsible' => TRUE,
       '#weight' => -4,
       '#tree' => TRUE,
@@ -82,14 +80,13 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
       '#type' => 'textfield',
       '#title' => t('Special User'),
       '#default_value' => variable_get('facebook_status_special_user', ''),
-      '#description' => t("This block will work exactly like the Facebook Status block, except that it only shows one user's status.  That user is determined by the UID you enter in this field."),
+      '#description' => t("If you enter a user's name in this field, the block will show only that user's status. Use this on single-user blog sites or for site announcements, for example."),
       '#element_validate' => array('facebook_status_alter_validate'),
-      '#required' => TRUE,
       '#autocomplete_path' => 'user/autocomplete',
     );
     return $form;
   }
-  else if ($op == 'save' && $delta == 'facebook_status_single') {
+  else if ($op == 'save' && $delta == 'facebook_status') {
     variable_set('facebook_status_special_user', $edit['facebook_status']['facebook_status_special_user']);
   }
 }
@@ -99,9 +96,11 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
  */
 function facebook_status_alter_validate($element, &$form_state) {
   $name = $form_state['values']['facebook_status']['facebook_status_special_user'];
-  $uid = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $name));
-  if (!$uid) {
-    form_set_error('facebook_status', t('You must use a valid username in the Special User field.'));
+  if ($name) {
+    $uid = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $name));
+    if (!$uid) {
+      form_set_error('facebook_status', t('You must use a valid username in the Special User field.'));
+    }
   }
 }
 
@@ -475,6 +474,19 @@ function facebook_status_load($sid) {
 }
 
 /**
+ * Delete a status from the database. Not exposed in the UI anywhere.
+ *
+ * @param $sid
+ *   The Status ID or a status object.
+ */
+function facebook_status_delete_status($sid) {
+  if (is_object($sid)) {
+    $sid = $sid->sid;
+  }
+  db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
+}
+
+/**
  * Determines the user whose status should be shown.
  *
  * @param $legacy
@@ -621,14 +633,14 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   if (!$size) {
     $size = variable_get('facebook_status_size', 32);
   }
-  //Hidden option.  Not on the settings page.
+  //Hidden setting. Not available on the settings page.
   $maxlength = variable_get('facebook_status_length', 192);
   //Because this text will appear exactly as-is in the textfield, we can't use a full check_plain() or filter_xss().
   //We also translate a blank string so that the default text can be in different languages without having the restriction of being preset.
   $default = str_replace('"', '', t('@fbssdefault', array('@fbssdefault' => '')));
 
   if (variable_get('facebook_status_concat', 1)) {
-    $prefix = '<span style="float: left;" class="facebook_status_hide">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
+    $prefix = '<span class="facebook_status_hide">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
   }
   else {
     $prefix = '';
@@ -638,18 +650,15 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   if ($status->status_time) {
     $default = $status->status;
   }
-  $description = '';
 
   $path = drupal_get_path('module', 'facebook_status');
-  $slider = '';
-  if (variable_get('facebook_status_slide', 1)) {
+  $slider = theme('facebook_status_item', $account, '', FALSE);
+  //In some cases there can be two status forms on user profiles, and that will cause problems with the JavaScript, so we simply don't add it to the page.
+  if (variable_get('facebook_status_slide', 1) && arg(0) != 'user') {
     if (!$form_state['#js_exists']) {
       drupal_add_js($path .'/facebook_status.js');
     }
-    $slider = '<a href="#status" name="status" class="facebook_status_slide">'. theme('facebook_status_item', $account, '', FALSE) .'</a>';
-  }
-  else {
-    $description = theme('facebook_status_time', $status->status_time);
+    $slider = '<a href="#status" name="status" class="facebook_status_slide">'. $slider .'</a>';
   }
   if (!$form_state['#js_exists']) {
     drupal_add_css($path .'/facebook_status.css');
@@ -657,7 +666,6 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   $form['slider'] = array('#prefix' => '<span id="facebook_status_replace">', '#value' => $slider);
   $form['status'] = array(
     '#type' => 'textfield',
-    '#description' => $description,
     '#field_prefix' => $prefix,
     '#size' => $size,
     '#maxlength' => $maxlength,
@@ -665,13 +673,13 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
     '#attributes' => array('class' => 'facebook_status_hide'),
     '#suffix' => '</span>',
   );
-  $form['submit'] = array(
+  $form['fbss-submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
     '#submit' => array('_facebook_status_status_submit'),
     '#attributes' => array('class' => 'facebook_status_hide'),
   );
-  $form['submit']['#ahah'] = array(
+  $form['fbss-submit']['#ahah'] = array(
     'path' => 'facebook_status/js/'. $account->uid .'/'. $size,
     'wrapper' => 'facebook_status_replace',
     'effect' => 'fade',
