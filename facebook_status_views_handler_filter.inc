@@ -11,6 +11,13 @@
  */
 class facebook_status_views_handler_filter extends views_handler_filter_boolean_operator {
 
+  function construct() {
+    $this->definition['type'] = 'yes-no';
+    $this->definition['label'] = t('Show Latest Status Update Only (per User)');
+    $this->value_value = $this->definition['label'];
+    parent::construct();
+  }
+
   function query() {
     if ($this->value) {
       $this->ensure_my_table();

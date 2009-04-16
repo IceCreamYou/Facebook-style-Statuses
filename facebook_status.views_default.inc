@@ -318,7 +318,7 @@ function facebook_status_views_default_views() {
     ),
     'separator' => ' ',
   ));
-  $handler->override_option('block_description', t('Facebook-style Statuses List'));
+  $handler->override_option('block_description', t('Facebook-style Statuses User List'));
   $handler->override_option('block_caching', -1);
   $views[$view->name] = $view;
 
@@ -575,7 +575,7 @@ function facebook_status_views_default_views() {
       ),
     ),
   ));
-  $handler->override_option('block_description', '');
+  $handler->override_option('block_description', t('Facebook-style Statuses Latest Status Updates'));
   $handler->override_option('block_caching', -1);
   $views[$view->name] = $view;
 

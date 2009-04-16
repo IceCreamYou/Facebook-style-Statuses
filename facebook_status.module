@@ -32,6 +32,14 @@ function facebook_status_menu() {
     'description' => 'Allows administrators to adjust certain display settings for Facebook-style Statuses.',
     'file' => 'facebook_status.admin.inc',
   );
+  $items['share-status'] = array(
+    'title' => 'Post to Status',
+    'page callback' => 'theme',
+    'page arguments' => array('facebook_status_form_display'),
+    'access arguments' => array('edit own status'),
+    'description' => 'Allows users to post items to their status from other sites.',
+    'type' => 'MENU_SUGGESTED_ITEM',
+  );
   $items['facebook_status/autocomplete'] = array(
     'title' => 'Facebook-style Statuses user autocomplete',
     'page callback' => '_facebook_status_user_autocomplete',
@@ -627,11 +635,14 @@ function _facebook_status_user_autocomplete($string = '') {
  * @param $size
  *   The size of the status update textfield, or FALSE to use the setting.
  * @return
- *   A $form object.
+ *   A $form array.
  */
 function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   if (!$size) {
     $size = variable_get('facebook_status_size', 32);
+    if (arg(0) == 'share-status') {
+      $size = variable_get('facebook_status_size_long', 72);
+    }
   }
   //Hidden setting. Not available on the settings page.
   $maxlength = variable_get('facebook_status_length', 192);
@@ -650,17 +661,29 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   if ($status->status_time) {
     $default = $status->status;
   }
+  //An awkward hack that makes the JS status update callback aware that we came from a page where we don't want to linkify the status text.
+  if (arg(0) != 'facebook_status' && arg(1) != 'js') {
+    $_SESSION['#fbss-no-linkify'] = arg(0);
+  }
+  if (arg(0) == 'share-status') {
+    $default = str_replace('"', '', $_GET['s']);
+    //Keep the default value from clearing when the user clicks on the form.
+    $form_state['#js_exists'] = TRUE;
+  }
 
   $path = drupal_get_path('module', 'facebook_status');
   $slider = theme('facebook_status_item', $account, '', FALSE);
-  //In some cases there can be two status forms on user profiles, and that will cause problems with the JavaScript, so we simply don't add it to the page.
-  if (variable_get('facebook_status_slide', 1) && arg(0) != 'user') {
+  //When the status update form is present in the page content, there can be two status forms on user profiles.
+  //That will cause problems with the JavaScript, so we simply don't add it to the page.
+  if (variable_get('facebook_status_slide', 1) && arg(0) != 'user' && arg(0) != 'share-status') {
     if (!$form_state['#js_exists']) {
       drupal_add_js($path .'/facebook_status.js');
     }
-    $slider = '<a href="#status" name="status" class="facebook_status_slide">'. $slider .'</a>';
+    if ($_SESSION['#fbss-no-linkify'] != 'user' && $_SESSION['#fbss-no-linkify'] != 'share-status') {
+      $slider = '<a href="#status" name="status" class="facebook_status_slide">'. $slider .'</a>';
+    }
   }
-  if (!$form_state['#js_exists']) {
+  if (!$form_state['#css_exists']) {
     drupal_add_css($path .'/facebook_status.css');
   }
   $form['slider'] = array('#prefix' => '<span id="facebook_status_replace">', '#value' => $slider);
@@ -743,8 +766,9 @@ function facebook_status_save_js() {
   $form = form_get_cache($form_build_id, $form_state);
   $form_state['post'] = $form['#post'] = $_POST;
   $form['#programmed'] = $form['#redirect'] = FALSE;
-  //Custom parameter that lets us know whether the AHAH has already been run.
+  //Custom parameters that let us know whether the AHAH has already been run.
   $form_state['#js_exists'] = TRUE;
+  $form_state['#css_exists'] = TRUE;
 
   $account = user_load(array('uid' => arg(2)));
   $size = arg(3);
