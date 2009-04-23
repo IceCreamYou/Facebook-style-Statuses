@@ -32,6 +32,21 @@ function facebook_status_menu() {
     'description' => 'Allows administrators to adjust certain display settings for Facebook-style Statuses.',
     'file' => 'facebook_status.admin.inc',
   );
+  $items['admin/settings/facebook_status/general'] = array(
+    'title' => 'General',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access arguments' => array('access administration pages'),
+    'weight' => -1,
+  );
+  $items['admin/settings/facebook_status/advanced'] = array(
+    'title' => 'Advanced',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('facebook_status_admin_advanced'),
+    'access arguments' => array('access administration pages'),
+    'description' => 'Allows administrators to adjust certain display settings for Facebook-style Statuses.',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'facebook_status.admin.inc',
+  );
   $items['share-status'] = array(
     'title' => 'Post to Status',
     'page callback' => 'theme',
@@ -137,8 +152,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
       '#weight' => -5,
       '#title' => t('Status'),
     );
-    //Hidden setting. Not available on the settings page.
-    $size = variable_get('facebook_status_size_long', 72);
+    $size = variable_get('facebook_status_size_long', 40);
     $account->content['facebook_status']['status'] = array(
       '#type' => 'user_profile_item',
       '#title' => '',
@@ -641,10 +655,9 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   if (!$size) {
     $size = variable_get('facebook_status_size', 32);
     if (arg(0) == 'share-status') {
-      $size = variable_get('facebook_status_size_long', 72);
+      $size = variable_get('facebook_status_size_long', 40);
     }
   }
-  //Hidden setting. Not available on the settings page.
   $maxlength = variable_get('facebook_status_length', 192);
   //Because this text will appear exactly as-is in the textfield, we can't use a full check_plain() or filter_xss().
   //We also translate a blank string so that the default text can be in different languages without having the restriction of being preset.
@@ -710,6 +723,10 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   );
   $form_state['#account'] = $account;
   $_SESSION['#fbss-uid'] = $account->uid;
+  //Hack to remove slider text if necessary.
+  if (variable_get('facebook_status_hide_status', 0)) {
+    $form['slider']['#value'] = '';
+  }
   return $form;
 }
 

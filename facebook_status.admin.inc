@@ -40,10 +40,10 @@ function facebook_status_admin($form_state) {
   $form['facebook_status_size'] = array(
     '#type' => 'textfield',
     '#title' => t('Status update field size'),
-    '#description' => t('The width of the status update textfield.'),
+    '#description' => t('The width of the status update textfield, except on user profiles and the Share page.'),
     '#default_value' => variable_get('facebook_status_size', 32),
-    '#size' => 4,
-    '#maxlength' => 4,
+    '#size' => 3,
+    '#maxlength' => 3,
     '#required' => TRUE,
   );
   return system_settings_form($form);
@@ -69,5 +69,50 @@ function facebook_status_admin_validate($form, &$form_state) {
   $size = $form_state['values']['facebook_status_size'];
   if (!is_numeric($size) || $size < 1 || $size != round($size)) {
     form_set_error('facebook_status_size', t('The size of the status update field must be a positive integer!'));
+  }
+}
+
+/**
+ * Advanced settings form.
+ */
+function facebook_status_admin_advanced($form_state) {
+  $form['facebook_status_hide_status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide status above textfield'),
+    '#default_value' => variable_get('facebook_status_hide_status', 0),
+  );
+  $form['facebook_status_length'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum status length'),
+    '#description' => t('Must be a positive integer no greater than 255.'),
+    '#default_value' => variable_get('facebook_status_length', 192),
+    '#size' => 3,
+    '#maxlength' => 3,
+    '#required' => TRUE,
+  );
+  $form['facebook_status_size_long'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Status update field size (long)'),
+    '#description' => t('Applies to user profiles and the "share-status" page.'),
+    '#default_value' => variable_get('facebook_status_size_long', 40),
+    '#size' => 3,
+    '#maxlength' => 3,
+    '#required' => TRUE,
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Validate function for the advanced settings form.
+ */
+function facebook_status_admin_advanced_validate($form, &$form_state) {
+  $size = $form_state['values']['facebook_status_length'];
+  if (!is_numeric($size) || $size < 1 || $size != round($size) || $size > 255) {
+    form_set_error('facebook_status_length', t('The maximum status length must be a positive integer no greater than 255!'));
+  }
+
+  $size = $form_state['values']['facebook_status_size_long'];
+  if (!is_numeric($size) || $size < 1 || $size != round($size)) {
+    form_set_error('facebook_status_size_long', t('The size of the long status update field must be a positive integer!'));
   }
 }
