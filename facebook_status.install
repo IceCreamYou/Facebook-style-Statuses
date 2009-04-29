@@ -50,6 +50,10 @@ function facebook_status_schema() {
 function facebook_status_install() {
   //Create tables.
   drupal_install_schema('facebook_status');
+  //Lower weight so that the Flag module's classes are available to us.
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'facebook_status'");
+  //Set a variable that tells us the weight has been lowered.
+  variable_set('facebook_status_flag_update', TRUE);
 }
 
 /**
@@ -110,17 +114,30 @@ function facebook_status_update_6200() {
 }
 
 /**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6201() {
+  $result = array();
+  $result[] = update_sql("UPDATE {system} SET weight = 1 WHERE name = 'facebook_status'");
+  variable_set('facebook_status_flag_update', TRUE);
+  return $result;
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {
   //Remove tables.
   drupal_uninstall_schema('facebook_status');
   //Remove variables.
+  variable_del('facebook_status_twitter_special');
   variable_del('facebook_status_special_user');
   variable_del('facebook_status_hide_status');
+  variable_del('facebook_status_flag_update');
   variable_del('facebook_status_size_long');
   variable_del('facebook_status_exclude');
   variable_del('facebook_status_default');
+  variable_del('facebook_status_twitter');
   variable_del('facebook_status_concat');
   variable_del('facebook_status_length');
   variable_del('facebook_status_legacy');

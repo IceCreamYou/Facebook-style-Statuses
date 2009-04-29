@@ -1,4 +1,4 @@
 ; $Id$
-name = Facebook Status
+name = Facebook-style Statuses
 description = "Allows users to have an arbitrary status, Facebook-style."
 core = 6.x

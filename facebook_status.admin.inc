@@ -76,6 +76,13 @@ function facebook_status_admin_validate($form, &$form_state) {
  * Advanced settings form.
  */
 function facebook_status_admin_advanced($form_state) {
+  if (module_exists('twitter')) {
+    $form['facebook_status_twitter'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow users to post their statuses to Twitter'),
+      '#default_value' => variable_get('facebook_status_twitter', 1),
+    );
+  }
   $form['facebook_status_hide_status'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide status above textfield'),

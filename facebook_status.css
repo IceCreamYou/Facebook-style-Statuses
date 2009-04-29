@@ -1,24 +1,34 @@
 /* $Id$ */
 
-#-facebook_status-status, #-facebook_status-status-1 {
-  margin: 0 0 2em;
-}
-
-#-facebook-status-status #edit-status-wrapper, #-facebook-status-status-1 #edit-status-1-wrapper {
+#-facebook_status-status, #-facebook-status-status #edit-status-wrapper {
   margin: 0;
 }
 
-#-facebook-status-status .field-prefix, #-facebook-status-status-1 .field-prefix {
+#-facebook-status-status .field-prefix {
   float: left;
   margin-top: 0.25em;
 }
 
-#-facebook-status-status #edit-status, #-facebook-status-status-1 #edit-status-1 {
+#-facebook-status-status #edit-status {
   float: left;
   margin: 0.25em 0.5em 0 0;
 }
 
-#-facebook-status-status #edit-fbss-submit, #-facebook-status-status-1 #edit-fbss-submit-1 {
+#-facebook-status-status #edit-fbss-submit {
   float: left;
   margin: 0.25em 0 0 0;
+}
+
+#-facebook-status-status #edit-twitter-wrapper {
+  clear: both;
+  margin: 0;
+}
+
+#-facebook-status-status .facebook_status-time {
+  font-size: 80%;
+  font-style: italic;
+}
+
+#-facebook-status-status .flag-wrapper {
+  font-size: 80%;
 }
