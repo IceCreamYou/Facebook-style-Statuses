@@ -283,22 +283,22 @@ function theme_facebook_status_item($account, $status = FALSE, $linked = TRUE) {
     }
   }
   $time = '<span class="facebook_status-time">'. theme('facebook_status_time', $status->status_time) .'</span>';
-  $flags = theme('facebook_status_flag_create', $status->sid);
-  if (!$linked) {
-    $flags = '';
-  }
   //We trim() to remove the extra space on the end if there are no flags.
   if (variable_get('facebook_status_concat', 1)) {
     if (_facebook_status_possessive($status->status)) {
-      return trim(t('!user@status !time !flags', array('!user' => $name, '@status' => $status->status, '!time' => $time, '!flags' => $flags)));
+      $output = t('!user@status !time', array('!user' => $name, '@status' => $status->status, '!time' => $time));
     }
     else {
-      return trim(t('!user @status !time !flags', array('!user' => $name, '@status' => $status->status, '!time' => $time, '!flags' => $flags)));
+      $output = t('!user @status !time', array('!user' => $name, '@status' => $status->status, '!time' => $time));
     }
   }
   else {
-    return trim(t('@fbsstatus !time !flags', array('!user' => $name, '@fbsstatus' => $status->status, '!time' => $time, '!flags' => $flags)));
+    $output = t('@fbsstatus !time', array('!user' => $name, '@fbsstatus' => $status->status, '!time' => $time));
   }
+  //Invokes hook_facebook_status_render($status_owner_object, &$status, $linked = TRUE).
+  //In general, if $linked is FALSE then this is being used on the status update form.
+  module_invoke_all('facebook_status_render', $account, $output, $linked);
+  return $output;
 }
 
 /**
@@ -347,8 +347,6 @@ function theme_facebook_status_time($status_time) {
     return t('a moment ago');
   }
   else if (time() - $status_time < 60 * 60 * 24 * 3) {
-    //!time and not @time because this is usually run through check_plain() later as part of theme_placeholder().
-    //It doesn't really matter though since the text is created by format_interval() and thus should already be safe.
     return t('!time ago', array('!time' => format_interval(time() - $status_time, 1)));
   }
   else {
@@ -369,7 +367,6 @@ function theme_facebook_status_flag_create($sid) {
   if (!module_exists('flag')) {
     return '';
   }
-  $path = drupal_get_path('module', 'facebook_status');
   $links = array();
   $result = db_query("SELECT name FROM {flags} WHERE content_type = 'facebook_status'");
   while ($name = db_fetch_object($result)) {
@@ -581,6 +578,8 @@ function facebook_status_delete_status($sid) {
   if (module_exists('rules')) {
     rules_invoke_event('facebook_status_delete', $sid);
   }
+  //Invokes hook_facebook_status_delete($sid).
+  module_invoke_all('facebook_status_delete', $sid);
   db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
 }
 
@@ -618,8 +617,8 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
       $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid);
       drupal_write_record('facebook_status', $object);
     }
-    //Invokes hook_facebook_status_update($status_owner_object, &$status).
-    module_invoke_all('facebook_status_update', $account, $new_status);
+    //Invokes hook_facebook_status_save($status_owner_object, &$status).
+    module_invoke_all('facebook_status_save', $account, $new_status);
   }
   //Trigger integration.
   if (module_exists('trigger')) {
@@ -808,7 +807,7 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   }
   //An awkward hack that makes the JS status update callback aware that we came from a page where we don't want to linkify the status text.
   if (arg(0) != 'facebook_status' && arg(1) != 'js') {
-    $_SESSION['#fbss-no-linkify'] = arg(0);
+    $_SESSION['#fbss-no-linkify'] = $_GET['q'];
   }
   if (arg(0) == 'share-status') {
     $default = str_replace('"', '', $_GET['s']);
@@ -828,7 +827,6 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
       $slider = '<a href="#status" name="status" class="facebook_status_slide">'. $slider .'</a>';
     }
   }
-  $slider .= ' '. theme('facebook_status_flag_create', $status->sid);
   if (!$form_state['#css_exists']) {
     drupal_add_css($path .'/facebook_status.css');
   }
@@ -1096,7 +1094,7 @@ function facebook_status_twitter($account, $status) {
   if (!module_exists('twitter')) {
     return;
   }
-  $twitter_accounts = twitter_twitter_accounts($account);
+  $twitter_accounts = twitter_get_user_accounts($account->uid);
   $data = unserialize($account->data);
   $twitter_account = $twitter_accounts[$data['facebook_status_twitter']];
   module_load_include('inc', 'twitter');
