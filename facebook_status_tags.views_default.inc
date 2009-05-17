@@ -18,11 +18,11 @@ function facebook_status_tags_views_default_views() {
   $view->base_table = 'facebook_status';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
-  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
-  $handler = $view->new_display('default', 'Tag Reference', 'default');
+  $view->disabled = !module_exists('taxonomy');
+  $handler = $view->new_display('default', t('Tag Reference'), 'default');
   $handler->override_option('fields', array(
     'name' => array(
-      'label' => t('Name'),
+      'label' => '',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -49,7 +49,7 @@ function facebook_status_tags_views_default_views() {
       'relationship' => 'none',
     ),
     'status' => array(
-      'label' => t('Status'),
+      'label' => '',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -109,8 +109,8 @@ function facebook_status_tags_views_default_views() {
     ),
   ));
   $handler->override_option('arguments', array(
-    'rid' => array(
-      'default_action' => 'ignore',
+    'name' => array(
+      'default_action' => 'summary asc',
       'style_plugin' => 'default_summary',
       'style_options' => array(
         'count' => 1,
@@ -119,16 +119,19 @@ function facebook_status_tags_views_default_views() {
       ),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
-      'title' => '',
+      'title' => t('Statuses Referencing #%1'),
       'default_argument_type' => 'fixed',
       'default_argument' => '',
-      'validate_type' => 'none',
+      'validate_type' => 'taxonomy_term',
       'validate_fail' => 'not found',
-      'break_phrase' => 1,
-      'not' => 0,
-      'id' => 'rid',
+      'glossary' => 0,
+      'limit' => '0',
+      'case' => 'ucfirst',
+      'path_case' => 'none',
+      'transform_dash' => 1,
+      'id' => 'name',
       'table' => 'facebook_status_tags',
-      'field' => 'rid',
+      'field' => 'name',
       'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
@@ -146,10 +149,10 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
-        '1' => 0,
+        '1' => 1,
       ),
-      'validate_argument_type' => 'rid',
-      'validate_argument_transform' => 0,
+      'validate_argument_type' => 'name',
+      'validate_argument_transform' => 1,
       'validate_user_restrict_roles' => 0,
       'validate_argument_node_flag_name' => '*relationship*',
       'validate_argument_node_flag_test' => 'flaggable',
@@ -158,9 +161,6 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
       'validate_argument_php' => '',
-      'override' => array(
-        'button' => t('Override'),
-      ),
     ),
   ));
   $handler->override_option('filters', array(
@@ -198,7 +198,7 @@ function facebook_status_tags_views_default_views() {
     'type' => 'perm',
     'perm' => 'view all statuses',
   ));
-  $handler->override_option('title', 'Latest Status Updates');
+  $handler->override_option('title', 'Tags');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', 'mini');
   $handler->override_option('style_plugin', 'list');
@@ -258,10 +258,10 @@ function facebook_status_tags_views_default_views() {
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
   $view->disabled = FALSE;
-  $handler = $view->new_display('default', 'User Reference', 'default');
+  $handler = $view->new_display('default', t('User Reference'), 'default');
   $handler->override_option('fields', array(
     'name' => array(
-      'label' => t('Name'),
+      'label' => '',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -288,7 +288,7 @@ function facebook_status_tags_views_default_views() {
       'relationship' => 'none',
     ),
     'status' => array(
-      'label' => t('Status'),
+      'label' => '',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -348,8 +348,8 @@ function facebook_status_tags_views_default_views() {
     ),
   ));
   $handler->override_option('arguments', array(
-    'rid' => array(
-      'default_action' => 'ignore',
+    'name' => array(
+      'default_action' => 'summary asc',
       'style_plugin' => 'default_summary',
       'style_options' => array(
         'count' => 1,
@@ -358,17 +358,20 @@ function facebook_status_tags_views_default_views() {
       ),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
-      'title' => '',
+      'title' => t('Statuses Referencing %1'),
       'default_argument_type' => 'fixed',
       'default_argument' => '',
-      'validate_type' => 'none',
+      'validate_type' => 'php',
       'validate_fail' => 'not found',
-      'break_phrase' => 1,
-      'not' => 0,
-      'id' => 'rid',
+      'glossary' => 0,
+      'limit' => '0',
+      'case' => 'none',
+      'path_case' => 'none',
+      'transform_dash' => 1,
+      'id' => 'name',
       'table' => 'facebook_status_tags',
-      'field' => 'rid',
-      'validate_user_argument_type' => 'uid',
+      'field' => 'name',
+      'validate_user_argument_type' => 'either',
       'validate_user_roles' => array(
         '2' => 0,
         '3' => 0,
@@ -387,7 +390,7 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_vocabulary' => array(
         '1' => 0,
       ),
-      'validate_argument_type' => 'rid',
+      'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
       'validate_user_restrict_roles' => 0,
       'validate_argument_node_flag_name' => '*relationship*',
@@ -396,10 +399,8 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '',
-      'override' => array(
-        'button' => t('Override'),
-      ),
+      'validate_argument_php' => '$account = user_load(array(\'name\' => $argument));
+      return $account->uid;',
     ),
   ));
   $handler->override_option('filters', array(
@@ -437,7 +438,7 @@ function facebook_status_tags_views_default_views() {
     'type' => 'perm',
     'perm' => 'view all statuses',
   ));
-  $handler->override_option('title', 'Latest Status Updates');
+  $handler->override_option('title', t('User References'));
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', 'mini');
   $handler->override_option('style_plugin', 'list');

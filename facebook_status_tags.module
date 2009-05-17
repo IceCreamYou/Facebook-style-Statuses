@@ -47,7 +47,7 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
       '#type' => 'textfield',
       '#title' => t('Location of status-term pages'),
       '#description' => t('Can be an absolute or relative URL. Use the tokens [term-id] and [term-name]. Use Views to build the listing (a default one is provided).'),
-      '#default_value' => variable_get('facebook_status_tags_url', 'statuses/term/[term-id]'),
+      '#default_value' => variable_get('facebook_status_tags_url', 'statuses/term/[term-name]'),
       '#weight' => -1,
     );
     return $form;
@@ -78,26 +78,14 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
 function facebook_status_tags_get_statuses_by_tag($tag, $type = 'term', $count = 1, $uid = 0) {
   $params = array($tag, $type);
   if ($uid == 0) {
-    if ($type == 'term') {
-      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {term_data} td ON fbst.rid = td.tid WHERE td.name = '%s' AND fbst.type = '%s'";
-    }
-    else if ($type == 'user') {
-      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {users} u ON fbst.rid = u.uid WHERE u.name = '%s' AND fbst.type = '%s'";
-    }
+    $sql = "SELECT sid FROM {facebook_status_tags} WHERE name = '%s' AND type = '%s'";
   }
   else {
     if (is_numeric($uid)) {
       $uid = array($uid);
     }
     $params = array_merge($params, $uid);
-    if ($type == 'term') {
-      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {term_data} td ON fbst.rid = td.tid INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid
-        WHERE td.name = '%s' AND fbst.type = '%s' AND (";
-    }
-    else if ($type == 'user') {
-      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {users} u ON fbst.rid = u.uid INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid
-        WHERE u.name = '%s' AND fbst.type = '%s' AND (";
-    }
+    $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.name = '%s' AND fbst.type = '%s' AND (";
     $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
     $sql .= ')';
   }
@@ -199,6 +187,42 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
   return $rids;
 }
 
+/**
+ * Get tags by popularity.
+ *
+ * @param $count
+ *   The number of tags to return.
+ * @param $time
+ *   The time period in which to test for term popularity. Values can be "all,"
+ *   "day," "week," "month," or "year."
+ * @return
+ *   An array of term objects, with the most popular first, and with the
+ *   property "popularity" added.
+ */
+function facebook_status_tags_popular_terms($count = 1, $time = 'all') {
+  if ($time == 'all') {
+    $result = db_query("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE type = 'term' GROUP BY rid ORDER BY count DESC");
+  }
+  else {
+    $times = array(
+      'day' => time() - (60 * 60 * 24),
+      'week' => time() - (60 * 60 * 24 * 7),
+      'month' => time() - (60 * 60 * 24 * 30),
+      'year' => time() - (60 * 60 * 24 * 364),
+    );
+    $time = $times[$time];
+    $result = db_query("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
+      WHERE t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time);
+  }
+  $terms = array();
+  while ($obj = db_fetch_object($result)) {
+    $term = taxonomy_get_term($obj->rid);
+    $term->popularity = $obj->count;
+    $terms[] = $term;
+  }
+  return $terms;
+}
+
 //=================
 //HELPER FUNCTIONS.
 //=================
@@ -262,7 +286,7 @@ function _facebook_status_tags_filter($text, $op = '@') {
  *   The resolved URL.
  */
 function _facebook_status_tags_resolve($term) {
-  $url = variable_get('facebook_status_tags_url', 'statuses/term/[term-id]');
+  $url = variable_get('facebook_status_tags_url', 'statuses/term/[term-name]');
   if (!trim($url)) {
     return;
   }
@@ -319,7 +343,7 @@ function facebook_status_tags_facebook_status_save($account, $status, $sid) {
     $account = user_load(array('name' => $match));
     if ($account->uid) {
       if (!in_array($match, $old_matches)) {
-        $array = array('sid' => $sid, 'rid' => $account->uid, 'type' => 'user');
+        $array = array('sid' => $sid, 'rid' => $account->uid, 'type' => 'user', 'name' => $match);
         drupal_write_record('facebook_status_tags', $array);
       }
       $old_matches[] = $match;
@@ -348,7 +372,7 @@ function facebook_status_tags_facebook_status_save($account, $status, $sid) {
       taxonomy_save_term($term);
     }
     if (!in_array($match, $old_matches)) {
-      $array = array('sid' => $sid, 'rid' => $term->tid, 'type' => 'term');
+      $array = array('sid' => $sid, 'rid' => $term->tid, 'type' => 'term', 'name' => $match);
       drupal_write_record('facebook_status_tags', $array);
     }
     $old_matches[] = $match;
@@ -389,5 +413,14 @@ function facebook_status_tags_taxonomy($op, $type, $array = NULL) {
       db_query("DELETE FROM {facebook_status_tags} WHERE type = 'term'");
       variable_set('facebook_status_tags_vid', -1);
     }
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function facebook_status_tags_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'delete') {
+    db_query("DELETE FROM {facebook_status_tags} WHERE rid = %d and type = 'user'", $account->uid);
   }
 }

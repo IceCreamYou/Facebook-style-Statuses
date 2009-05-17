@@ -25,13 +25,11 @@ function facebook_status_tags_views_data() {
     ),
   );
 
-  //Declares the Status ID column.
   $data['facebook_status_tags']['sid'] = array(
     'title' => t('Status ID'),
     'help' => t('The ID of the status update.'),
   );
 
-  //Declares the Tag ID column.
   $data['facebook_status_tags']['rid'] = array(
     'title' => t('Tag ID'),
     'help' => t('The Tag ID of the status - either a UID or Term ID depending on the reference type.'),
@@ -50,7 +48,6 @@ function facebook_status_tags_views_data() {
     ),
   );
 
-  //Defines the Type column.
   $data['facebook_status_tags']['type'] = array(
     'title' => t('Tag type'),
     'help' => t('The type of tag - User or Taxonomy Term.'),
@@ -60,6 +57,24 @@ function facebook_status_tags_views_data() {
     ),
     'filter' => array(
       'handler' => 'facebook_status_views_handler_filter_string_type',
+    ),
+  );
+
+  $data['facebook_status_tags']['name'] = array(
+    'title' => t('Tag Name'),
+    'help' => t('The name of the tag - a username or taxonomy term name.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
     ),
   );
 

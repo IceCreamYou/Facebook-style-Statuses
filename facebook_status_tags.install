@@ -35,6 +35,13 @@ function facebook_status_tags_schema() {
         'default' => '',
         'description' => 'Reference type',
       ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Reference name',
+      ),
     ),
     'indexes' => array(
       'sid' => array('sid'),
