@@ -1,0 +1,62 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Converts @usernames to themed usernames and #hashtags to themed taxonomy terms on Facebook-style Statuses.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function facebook_status_tags_schema() {
+  $schema = array();
+  $schema['facebook_status_tags'] = array(
+    'description' => 'Stores term-to-status relationships.',
+    'fields' => array(
+      'sid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Status ID',
+      ),
+      'rid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Reference ID (Term ID or User ID)',
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Reference type',
+      ),
+    ),
+    'indexes' => array(
+      'sid' => array('sid'),
+      'rid' => array('rid'),
+    ),
+    'primary key' => array('sid', 'rid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function facebook_status_tags_install() {
+  drupal_install_schema('facebook_status_tags');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function facebook_status_tags_uninstall() {
+  drupal_uninstall_schema('facebook_status_tags');
+  variable_del('facebook_status_tags_vid');
+  variable_del('facebook_status_tags_url');
+}

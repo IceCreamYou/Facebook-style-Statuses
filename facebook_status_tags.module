@@ -1,0 +1,393 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Converts @usernames to themed usernames and #hashtags to themed taxonomy terms on Facebook-style Statuses.
+ */
+
+/**
+ * In this file:
+ * - "Tag" means a reference, like @username or #hashtag.
+ * - "Term" means a taxonomy term.
+ */
+
+//=============
+//DRUPAL HOOKS.
+//=============
+
+/**
+ * Implementation of hook_help().
+ */
+function facebook_status_tags_help($path, $arg) {
+  if ($path == 'admin/help#facebook_status_tags') {
+    return t('Modifies Facebook-style Statuses on display to replace @username references with the themed username and #hashtags with taxonomy terms. ') .
+      t('Please see the <a href="http://drupal.org/project/facebook_status" rel="nofollow">Facebook-style Statuses project page</a> for more information.');
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, &$form_state) {
+  if (module_exists('taxonomy')) {
+    $options = array('-1' => t('None'));
+    $vocabularies = taxonomy_get_vocabularies();
+    foreach ($vocabularies as $vocabulary) {
+      $options[$vocabulary->vid] = check_plain($vocabulary->name);
+    }
+    $form['facebook_status_tags_vid'] = array(
+      '#type' => 'select',
+      '#title' => t('Vocabulary for #hashtags'),
+      '#default_value' => variable_get('facebook_status_tags_vid', -1),
+      '#options' => $options,
+      '#weight' => -1,
+    );
+    $form['facebook_status_tags_url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Location of status-term pages'),
+      '#description' => t('Can be an absolute or relative URL. Use the tokens [term-id] and [term-name]. Use Views to build the listing (a default one is provided).'),
+      '#default_value' => variable_get('facebook_status_tags_url', 'statuses/term/[term-id]'),
+      '#weight' => -1,
+    );
+    return $form;
+  }
+}
+
+//====
+//API.
+//====
+
+/**
+ * Gets statuses that have a given tag by tag name.
+ *
+ * @param $tag
+ *   The taxonomy term or username which retrieved statuses must contain.
+ * @param $type
+ *   The type of tag: 'user' or 'term.'
+ * @param $count
+ *   The number of statuses to retrieve, starting with the most recent one. If
+ *   zero, all relevant statuses are returned.
+ * @param $uid
+ *   If zero, has no effect. If a positive integer, restricts results to
+ *   statuses by the user with that UID. If an array of positive integers,
+ *   restricts results to statuses by users with a UID in the array.
+ * @return
+ *   An array of status objects.
+ */
+function facebook_status_tags_get_statuses_by_tag($tag, $type = 'term', $count = 1, $uid = 0) {
+  $params = array($tag, $type);
+  if ($uid == 0) {
+    if ($type == 'term') {
+      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {term_data} td ON fbst.rid = td.tid WHERE td.name = '%s' AND fbst.type = '%s'";
+    }
+    else if ($type == 'user') {
+      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {users} u ON fbst.rid = u.uid WHERE u.name = '%s' AND fbst.type = '%s'";
+    }
+  }
+  else {
+    if (is_numeric($uid)) {
+      $uid = array($uid);
+    }
+    $params = array_merge($params, $uid);
+    if ($type == 'term') {
+      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {term_data} td ON fbst.rid = td.tid INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid
+        WHERE td.name = '%s' AND fbst.type = '%s' AND (";
+    }
+    else if ($type == 'user') {
+      $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {users} u ON fbst.rid = u.uid INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid
+        WHERE u.name = '%s' AND fbst.type = '%s' AND (";
+    }
+    $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
+    $sql .= ')';
+  }
+  if ($count) {
+    $result = db_query_range($sql, $params, 0, $count);
+  }
+  else {
+    $result = db_query($sql, $params);
+  }
+  $statuses = array();
+  while ($sid = db_fetch_object($result)) {
+    $statuses[] = facebook_status_load($sid->sid);
+  }
+  return $statuses;
+}
+
+/**
+ * Gets statuses that have a given tag by Term ID or User ID.
+ *
+ * @param $rid
+ *   The Term ID of tags or the User ID of users which retrieved statuses must
+ *   reference.
+ * @param $type
+ *   The type of reference: 'user' or 'term.'
+ * @param $count
+ *   The number of statuses to retrieve, starting with the most recent one. If
+ *   zero, all relevant statuses are returned.
+ * @param $uid
+ *   If zero, has no effect. If a positive integer, restricts results to
+ *   statuses by the user with that UID. If an array of positive integers,
+ *   restricts results to statuses by users with a UID in the array.
+ * @return
+ *   An array of status objects.
+ */
+function facebook_status_tags_get_statuses($rid, $type = 'term', $count = 1, $uid = 0) {
+  $params = array($rid, $type);
+  if ($uid == 0) {
+    $sql = "SELECT sid FROM {facebook_status_tags} WHERE rid = %d AND type = '%s'";
+  }
+  else {
+    if (is_numeric($uid)) {
+      $uid = array($uid);
+    }
+    $params = array_merge($params, $uid);
+    $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.rid = %d AND fbst.type = '%s' AND (";
+    $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
+    $sql .= ')';
+  }
+  if ($count) {
+    $result = db_query_range($sql, $params, 0, $count);
+  }
+  else {
+    $result = db_query($sql, $params);
+  }
+  $statuses = array();
+  while ($sid = db_fetch_object($result)) {
+    $statuses[] = facebook_status_load($sid->sid);
+  }
+  return $statuses;
+}
+
+/**
+ * Determines whether a given status has a given reference.
+ *
+ * @param $sid
+ *   The Status ID of the status being tested.
+ * @param $rid
+ *   The Term ID or User ID of the reference being tested.
+ * @param $type
+ *   The type of reference: 'user' or 'term.'
+ * @return
+ *   1 if the status has the reference or 0 if it does not.
+ */
+function facebook_status_tags_status_has_tag($sid, $rid, $type = 'term') {
+  return db_result(db_query("SELECT COUNT(*) FROM {facebook_status_tags} WHERE sid = %d AND rid = %d AND type = '%s'", $sid, $rid, $type));
+}
+
+/**
+ * Gets the tags that a given status has.
+ *
+ * @param $sid
+ *   The Status ID of the status for which to retrieve a tag.
+ * @param $type
+ *   The type of reference: 'user' or 'term.'
+ * @return
+ *   An array of term objects or user objects.
+ */
+function facebook_status_tags_get_status_tags($sid, $type = 'term') {
+  $result = db_query("SELECT rid FROM {facebook_status_tags} WHERE sid = %d AND type = '%s'", $sid, $type);
+  $rids = array();
+  while ($rid = db_fetch_object($result)) {
+    if ($type == 'term') {
+      $rids[] = taxonomy_get_term($rid->rid);
+    }
+    else if ($type == 'user') {
+      $rids[] = user_load(array('uid' => $rid->rid));
+    }
+  }
+  return $rids;
+}
+
+//=================
+//HELPER FUNCTIONS.
+//=================
+
+/**
+ * Replaces tags with a themed version.
+ * Will not work on tags containing $op, a space, or an apostrophe.
+ *
+ * @param $text
+ *   The text in which to replace usernames.
+ * @param $op
+ *   The character that indicates that the subsequent text could be a username.
+ *   Use the 'at' character (@) for usernames and the 'hash' character (#) for
+ *   taxonomy terms.
+ * @return
+ *   The filtered text.
+ */
+function _facebook_status_tags_filter($text, $op = '@') {
+  $pattern = '/([\s]'. $op .'.+\b)|(^'. $op .'.+\b)/U';
+  preg_match_all($pattern, $text, $matches);
+
+  $links = array();
+  foreach ($matches[0] as $match) {
+    if ($op == '@') {
+      $account = user_load(array('name' => drupal_substr(trim($match), 1)));
+    }
+    else if ($op == '#' && module_exists('taxonomy') && variable_get('facebook_status_tags_vid', -1) != -1) {
+      $term = _facebook_status_tags_get_term(drupal_substr(trim($match), 1));
+    }
+    $link = $op;
+    if (drupal_substr($match, 0, 1) == ' ') {
+      $link = ' '. $op;
+    }
+    if ($op == '@') {
+      if ($account->uid) {
+        $link .= theme('username', $account);
+      }
+    }
+    else if ($op == '#') {
+      if (!empty($term)) {
+        $dest = _facebook_status_tags_resolve($term);
+        if ($dest) {
+          $link .= l($term->name, $dest);
+        }
+      }
+    }
+    if (trim($link) == $op) {
+      $link = $match;
+    }
+    $links[] = $link;
+  }
+  return str_replace($matches[0], $links, $text);
+}
+
+/**
+ * Resolves the URL to which to redirect a taxonomy term.
+ *
+ * @param $term
+ *   A taxonomy term object.
+ * @return
+ *   The resolved URL.
+ */
+function _facebook_status_tags_resolve($term) {
+  $url = variable_get('facebook_status_tags_url', 'statuses/term/[term-id]');
+  if (!trim($url)) {
+    return;
+  }
+  $phpversion = drupal_substr(phpversion(), 0, 1);
+  //str_ireplace() is not defined in PHP4 so we use the case-sensitive version.
+  if ($phpversion == 5) {
+    return str_ireplace(array('[term-id]', '[term-name]'), array($term->tid, $term->name), $url);
+  }
+  else {
+    return str_replace(array('[term-id]', '[term-name]'), array($term->tid, $term->name), $url);
+  }
+}
+
+/**
+ * Replaces both the username and hash tags.
+ */
+function _facebook_status_tags_replace($text) {
+  $text = _facebook_status_tags_filter($text, '@');
+  $text = _facebook_status_tags_filter($text, '#');
+  return $text;
+}
+
+/**
+ * Gets a taxonomy term by name.
+ */
+function _facebook_status_tags_get_term($name) {
+  return db_fetch_object(db_query("SELECT tid, name FROM {term_data} WHERE LOWER(name) = LOWER('%s') AND vid = %d", $name, variable_get('facebook_status_tags_vid', -1)));
+}
+
+//=================
+//FBSS INTEGRATION.
+//=================
+
+/**
+ * Implementation of hook_facebook_status_render().
+ */
+function facebook_status_tags_facebook_status_render($account, $status, $linked = TRUE) {
+  if ($linked) {
+    return array('_facebook_status_tags_replace' => array());
+  }
+}
+
+/**
+ * Implementation of hook_facebook_status_save().
+ */
+function facebook_status_tags_facebook_status_save($account, $status, $sid) {
+  //Users.
+  $pattern = '/([\s]@.+\b)|(^@.+\b)/U';
+  preg_match_all($pattern, $status, $matches);
+  $matches = $matches[0];
+  $old_matches = array();
+  foreach ($matches as $match) {
+    $match = drupal_substr(trim($match), 1);
+    $account = user_load(array('name' => $match));
+    if ($account->uid) {
+      if (!in_array($match, $old_matches)) {
+        $array = array('sid' => $sid, 'rid' => $account->uid, 'type' => 'user');
+        drupal_write_record('facebook_status_tags', $array);
+      }
+      $old_matches[] = $match;
+    }
+  }
+
+  //Terms.
+  if (!module_exists('taxonomy') || variable_get('facebook_status_tags_vid', -1) == -1) {
+    return;
+  }
+  $pattern = '/([\s]#.+\b)|(^#.+\b)/U';
+  preg_match_all($pattern, $status, $matches);
+  $matches = $matches[0];
+  $old_matches = array();
+  foreach ($matches as $match) {
+    $match = drupal_substr(trim($match), 1);
+    //If the term does not exist, create it.
+    $term = _facebook_status_tags_get_term($match);
+    if (empty($term)) {
+      $term = array(
+        'vid' => variable_get('facebook_status_tags_vid', -1),
+        'name' => $match,
+        'description' => '',
+        'weight' => 0,
+      );
+      taxonomy_save_term($term);
+    }
+    if (!in_array($match, $old_matches)) {
+      $array = array('sid' => $sid, 'rid' => $term->tid, 'type' => 'term');
+      drupal_write_record('facebook_status_tags', $array);
+    }
+    $old_matches[] = $match;
+  }
+}
+
+/**
+ * Implementation of hook_facebook_status_delete().
+ */
+function facebook_status_tags_facebook_status_delete($sid) {
+  db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
+}
+
+//===================
+//OTHER INTEGRATIONS.
+//===================
+
+/**
+ * Implementation of hook_views_api().
+ */
+function facebook_status_tags_views_api() {
+  return array('api' => 2);
+}
+
+/**
+ * Implementation of hook_taxonomy().
+ */
+function facebook_status_tags_taxonomy($op, $type, $array = NULL) {
+  if ($op != 'delete') {
+    return;
+  }
+  if ($type == 'term') {
+    db_query("DELETE FROM {facebook_status_tags} WHERE rid = %d AND type = 'term'", $array['tid']);
+  }
+  else if ($type == 'vocabulary') {
+    if ($array['vid'] === variable_get('facebook_status_tags_vid', -1)) {
+      //If the vocabulary is deleted, all the tags will no longer exist, so the references are invalid.
+      db_query("DELETE FROM {facebook_status_tags} WHERE type = 'term'");
+      variable_set('facebook_status_tags_vid', -1);
+    }
+  }
+}
