@@ -1,5 +1,0 @@
-; $Id$
-name = Facebook-style Statuses Tags
-description = "Converts @usernames to themed usernames and #hashtags to themed taxonomy terms on Facebook-style Statuses."
-dependencies[] = facebook_status
-core = 6.x
