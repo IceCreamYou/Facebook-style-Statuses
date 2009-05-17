@@ -105,7 +105,7 @@ function facebook_status_views_data() {
     'title' => t('Status text'),
     'help' => t('The text of the status update.'),
     'field' => array(
-      'handler' => 'views_handler_field',
+      'handler' => 'facebook_status_views_handler_field_status',
       'click sortable' => TRUE,
     ),
     'filter' => array(
@@ -178,6 +178,9 @@ function facebook_status_views_handlers() {
       ),
       'facebook_status_views_handler_filter' => array(
         'parent' => 'views_handler_filter_boolean_operator',
+      ),
+      'facebook_status_views_handler_field_status' => array(
+        'parent' => 'views_handler_field',
       ),
     ),
   );

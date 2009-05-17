@@ -25,7 +25,7 @@ function facebook_status_help($path, $arg) {
 function facebook_status_menu() {
   $items = array();
   $items['admin/settings/facebook_status'] = array(
-    'title' => 'Facebook-style Statuses settings',
+    'title' => 'Facebook-style Statuses',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('facebook_status_admin'),
     'access arguments' => array('access administration pages'),
@@ -61,12 +61,17 @@ function facebook_status_menu() {
     'access arguments' => array('access administration pages'),
     'type' => MENU_CALLBACK,
   );
-  $items['facebook_status/js/%user'] = array(
+  $items['status/openapi'] = array(
+    'title' => 'Status Open API',
+    'page callback' => '_facebook_status_openapi',
+    'access arguments' => array('view all statuses'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['facebook_status/js'] = array(
     'title' => 'Save status update form',
     'page callback' => 'facebook_status_save_js',
-    'page arguments' => array(2),
     'access callback' => '_facebook_status_can_edit',
-    'access arguments' => array(2),
+    'access arguments' => FALSE,
     'type' => MENU_CALLBACK,
   );
   return $items;
@@ -295,9 +300,12 @@ function theme_facebook_status_item($account, $status = FALSE, $linked = TRUE) {
   else {
     $output = t('@fbsstatus !time', array('!user' => $name, '@fbsstatus' => $status->status, '!time' => $time));
   }
-  //Invokes hook_facebook_status_render($status_owner_object, &$status, $linked = TRUE).
+  //Invokes hook_facebook_status_render($status_owner_object, $status, $linked = TRUE).
   //In general, if $linked is FALSE then this is being used on the status update form.
-  module_invoke_all('facebook_status_render', $account, $output, $linked);
+  $functions = module_invoke_all('facebook_status_render', $account, $output, $linked);
+  foreach ($functions as $function => $args) {
+    $output = call_user_func_array($function, array_merge(array($output), $args));
+  }
   return $output;
 }
 
@@ -617,8 +625,9 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
       $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid);
       drupal_write_record('facebook_status', $object);
     }
-    //Invokes hook_facebook_status_save($status_owner_object, &$status).
-    module_invoke_all('facebook_status_save', $account, $new_status);
+    $new_id = db_result(db_query("SELECT MAX(sid) FROM {facebook_status}"));
+    //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid).
+    module_invoke_all('facebook_status_save', $account, $new_status, $new_id);
   }
   //Trigger integration.
   if (module_exists('trigger')) {
@@ -738,6 +747,114 @@ function _facebook_status_possessive($status) {
 }
 
 /**
+ * Handles the Open API.
+ */
+function _facebook_status_openapi() {
+  $name = $_GET['name'];
+  $count = $_GET['count'];
+  $type = $_GET['type'];
+  $format = $_GET['format'];
+  if ($format != 'json' && $format != 'xml' && $format != 'short' && $format) {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo 'invalid "format" parameter';
+    return;
+  }
+  if ((!is_numeric($count) || round($count) != $count || $count < 1 || $count > 25) && $format != 'short' && $count) {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo '"count" parameter must be a positive integer no larger than 25';
+    return;
+  }
+  if (($type == 'tag' || $type == 'user' || $type == 'userref') && !$name) {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo 'if "type" is "tag" or "user" or "userref" you must use the "name" parameter as well';
+    return;
+  }
+  if ($type && $type != 'tag' && $type != 'user' && $type != 'public' && $type != 'userref') {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo 'invalid "type" parameter';
+    return;
+  }
+  if ($type == 'tag' && (!module_exists('facebook_status_tags') || !module_exists('taxonomy'))) {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo 'invalid "type" parameter';
+    return;
+  }
+  if ($type == 'userref' && !module_exists('facebook_status_tags')) {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo 'invalid "type" parameter';
+    return;
+  }
+  if (!$type && !$name) {
+    $type = 'public';
+  }
+  if (!$type && $name) {
+    $type = 'user';
+  }
+  if (!$count || $format == 'short') {
+    $count = 1;
+  }
+  if (!$format) {
+    $format = 'short';
+  }
+  if ($type == 'user' || $type == 'userref') {
+    $account = user_load(array('name' => $name));
+    if (!$account->uid) {
+      drupal_set_header('Content-Type: text/html; charset: utf-8');
+      echo 'invalid name';
+      return;
+    }
+  }
+
+  switch ($type) {
+    case 'tag':
+      $statuses = facebook_status_tags_get_statuses_by_tag($name, 'term', $count);
+      break;
+    case 'userref':
+      $statuses = facebook_status_tags_get_statuses_by_tag($name, 'user', $count);
+      break;
+    case 'user':
+      $statuses = facebook_status_get_status($account->uid, $count, 0, TRUE);
+      break;
+    case 'public':
+      $statuses = facebook_status_get_statuses(array(), $count, 0);
+      break;
+  }
+  if (empty($statuses)) {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo 'no statuses match your criteria';
+    return;
+  }
+  $clean = array();
+  $xml = '';
+  foreach ($statuses as $key => $status) {
+    $array = array(
+      'text' => check_plain($status->status),
+      'time' => $status->status_time,
+      'sid' => $status->sid,
+      'uid' => $status->uid,
+    );
+    $xml .= '
+  <status>
+'. format_xml_elements($array) .'
+  </status>';
+    $clean[] = $array;
+  }
+  if ($format == 'xml') {
+    drupal_set_header('Content-Type: application/xml; charset: utf-8');
+    echo '<?xml version="1.0" encoding="UTF-8"?>
+<statuses>'. $xml .'
+</statuses>';
+  }
+  else if ($format == 'json') {
+    drupal_json($clean);
+  }
+  else if ($format == 'short') {
+    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    echo $clean[0]['text'];
+  }
+}
+
+/**
  * Autocompletes multiple-username textfields.
  * Some awkwardness exists if a user has quotes or commas in their username.
  * Adapted from taxonomy.module.
@@ -782,7 +899,13 @@ function _facebook_status_user_autocomplete($string = '') {
  * @return
  *   A $form array.
  */
-function _facebook_status_status(&$form_state, $account, $size = FALSE) {
+function _facebook_status_status($form_state, $account = NULL, $size = FALSE) {
+  if (isset($form_state['facebook_status'])) {
+    $aid = $form_state['facebook_status']['account'];
+    $account = user_load(array('uid' => $aid));
+    $size = $form_state['facebook_status']['size'];
+  }
+
   if (!$size) {
     $size = variable_get('facebook_status_size', 32);
     if (arg(0) == 'share-status') {
@@ -811,25 +934,20 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   }
   if (arg(0) == 'share-status') {
     $default = str_replace('"', '', $_GET['s']);
-    //Keep the default value from clearing when the user clicks on the form.
-    $form_state['#js_exists'] = TRUE;
   }
 
   $path = drupal_get_path('module', 'facebook_status');
-  $slider = theme('facebook_status_item', $account, FALSE, FALSE);
+  $slider = theme('facebook_status_item', $account, FALSE, ($_SESSION['#fbss-no-linkify'] == 'share-status' || arg(0) == 'share-status'));
   //When the status update form is present in the page content, there can be two status forms on user profiles.
   //That will cause problems with the JavaScript, so we simply don't add it to the page.
   if (variable_get('facebook_status_slide', 1) && arg(0) != 'share-status') {
-    if (!$form_state['#js_exists']) {
-      drupal_add_js($path .'/facebook_status.js');
-    }
+    drupal_add_js($path .'/facebook_status.js');
     if ($_SESSION['#fbss-no-linkify'] != 'share-status') {
       $slider = '<a href="#status" name="status" class="facebook_status_slide">'. $slider .'</a>';
     }
   }
-  if (!$form_state['#css_exists']) {
-    drupal_add_css($path .'/facebook_status.css');
-  }
+  drupal_add_css($path .'/facebook_status.css');
+  $form = array('#cache' => TRUE);
   $form['slider'] = array('#prefix' => '<span id="facebook_status_replace">', '#value' => $slider);
   $form['status'] = array(
     '#type' => 'textfield',
@@ -840,6 +958,14 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
     '#attributes' => array('class' => 'facebook_status_hide'),
     '#suffix' => '</span>',
   );
+  $form['account'] = array(
+    '#type' => 'value',
+    '#value' => $account->uid,
+  );
+  $form['size'] = array(
+    '#type' => 'value',
+    '#value' => $size,
+  );
   $form['fbss-submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -847,7 +973,7 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
     '#attributes' => array('class' => 'facebook_status_hide'),
   );
   $form['fbss-submit']['#ahah'] = array(
-    'path' => 'facebook_status/js/'. $account->uid .'/'. $size,
+    'path' => 'facebook_status/js',
     'wrapper' => 'facebook_status_replace',
     'effect' => 'fade',
     'method' => 'replace',
@@ -860,7 +986,6 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
       //'#attributes' => array('class' => 'facebook_status_hide'),
     );
   }
-  $form_state['#account'] = $account;
   $_SESSION['#fbss-uid'] = $account->uid;
   //Hack to remove slider text if necessary.
   if (variable_get('facebook_status_hide_status', 0)) {
@@ -868,6 +993,7 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
   }
   //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');
+  $form['#cache'] = TRUE;
   return $form;
 }
 
@@ -875,7 +1001,9 @@ function _facebook_status_status(&$form_state, $account, $size = FALSE) {
  * Submit function for the status update form.
  */
 function _facebook_status_status_submit($form, &$form_state) {
-  $account = $form_state['#account'];
+  $size = $form_state['values']['size'];
+  $aid = $form_state['values']['account'];
+  $account = user_load(array('uid' => $aid));
   if (!$account->uid) {
     $account = user_load(array('uid' => $_SESSION['#fbss-uid']));
   }
@@ -886,9 +1014,12 @@ function _facebook_status_status_submit($form, &$form_state) {
 
   $message = facebook_status_save_status($account, $new_status);
 
-  if (!$form_state['#js_exists']) {
-    drupal_set_message($message);
-  }
+  //drupal_set_message($message);
+  $form_state['facebook_status'] = array(
+    'account' => $aid,
+    'size' => $size,
+  );
+  $form_state['rebuild'] = TRUE;
 }
 
 /**
@@ -900,32 +1031,17 @@ function facebook_status_save_js() {
   $form = form_get_cache($form_build_id, $form_state);
   $form_state['post'] = $form['#post'] = $_POST;
   $form['#programmed'] = $form['#redirect'] = FALSE;
-  //Custom parameters that let us know whether the AHAH has already been run.
-  $form_state['#js_exists'] = TRUE;
-  $form_state['#css_exists'] = TRUE;
-
-  $account = user_load(array('uid' => arg(2)));
-  $size = arg(3);
-  if (!is_numeric($size) || round($size) != $size || $size < 1) {
-    $size = variable_get('facebook_status_size', 32);
-  }
-
-  //Oddly, $args is not always an array.
-  $form_id = '_facebook_status_status';
   $args = $form['#parameters'];
-  if (is_array($args)) {
-    $form_id = array_shift($args);
-  }
-
-  //Get HTML for the replacement form.
+  $form_id = array_shift($args);
   drupal_process_form($form_id, $form, $form_state);
-  $form = drupal_rebuild_form($form_id, $form_state, array('_facebook_status_status', $account, $size));
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  //Get HTML for the replacement form.
   $new_form['slider'] = $form['slider'];
   $new_form['status'] = $form['status'];
   //Prevent duplicate wrappers.
-  unset($form['slider']['#prefix']);
-  unset($form['status']['#suffix']);
-  $output = theme('status_messages') . drupal_render_form($form_id, $new_form);
+  unset($new_form['slider']['#prefix']);
+  unset($new_form['status']['#suffix']);
+  $output = theme('status_messages') . drupal_render($new_form);
 
   //Return the results.
   drupal_json(array('status' => TRUE, 'data' => $output));
