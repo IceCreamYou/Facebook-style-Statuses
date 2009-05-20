@@ -11,44 +11,44 @@
  */
 function facebook_status_rules_defaults() {
   $config = array(
-    'rules' => 
+    'rules' =>
     array(
-      'facebook_status_rules_update' => 
+      'facebook_status_rules_update' =>
       array(
         '#type' => 'rule',
         '#set' => 'event_facebook_status_update',
         '#label' => 'Submit Facebook-style Status',
         '#active' => 0,
         '#weight' => '0',
-        '#categories' => 
+        '#categories' =>
         array(
           0 => 'facebook_status',
         ),
         '#status' => 'default',
-        '#conditions' => 
+        '#conditions' =>
         array(
         ),
-        '#actions' => 
+        '#actions' =>
         array(
-          0 => 
+          0 =>
           array(
             '#type' => 'action',
-            '#settings' => 
+            '#settings' =>
             array(
               'severity' => '6',
               'type' => 'rules',
               'message' => '<?php echo check_plain($account->name); ?> submitted the status <?php echo $new_status; ?>.',
               'link' => '/user/<?php echo $account->uid; ?>',
-              '#eval input' => 
+              '#eval input' =>
               array(
-                'rules_input_evaluator_php' => 
+                'rules_input_evaluator_php' =>
                 array(
-                  'message' => 
+                  'message' =>
                   array(
                     0 => 'account',
                     1 => 'new_status',
                   ),
-                  'link' => 
+                  'link' =>
                   array(
                     0 => 'account',
                   ),
@@ -56,11 +56,11 @@ function facebook_status_rules_defaults() {
               ),
             ),
             '#name' => 'rules_action_watchdog',
-            '#info' => 
+            '#info' =>
             array(
               'label' => 'Log to watchdog',
               'module' => 'System',
-              'eval input' => 
+              'eval input' =>
               array(
                 0 => 'type',
                 1 => 'message',
@@ -71,37 +71,37 @@ function facebook_status_rules_defaults() {
           ),
         ),
       ),
-      'facebook_status_rules_delete' => 
+      'facebook_status_rules_delete' =>
       array(
         '#type' => 'rule',
         '#set' => 'event_facebook_status_delete',
         '#label' => 'Delete Facebook-style Status',
         '#active' => 1,
         '#weight' => '0',
-        '#categories' => 
+        '#categories' =>
         array(
           0 => 'facebook_status',
         ),
         '#status' => 'default',
-        '#conditions' => 
+        '#conditions' =>
         array(
         ),
-        '#actions' => 
+        '#actions' =>
         array(
-          0 => 
+          0 =>
           array(
             '#type' => 'action',
-            '#settings' => 
+            '#settings' =>
             array(
               'message' => 'Status deleted.',
               'error' => 0,
             ),
             '#name' => 'rules_action_drupal_message',
-            '#info' => 
+            '#info' =>
             array(
               'label' => 'Show a configurable message on the site',
               'module' => 'System',
-              'eval input' => 
+              'eval input' =>
               array(
                 0 => 'message',
               ),

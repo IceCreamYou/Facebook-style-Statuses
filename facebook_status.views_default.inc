@@ -3,7 +3,7 @@
 
 /**
  * @file
- *   Provides a default View for the Facebook-style Statuses module.
+ *   Provides default Views for the Facebook-style Statuses module.
  */
 
 /**
@@ -12,7 +12,7 @@
 function facebook_status_views_default_views() {
   $view = new view;
   $view->name = 'facebook_status';
-  $view->description = t('Facebook-style Statuses');
+  $view->description = 'Facebook-style Statuses';
   $view->tag = 'facebook_status';
   $view->view_php = '';
   $view->base_table = 'users';
@@ -36,6 +36,7 @@ function facebook_status_views_default_views() {
         'max_length' => '',
         'word_boundary' => 1,
         'ellipsis' => 1,
+        'strip_tags' => 0,
         'html' => 0,
       ),
       'link_to_user' => 1,
@@ -46,35 +47,12 @@ function facebook_status_views_default_views() {
       'table' => 'users',
       'field' => 'name',
       'relationship' => 'none',
-    ),
-    'status' => array(
-      'label' => t('Status'),
-      'alter' => array(
-        'alter_text' => 1,
-        'text' => '[name] [status]',
-        'make_link' => 0,
-        'path' => '',
-        'alt' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'help' => '',
-        'trim' => 0,
-        'max_length' => '',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'html' => 0,
-      ),
-      'exclude' => 0,
-      'id' => 'status',
-      'table' => 'facebook_status',
-      'field' => 'status',
-      'relationship' => 'none',
       'override' => array(
         'button' => 'Override',
       ),
     ),
-    'status_time' => array(
-      'label' => t('Posted'),
+    'status' => array(
+      'label' => '',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -88,6 +66,34 @@ function facebook_status_views_default_views() {
         'max_length' => '',
         'word_boundary' => 1,
         'ellipsis' => 1,
+        'strip_tags' => 0,
+        'html' => 0,
+      ),
+      'exclude' => 1,
+      'id' => 'status',
+      'table' => 'facebook_status',
+      'field' => 'status',
+      'relationship' => 'none',
+      'override' => array(
+        'button' => 'Override',
+      ),
+    ),
+    'status_time' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 1,
+        'text' => '[name] [status] <em>[status_time]</em>',
+        'make_link' => 0,
+        'path' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'strip_tags' => 0,
         'html' => 0,
       ),
       'date_format' => 'time ago',
@@ -97,6 +103,9 @@ function facebook_status_views_default_views() {
       'table' => 'facebook_status',
       'field' => 'status_time',
       'relationship' => 'none',
+      'override' => array(
+        'button' => 'Override',
+      ),
     ),
   ));
   $handler->override_option('sorts', array(
@@ -110,15 +119,15 @@ function facebook_status_views_default_views() {
   ));
   $handler->override_option('arguments', array(
     'name' => array(
-      'default_action' => 'ignore',
+      'default_action' => 'not found',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
-      'title' => t("%1's Statuses"),
+      'title' => '%1\'s Statuses',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
-      'validate_type' => 'none',
+      'validate_type' => 'php',
       'validate_fail' => 'not found',
       'glossary' => 0,
       'limit' => '0',
@@ -128,30 +137,47 @@ function facebook_status_views_default_views() {
       'id' => 'name',
       'table' => 'users',
       'field' => 'name',
+      'validate_user_argument_type' => 'uid',
+      'validate_user_roles' => array(
+        '2' => 0,
+        '3' => 0,
+      ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
       'default_argument_user' => 0,
       'default_argument_fixed' => '',
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
-        'image' => 0,
-        'feed' => 0,
-        'news' => 0,
+        'panel' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
-        '3' => 0,
-        '2' => 0,
+        '1' => 0,
       ),
       'validate_argument_type' => 'tid',
-      'user_argument_type' => 'either',
-      'restrict_user_roles' => 0,
-      'user_roles' => array(
-        '2' => '2',
-      ),
-      'validate_argument_php' => '',
+      'validate_argument_transform' => 0,
+      'validate_user_restrict_roles' => 0,
+      'validate_argument_node_flag_name' => '*relationship*',
+      'validate_argument_node_flag_test' => 'flaggable',
+      'validate_argument_node_flag_id_type' => 'id',
+      'validate_argument_user_flag_name' => '*relationship*',
+      'validate_argument_user_flag_test' => 'flaggable',
+      'validate_argument_user_flag_id_type' => 'id',
+      'validate_argument_php' => '$account = user_load(array(\'name\' => $argument));
+      if ($account->uid) {
+        $handler->argument = $account->name;
+        return TRUE;
+      }
+      else {
+        $account = user_load(array(\'uid\' => $argument));
+        if ($account->uid) {
+          $handler->argument = $account->name;
+          return TRUE;
+        }
+      }
+      return FALSE;',
     ),
   ));
   $handler->override_option('filters', array(
@@ -175,12 +201,29 @@ function facebook_status_views_default_views() {
     'type' => 'perm',
     'perm' => 'view all statuses',
   ));
-  $handler->override_option('title', t('Statuses'));
-  $handler->override_option('empty', t('No relevant statuses were found.'));
-  $handler->override_option('empty_format', '5');
+  $handler->override_option('title', 'Statuses');
+  $handler->override_option('empty', '<?php
+  $account = user_load(array(\'uid\' => arg(1)));
+  if (!$account->uid) {
+    echo t(\'This user has no statuses yet.\');
+    return;
+  }
+  $count = facebook_status_has_status(arg(1));
+  if (!$count) {
+    global $user;
+    if ($user->uid == $account->uid) {
+      echo t(\'You have no statuses yet.\');
+    }
+    else {
+      echo t(\'@name has no statuses yet.\', array(\'@name\' => check_plain($account->name)));
+    }
+  }
+  ?>');
+  $handler->override_option('empty_format', '3');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', '1');
-  $handler->override_option('distinct', 1);
+  $handler->override_option('use_more', 1);
+  $handler->override_option('distinct', 0);
   $handler->override_option('style_plugin', 'table');
   $handler->override_option('style_options', array(
     'grouping' => '',
@@ -211,10 +254,10 @@ function facebook_status_views_default_views() {
   $handler = $view->new_display('page', 'Page', 'page_1');
   $handler->override_option('path', 'user/%/status');
   $handler->override_option('menu', array(
-    'type' => 'none',
-    'title' => '',
+    'type' => 'tab',
+    'title' => 'Statuses',
     'description' => '',
-    'weight' => 0,
+    'weight' => '0',
     'name' => 'navigation',
   ));
   $handler->override_option('tab_options', array(
@@ -224,107 +267,13 @@ function facebook_status_views_default_views() {
     'weight' => 0,
   ));
   $handler = $view->new_display('block', 'Block', 'block_1');
-  $handler->override_option('fields', array(
-    'name' => array(
-      'label' => '',
-      'alter' => array(
-        'alter_text' => 0,
-        'text' => '',
-        'make_link' => 0,
-        'path' => '',
-        'alt' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'help' => '',
-        'trim' => 0,
-        'max_length' => '',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'html' => 0,
-      ),
-      'link_to_user' => 1,
-      'overwrite_anonymous' => 0,
-      'anonymous_text' => '',
-      'exclude' => 1,
-      'id' => 'name',
-      'table' => 'users',
-      'field' => 'name',
-      'relationship' => 'none',
-    ),
-    'status' => array(
-      'label' => t('Status'),
-      'alter' => array(
-        'alter_text' => 0,
-        'text' => '[name] [status]',
-        'make_link' => 0,
-        'path' => '',
-        'alt' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'help' => '',
-        'trim' => 1,
-        'max_length' => '25',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'html' => 0,
-      ),
-      'exclude' => 1,
-      'id' => 'status',
-      'table' => 'facebook_status',
-      'field' => 'status',
-      'relationship' => 'none',
-      'override' => array(
-        'button' => 'Use default',
-      ),
-    ),
-    'status_time' => array(
-      'label' => '',
-      'alter' => array(
-        'alter_text' => 1,
-        'text' => '[name] [status] <em>[status_time]</em>',
-        'make_link' => 0,
-        'path' => '',
-        'alt' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'help' => '',
-        'trim' => 0,
-        'max_length' => '',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'html' => 0,
-      ),
-      'date_format' => 'time ago',
-      'custom_date_format' => '1',
-      'exclude' => 0,
-      'id' => 'status_time',
-      'table' => 'facebook_status',
-      'field' => 'status_time',
-      'relationship' => 'none',
-      'override' => array(
-        'button' => 'Use default',
-      ),
-    ),
-  ));
-  $handler->override_option('items_per_page', 5);
-  $handler->override_option('use_pager', '0');
-  $handler->override_option('use_more', 1);
-  $handler->override_option('style_plugin', 'list');
-  $handler->override_option('style_options', array());
-  $handler->override_option('row_options', array(
-    'inline' => array(
-      'name' => 'name',
-      'status' => 'status',
-    ),
-    'separator' => ' ',
-  ));
-  $handler->override_option('block_description', t('Facebook-style Statuses User List'));
+  $handler->override_option('block_description', 'Facebook-style Statuses User List');
   $handler->override_option('block_caching', -1);
   $views[$view->name] = $view;
 
   $view = new view;
   $view->name = 'facebook_status_recent';
-  $view->description = t('Facebook-style Statuses Last Status Update');
+  $view->description = 'Facebook-style Statuses Last Status Update';
   $view->tag = 'facebook_status';
   $view->view_php = '';
   $view->base_table = 'facebook_status';
@@ -334,7 +283,7 @@ function facebook_status_views_default_views() {
   $handler = $view->new_display('default', 'Latest Status', 'default');
   $handler->override_option('fields', array(
     'name' => array(
-      'label' => t('Name'),
+      'label' => 'Name',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -359,9 +308,12 @@ function facebook_status_views_default_views() {
       'table' => 'users',
       'field' => 'name',
       'relationship' => 'none',
+      'override' => array(
+        'button' => 'Override',
+      ),
     ),
     'status' => array(
-      'label' => t('Status text'),
+      'label' => '',
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
@@ -403,7 +355,7 @@ function facebook_status_views_default_views() {
         'html' => 0,
       ),
       'date_format' => 'time ago',
-      'custom_date_format' => '',
+      'custom_date_format' => '1',
       'exclude' => 0,
       'id' => 'status_time',
       'table' => 'facebook_status',
@@ -442,18 +394,15 @@ function facebook_status_views_default_views() {
   ));
   $handler->override_option('title', 'Latest Status Updates');
   $handler->override_option('use_ajax', TRUE);
-  $handler->override_option('use_pager', 'mini');
-  $handler->override_option('style_plugin', 'list');
-  $handler->override_option('style_options', array(
-    'type' => 'ul',
-  ));
-  $handler = $view->new_display('page', 'Page', 'page_1');
+  $handler->override_option('items_per_page', 15);
+  $handler->override_option('use_pager', '1');
+  $handler->override_option('use_more', 1);
   $handler->override_option('style_plugin', 'table');
   $handler->override_option('style_options', array(
     'grouping' => '',
-    'override' => 0,
+    'override' => 1,
     'sticky' => 0,
-    'order' => 'desc',
+    'order' => 'asc',
     'columns' => array(
       'name' => 'name',
       'status' => 'status',
@@ -475,107 +424,24 @@ function facebook_status_views_default_views() {
     ),
     'default' => '-1',
   ));
-  $handler->override_option('path', 'recent_statuses');
+  $handler = $view->new_display('page', 'Page', 'page_1');
+  $handler->override_option('path', 'statuses/recent');
   $handler->override_option('menu', array(
-    'type' => 'none',
-    'title' => '',
+    'type' => 'default tab',
+    'title' => 'Latest Status Updates',
     'description' => '',
-    'weight' => 0,
+    'weight' => '0',
     'name' => 'navigation',
   ));
   $handler->override_option('tab_options', array(
-    'type' => 'none',
-    'title' => '',
+    'type' => 'normal',
+    'title' => 'Latest Status Updates',
     'description' => '',
-    'weight' => 0,
+    'weight' => '0',
   ));
   $handler = $view->new_display('block', 'Block', 'block_1');
-  $handler->override_option('fields', array(
-    'name' => array(
-      'label' => t('Name'),
-      'alter' => array(
-        'alter_text' => 0,
-        'text' => '',
-        'make_link' => 0,
-        'path' => '',
-        'alt' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'help' => '',
-        'trim' => 0,
-        'max_length' => '',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'strip_tags' => 0,
-        'html' => 0,
-      ),
-      'link_to_user' => 1,
-      'overwrite_anonymous' => 0,
-      'anonymous_text' => '',
-      'exclude' => 1,
-      'id' => 'name',
-      'table' => 'users',
-      'field' => 'name',
-      'relationship' => 'none',
-    ),
-    'status' => array(
-      'label' => t('Status text'),
-      'alter' => array(
-        'alter_text' => 0,
-        'text' => '',
-        'make_link' => 0,
-        'path' => '',
-        'alt' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'help' => '',
-        'trim' => 1,
-        'max_length' => '72',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'strip_tags' => 0,
-        'html' => 0,
-      ),
-      'exclude' => 1,
-      'id' => 'status',
-      'table' => 'facebook_status',
-      'field' => 'status',
-      'relationship' => 'none',
-      'override' => array(
-        'button' => t('Use default'),
-      ),
-    ),
-    'status_time' => array(
-      'label' => '',
-      'alter' => array(
-        'alter_text' => 1,
-        'text' => '[name] [status] <em>[status_time]</em>',
-        'make_link' => 0,
-        'path' => '',
-        'alt' => '',
-        'prefix' => '',
-        'suffix' => '',
-        'help' => '',
-        'trim' => 0,
-        'max_length' => '',
-        'word_boundary' => 1,
-        'ellipsis' => 1,
-        'strip_tags' => 0,
-        'html' => 0,
-      ),
-      'date_format' => 'time ago',
-      'custom_date_format' => '1',
-      'exclude' => 0,
-      'id' => 'status_time',
-      'table' => 'facebook_status',
-      'field' => 'status_time',
-      'relationship' => 'none',
-      'override' => array(
-        'button' => t('Use default'),
-      ),
-    ),
-  ));
-  $handler->override_option('block_description', t('Facebook-style Statuses Latest Status Updates'));
+  $handler->override_option('use_pager', 'mini');
+  $handler->override_option('block_description', 'Facebook-style Statuses Latest Status Updates');
   $handler->override_option('block_caching', -1);
   $views[$view->name] = $view;
 

@@ -617,9 +617,10 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = facebook_status_get_status($account->uid);
   if ($new_status != $status[0]->status && $account->uid) {
-    //If a new status is submitted within 12 seconds of the old one, we assume the user didn't mean to post the first one, and write over it.
-    if (time() - $status[0]->status_time < 12) {
-      db_query("UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE uid = %d ORDER BY sid DESC LIMIT 1", $new_status, $time, $account->uid);
+    //If a new status is submitted within 10 seconds of the old one, we assume the user didn't mean to post the first one, and write over it.
+    if (time() - $status[0]->status_time < 10) {
+      $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
+      db_query($sql, $new_status, $time, $status[0]->sid);
     }
     else {
       $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid);
@@ -1100,9 +1101,9 @@ function facebook_status_save_js() {
  */
 function facebook_status_hook_info() {
   return array(
-    'Facebook-style Statuses' => array(
+    'facebook_status' => array(
       'facebook_status' => array(
-        'submitted' => array(
+        'fbss_submitted' => array(
           'runs when' => t('The status update form has been submitted.'),
         ),
       ),
@@ -1244,6 +1245,7 @@ function facebook_status_twitter($account, $status) {
   if (!module_exists('twitter')) {
     return;
   }
+  module_load_include('inc', 'twitter');
   $twitter_accounts = twitter_get_user_accounts($account->uid);
   $data = unserialize($account->data);
   $twitter_account = $twitter_accounts[$data['facebook_status_twitter']];
