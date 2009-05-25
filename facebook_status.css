@@ -24,11 +24,15 @@
   margin: 0;
 }
 
-#-facebook-status-status .facebook_status-time {
-  font-size: 80%;
-  font-style: italic;
+#-facebook-status-status .facebook_status_negative {
+  color: #600000;
 }
 
-#-facebook-status-status .flag-wrapper {
-  font-size: 80%;
+#-facebook-status-status #facebook_status_chars {
+  float: left;
+  margin-left: 0.25em;
+}
+
+.facebook_status-profile-category .profile {
+  clear: none;
 }

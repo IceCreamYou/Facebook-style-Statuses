@@ -12,32 +12,46 @@
 function facebook_status_schema() {
   $schema = array();
   $schema['facebook_status'] = array(
+    'description' => 'Stores statuses.',
     'fields' => array(
       'sid' => array(
         'type' => 'serial',
         'not null' => TRUE,
         'unsigned' => TRUE,
+        'description' => 'The Status ID.',
       ),
       'uid' => array(
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
+        'description' => 'The User ID of the owner of the profile.',
+      ),
+      'pid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The User ID of the poster of the status.',
       ),
       'status_time' => array(
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
+        'description' => 'The time the status was submitted.',
       ),
       'status' => array(
-        'type' => 'varchar',
-        'length' => 255,
+        'type' => 'text',
+        'length' => 1024,
         'not null' => TRUE,
         'default' => '',
+        'description' => 'The status text.',
       ),
     ),
     'indexes' => array(
-      'uid' => array('uid')
+      'uid' => array('uid'),
+      'pid' => array('pid'),
+      'status_time' => array('status_time'),
     ),
     'primary key' => array('sid'),
   );
@@ -78,20 +92,13 @@ function facebook_status_update_6200() {
 
   //Rename column.
   $result = array();
-  //Technically, Oracle and MSSQL are not supported.
-  switch ($GLOBALS['db_type']) {
-    case 'mysqli':
-    case 'mysql':
-      $result[] = update_sql("ALTER TABLE {facebook_status} CHANGE COLUMN status_fb status varchar(255) NOT NULL DEFAULT ''");
-      break;
-    case 'pgsql':
-    case 'oracle':
-      $result[] = update_sql('ALTER TABLE {facebook_status} RENAME COLUMN status_fb TO status');
-      break;
-    case 'mssql':
-      $result[] = update_sql("EXEC sp_rename '{facebook_status}.status_fb', 'status', 'COLUMN'");
-      break;
-  }
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+  );
+  db_change_field($result, 'facebook_status', 'status_fb', 'status', $spec);
 
   //Delete old variables.
   variable_del('facebook_status_clear_user_records_string');
@@ -124,6 +131,37 @@ function facebook_status_update_6201() {
 }
 
 /**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6202() {
+  $result = array();
+  variable_del('facebook_status_slide');
+  db_add_index($result, 'facebook_status', 'status_time', array('status_time'));
+  //Change column definition so it can be longer.
+  //Use 1024 in case special characters require extra room.
+  $spec = array(
+    'type' => 'text',
+    'length' => 1024,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The status text.',
+  );
+  db_change_field($result, 'facebook_status', 'status', 'status', $spec);
+  //Add a field to track who posted the status.
+  $spec = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The User ID of the poster of the status.',
+  );
+  db_add_field($result, 'facebook_status', 'pid', $spec, array('indexes' => array('pid' => array('pid'))));
+  //Before this field was added, users could only post on their own profiles.
+  db_query("UPDATE {facebook_status} SET pid = uid");
+  return $result;
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {
@@ -134,13 +172,15 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_special_user');
   variable_del('facebook_status_hide_status');
   variable_del('facebook_status_flag_update');
+  variable_del('facebook_status_flood_user');
   variable_del('facebook_status_size_long');
-  variable_del('facebook_status_exclude');
   variable_del('facebook_status_default');
+  variable_del('facebook_status_exclude');
   variable_del('facebook_status_twitter');
   variable_del('facebook_status_concat');
-  variable_del('facebook_status_length');
+  variable_del('facebook_status_filter');
   variable_del('facebook_status_legacy');
-  variable_del('facebook_status_slide');
+  variable_del('facebook_status_length');
   variable_del('facebook_status_size');
+  variable_del('facebook_status_type');
 }

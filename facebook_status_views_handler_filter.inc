@@ -10,7 +10,6 @@
  * Filter handler which requires the latest status.
  */
 class facebook_status_views_handler_filter extends views_handler_filter_boolean_operator {
-
   function construct() {
     $this->definition['type'] = 'yes-no';
     $this->definition['label'] = t('Show Latest Status Update Only (per User)');
@@ -21,8 +20,8 @@ class facebook_status_views_handler_filter extends views_handler_filter_boolean_
   function query() {
     if ($this->value) {
       $this->ensure_my_table();
-      $this->query->add_where(0, db_prefix_tables("$this->table_alias.sid IN (SELECT MAX(sid) FROM {facebook_status} facebook_status GROUP BY facebook_status.uid)"));
+      $subquery = "(SELECT MAX(sid) FROM {facebook_status} WHERE uid = pid GROUP BY uid)";
+      $this->query->add_where(0, db_prefix_tables("$this->table_alias.sid IN ". $subquery));
     }
   }
-
 }

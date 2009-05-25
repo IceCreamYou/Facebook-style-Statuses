@@ -62,7 +62,9 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
  * Gets statuses that have a given tag by tag name.
  *
  * @param $tag
- *   The taxonomy term or username which retrieved statuses must contain.
+ *   The taxonomy term or username which retrieved statuses must contain, or the
+ *   ID of that term or user. If an ID is passed, it must be an integer (not a
+ *   string numeral).
  * @param $type
  *   The type of tag: 'user' or 'term.'
  * @param $count
@@ -70,70 +72,60 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
  *   zero, all relevant statuses are returned.
  * @param $uid
  *   If zero, has no effect. If a positive integer, restricts results to
- *   statuses by the user with that UID. If an array of positive integers,
- *   restricts results to statuses by users with a UID in the array.
- * @return
- *   An array of status objects.
- */
-function facebook_status_tags_get_statuses_by_tag($tag, $type = 'term', $count = 1, $uid = 0) {
-  $params = array($tag, $type);
-  if ($uid == 0) {
-    $sql = "SELECT sid FROM {facebook_status_tags} WHERE name = '%s' AND type = '%s'";
-  }
-  else {
-    if (is_numeric($uid)) {
-      $uid = array($uid);
-    }
-    $params = array_merge($params, $uid);
-    $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.name = '%s' AND fbst.type = '%s' AND (";
-    $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
-    $sql .= ')';
-  }
-  if ($count) {
-    $result = db_query_range($sql, $params, 0, $count);
-  }
-  else {
-    $result = db_query($sql, $params);
-  }
-  $statuses = array();
-  while ($sid = db_fetch_object($result)) {
-    $statuses[] = facebook_status_load($sid->sid);
-  }
-  return $statuses;
-}
-
-/**
- * Gets statuses that have a given tag by Term ID or User ID.
- *
- * @param $rid
- *   The Term ID of tags or the User ID of users which retrieved statuses must
- *   reference.
- * @param $type
- *   The type of reference: 'user' or 'term.'
- * @param $count
- *   The number of statuses to retrieve, starting with the most recent one. If
- *   zero, all relevant statuses are returned.
- * @param $uid
+ *   statuses on the profile of the user with that UID. If an array of positive
+ *   integers, restricts results to statuses on the profile of users with a UID
+ *   in the array.
+ * @param $pid
  *   If zero, has no effect. If a positive integer, restricts results to
- *   statuses by the user with that UID. If an array of positive integers,
- *   restricts results to statuses by users with a UID in the array.
+ *   statuses posted by the user with that UID. If an array of positive
+ *   integers, restricts results to statuses posted by users with a UID in the
+ *   array.
  * @return
  *   An array of status objects.
  */
-function facebook_status_tags_get_statuses($rid, $type = 'term', $count = 1, $uid = 0) {
-  $params = array($rid, $type);
-  if ($uid == 0) {
-    $sql = "SELECT sid FROM {facebook_status_tags} WHERE rid = %d AND type = '%s'";
+function facebook_status_tags_get_statuses($tag, $type = 'term', $count = 1, $uid = 0, $pid = 0) {
+  $params = array($tag, $type);
+  if (is_int($tag)) {
+    $rid = 'rid = %d';
+  }
+  else if (is_string($tag)) {
+    $rid = "name = '%s'";
+  }
+  $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.". $rid ." AND fbst.type = '%s' AND (";
+  if ($uid == 0 && $pid == 0) {
+    $sql = "SELECT sid FROM {facebook_status_tags} WHERE ". $rid ." AND type = '%s'";
+  }
+  else if ($uid == 0) {
+    if (is_numeric($pid)) {
+      $pid = array($pid);
+    }
+    $params = array_merge($params, $pid);
+    $sql .= implode(' OR ', array_fill(0, count($pid), 'fb.pid = %d'));
+    $sql .= ')';
+  }
+  else if ($pid == 0) {
+    if (is_numeric($uid)) {
+      $uid = array($uid);
+    }
+    $params = array_merge($params, $uid);
+    $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
+    $sql .= ')';
   }
   else {
     if (is_numeric($uid)) {
       $uid = array($uid);
     }
+    if (is_numeric($pid)) {
+      $pid = array($pid);
+    }
     $params = array_merge($params, $uid);
-    $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.rid = %d AND fbst.type = '%s' AND (";
+    $params = array_merge($params, $pid);
     $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
+    $sql .= ') AND (';
+    $sql .= implode(' OR ', array_fill(0, count($pid), 'fb.pid = %d'));
     $sql .= ')';
   }
+
   if ($count) {
     $result = db_query_range($sql, $params, 0, $count);
   }
@@ -195,15 +187,22 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
  * @param $time
  *   The time period in which to test for term popularity. Values can be "all,"
  *   "day," "week," "month," or "year."
+ * @param $own
+ *   If TRUE, only statuses posted on users' own profiles are counted. If FALSE,
+ *   all statuses are counted.
  * @return
  *   An array of term objects, with the most popular first, and with the
  *   property "popularity" added.
  */
-function facebook_status_tags_popular_terms($count = 1, $time = 'all') {
+function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FALSE) {
+  $restrict = '';
   if ($time == 'all') {
-    $result = db_query("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE type = 'term' GROUP BY rid ORDER BY count DESC");
+    if ($own == TRUE) {
+      $restrict = 'uid = pid AND ';
+    }
+    $result = db_query("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE ". $restrict ."type = 'term' GROUP BY rid ORDER BY count DESC");
   }
-  else {
+  else if (in_array($time, array('day', 'week', 'month', 'year'))) {
     $times = array(
       'day' => time() - (60 * 60 * 24),
       'week' => time() - (60 * 60 * 24 * 7),
@@ -211,8 +210,11 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all') {
       'year' => time() - (60 * 60 * 24 * 364),
     );
     $time = $times[$time];
+    if ($own == TRUE) {
+      $restrict = 'f.uid = f.pid AND ';
+    }
     $result = db_query("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
-      WHERE t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time);
+      WHERE ". $restrict ."t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time);
   }
   $terms = array();
   while ($obj = db_fetch_object($result)) {
@@ -323,10 +325,8 @@ function _facebook_status_tags_get_term($name) {
 /**
  * Implementation of hook_facebook_status_render().
  */
-function facebook_status_tags_facebook_status_render($account, $status, $linked = TRUE) {
-  if ($linked) {
-    return array('_facebook_status_tags_replace' => array());
-  }
+function facebook_status_tags_facebook_status_render($owner, $poster, $status) {
+  return array('_facebook_status_tags_replace' => array());
 }
 
 /**

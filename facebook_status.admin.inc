@@ -16,18 +16,31 @@ function facebook_status_admin($form_state) {
     '#description' => t("Facebook Mode makes this module work like Facebook, where the user's username is appended to the front of the status."),
     '#default_value' => variable_get('facebook_status_concat', 1),
   );
-  $form['facebook_status_slide'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Slide Effect'),
-    '#description' => t('Slides the status update form into a fieldset to reduce the space it takes up. Has no effect on the "share-status" page.'),
-    '#default_value' => variable_get('facebook_status_slide', 1),
-  );
   $form['facebook_status_legacy'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Legacy Mode'),
     '#description' => t('On nodes and/or user profiles, use the status of the author of the node or owner of the profile, respectively, in the status block.'),
     '#default_value' => variable_get('facebook_status_legacy', array('user' => 'user')),
     '#options' => array('node' => t('Nodes'), 'user' => t('User profiles')),
+  );
+  $form['facebook_status_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Form type'),
+    '#description' => t('Textfields are simpler; textareas are larger and somewhat more confusing for users with JavaScript turned off.'),
+    '#default_value' => variable_get('facebook_status_type', 'textfield'),
+    '#options' => drupal_map_assoc(array('textfield', 'textarea')),
+  );
+  $formats = filter_formats();
+  $options = array('none' => t('None (HTML escaped)'));
+  foreach ($formats as $format) {
+    $options[$format->format] = check_plain($format->name);
+  }
+  $form['facebook_status_filter'] = array(
+    '#type' => 'select',
+    '#title' => t('Input filter'),
+    '#description' => t('This input filter will run on all your statuses, so make sure it is secure.'),
+    '#default_value' => variable_get('facebook_status_filter', 1),
+    '#options' => $options,
   );
   $form['facebook_status_exclude'] = array(
     '#type' => 'textfield',
@@ -49,10 +62,10 @@ function facebook_status_admin($form_state) {
   $form['facebook_status_length'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum status length'),
-    '#description' => t('Must be a positive integer no greater than 255.'),
+    '#description' => t('Must be a positive integer no greater than 1000.'),
     '#default_value' => variable_get('facebook_status_length', 192),
     '#size' => 3,
-    '#maxlength' => 3,
+    '#maxlength' => 4,
     '#required' => TRUE,
   );
   return system_settings_form($form);
@@ -77,11 +90,11 @@ function facebook_status_admin_validate($form, &$form_state) {
 
   $size = $form_state['values']['facebook_status_size'];
   if (!is_numeric($size) || $size < 1 || $size != round($size)) {
-    form_set_error('facebook_status_size', t('The size of the status update field must be a positive integer!'));
+    form_set_error('facebook_status_size', t('The size of the status update field must be a positive integer.'));
   }
   $size = $form_state['values']['facebook_status_length'];
-  if (!is_numeric($size) || $size < 1 || $size != round($size) || $size > 255) {
-    form_set_error('facebook_status_length', t('The maximum status length must be a positive integer no greater than 255!'));
+  if (!is_numeric($size) || $size < 1 || $size != round($size) || $size > 1000) {
+    form_set_error('facebook_status_length', t('The maximum status length must be a positive integer no greater than 1000.'));
   }
 }
 
@@ -103,11 +116,20 @@ function facebook_status_admin_advanced($form_state) {
   );
   $form['facebook_status_size_long'] = array(
     '#type' => 'textfield',
-    '#title' => t('Long status update field size (long)'),
+    '#title' => t('Long status update field size'),
     '#description' => t('Sometimes, you just need the status update field to be longer than it is in the block. This applies mainly to the "share-status" page.'),
     '#default_value' => variable_get('facebook_status_size_long', 40),
     '#size' => 3,
     '#maxlength' => 3,
+    '#required' => TRUE,
+  );
+  $form['facebook_status_flood_user'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of OpenAPI accesses allowed per IP address per hour'),
+    '#description' => t('If you have problems with external sites or applications accessing the open API too often, disable permissions for using it and build RSS feeds in Views instead.'),
+    '#default_value' => variable_get('facebook_status_flood_user', 60),
+    '#size' => 10,
+    '#maxlength' => 10,
     '#required' => TRUE,
   );
   return system_settings_form($form);
@@ -119,6 +141,10 @@ function facebook_status_admin_advanced($form_state) {
 function facebook_status_admin_advanced_validate($form, &$form_state) {
   $size = $form_state['values']['facebook_status_size_long'];
   if (!is_numeric($size) || $size < 1 || $size != round($size)) {
-    form_set_error('facebook_status_size_long', t('The size of the long status update field must be a positive integer!'));
+    form_set_error('facebook_status_size_long', t('The size of the long status update field must be a positive integer.'));
+  }
+  $amount = $form_state['values']['facebook_status_flood_user'];
+  if (!is_numeric($amount) || $amount < 1 || $amount != round($amount)) {
+    form_set_error('facebook_status_flood_user', t('The size of the OpenAPI Access per IP field must be a positive integer.'));
   }
 }
