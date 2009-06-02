@@ -12,16 +12,16 @@
 function facebook_status_tags_views_default_views() {
   $view = new view;
   $view->name = 'facebook_status_tags';
-  $view->description = t('Facebook-style Statuses Tags');
+  $view->description = 'Facebook-style Statuses Tags';
   $view->tag = 'facebook_status';
   $view->view_php = '';
   $view->base_table = 'facebook_status';
   $view->is_cacheable = FALSE;
   $view->api_version = 2;
   $view->disabled = !module_exists('taxonomy');
-  $handler = $view->new_display('default', t('Tag Reference'), 'default');
+  $handler = $view->new_display('default', 'Tag Reference', 'default');
   $handler->override_option('fields', array(
-    'name' => array(
+    'pid_extra' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -39,13 +39,10 @@ function facebook_status_tags_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'link_to_user' => 1,
-      'overwrite_anonymous' => 0,
-      'anonymous_text' => '',
       'exclude' => 1,
-      'id' => 'name',
-      'table' => 'users',
-      'field' => 'name',
+      'id' => 'pid_extra',
+      'table' => 'facebook_status',
+      'field' => 'pid_extra',
       'relationship' => 'none',
     ),
     'status' => array(
@@ -76,7 +73,7 @@ function facebook_status_tags_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[name] [status] <em>[status_time]</em>',
+        'text' => '[pid_extra] [status] <em>[status_time]</em>',
         'make_link' => 0,
         'path' => '',
         'alt' => '',
@@ -91,7 +88,7 @@ function facebook_status_tags_views_default_views() {
         'html' => 0,
       ),
       'date_format' => 'time ago',
-      'custom_date_format' => '',
+      'custom_date_format' => '1',
       'exclude' => 0,
       'id' => 'status_time',
       'table' => 'facebook_status',
@@ -119,7 +116,7 @@ function facebook_status_tags_views_default_views() {
       ),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
-      'title' => t('Statuses Referencing #%1'),
+      'title' => 'Statuses Referencing #%1',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
       'validate_type' => 'taxonomy_term',
@@ -193,6 +190,20 @@ function facebook_status_tags_views_default_views() {
       'field' => 'type',
       'relationship' => 'none',
     ),
+    'pid_extra' => array(
+      'operator' => '=',
+      'value' => '0',
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => FALSE,
+        'label' => '',
+      ),
+      'id' => 'pid_extra',
+      'table' => 'facebook_status',
+      'field' => 'pid_extra',
+      'relationship' => 'none',
+    ),
   ));
   $handler->override_option('access', array(
     'type' => 'perm',
@@ -201,25 +212,19 @@ function facebook_status_tags_views_default_views() {
   $handler->override_option('title', 'Tags');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', 'mini');
-  $handler->override_option('style_plugin', 'list');
-  $handler->override_option('style_options', array(
-    'type' => 'ul',
-  ));
-  $handler = $view->new_display('page', 'Page', 'page_1');
   $handler->override_option('style_plugin', 'table');
   $handler->override_option('style_options', array(
     'grouping' => '',
-    'override' => 0,
+    'override' => 1,
     'sticky' => 0,
-    'order' => 'desc',
+    'order' => 'asc',
     'columns' => array(
-      'name' => 'name',
+      'pid_extra' => 'pid_extra',
       'status' => 'status',
       'status_time' => 'status_time',
     ),
     'info' => array(
-      'name' => array(
-        'sortable' => 0,
+      'pid_extra' => array(
         'separator' => '',
       ),
       'status' => array(
@@ -233,6 +238,7 @@ function facebook_status_tags_views_default_views() {
     ),
     'default' => '-1',
   ));
+  $handler = $view->new_display('page', 'Page', 'page_1');
   $handler->override_option('path', 'statuses/term');
   $handler->override_option('menu', array(
     'type' => 'none',
@@ -250,8 +256,8 @@ function facebook_status_tags_views_default_views() {
   $views[$view->name] = $view;
 
   $view = new view;
-  $view->name = 'facebook_status_convo';
-  $view->description = t('Facebook-style Statuses Conversations');
+  $view->name = 'facebook_status_mentions';
+  $view->description = 'Facebook-style Statuses Mentions';
   $view->tag = 'facebook_status';
   $view->view_php = '';
   $view->base_table = 'facebook_status';
@@ -260,7 +266,7 @@ function facebook_status_tags_views_default_views() {
   $view->disabled = FALSE;
   $handler = $view->new_display('default', 'User Reference', 'default');
   $handler->override_option('fields', array(
-    'name' => array(
+    'pid_extra' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -278,17 +284,11 @@ function facebook_status_tags_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'link_to_user' => 1,
-      'overwrite_anonymous' => 0,
-      'anonymous_text' => '',
       'exclude' => 1,
-      'id' => 'name',
-      'table' => 'users',
-      'field' => 'name',
+      'id' => 'pid_extra',
+      'table' => 'facebook_status',
+      'field' => 'pid_extra',
       'relationship' => 'none',
-      'override' => array(
-        'button' => 'Override',
-      ),
     ),
     'status' => array(
       'label' => '',
@@ -318,7 +318,7 @@ function facebook_status_tags_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[name] [status] <em>[status_time]</em>',
+        'text' => '[pid_extra] [status] <em>[status_time]</em>',
         'make_link' => 0,
         'path' => '',
         'alt' => '',
@@ -357,7 +357,7 @@ function facebook_status_tags_views_default_views() {
       'style_options' => array(),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
-      'title' => 'Conversation',
+      'title' => 'Mentions',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
       'validate_type' => 'php',
@@ -371,6 +371,7 @@ function facebook_status_tags_views_default_views() {
       'validate_user_roles' => array(
         '2' => 0,
         '3' => 0,
+        '4' => 0,
       ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
@@ -378,13 +379,13 @@ function facebook_status_tags_views_default_views() {
       'default_argument_fixed' => '',
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
-        'panel' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
         '1' => 0,
+        '2' => 0,
       ),
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
@@ -432,13 +433,26 @@ function facebook_status_tags_views_default_views() {
         'button' => 'Override',
       ),
     ),
+    'pid_extra' => array(
+      'operator' => '=',
+      'value' => '0',
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => FALSE,
+        'label' => '',
+      ),
+      'id' => 'pid_extra',
+      'table' => 'facebook_status',
+      'field' => 'pid_extra',
+      'relationship' => 'none',
+    ),
   ));
   $handler->override_option('access', array(
     'type' => 'perm',
     'perm' => 'view all statuses',
   ));
   $handler->override_option('title', 'User Mentions');
-  $handler->override_option('empty', 'These users have not exchanged conversation yet.');
   $handler->override_option('empty_format', '1');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', 'mini');
@@ -471,7 +485,7 @@ function facebook_status_tags_views_default_views() {
     'default' => '-1',
   ));
   $handler = $view->new_display('page', 'Page', 'page_1');
-  $handler->override_option('path', 'statuses/conversation');
+  $handler->override_option('path', 'statuses/mentions');
   $handler->override_option('menu', array(
     'type' => 'none',
     'title' => '',
@@ -510,6 +524,7 @@ function facebook_status_tags_views_default_views() {
       'validate_user_roles' => array(
         '2' => 0,
         '3' => 0,
+        '4' => 0,
       ),
       'override' => array(
         'button' => 'Use default',
@@ -520,13 +535,13 @@ function facebook_status_tags_views_default_views() {
       'default_argument_fixed' => '',
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
-        'panel' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
         '1' => 0,
+        '2' => 0,
       ),
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
@@ -552,23 +567,27 @@ function facebook_status_tags_views_default_views() {
     ),
   ));
   $handler->override_option('footer', '<?php
-  //Adds a link to view your conversation with the user whose profile you are viewing.
-  global $user;
-  $account = user_load(array(\'uid\' => arg(1)));
-  if ($account->uid != $user->uid) {
-    echo l(\'View your conversation with \'. check_plain($account->name), \'statuses/conversation/\'. check_plain($account->name) .\',\'. check_plain($user->name));
-  }
+  /*
+    //Adds a link to view your conversation with the user whose profile you are viewing.
+    global $user;
+    $account = user_load(array(\'uid\' => arg(1)));
+    if ($account->uid != $user->uid) {
+      echo l(\'View mentions between you and \'. $account->name, \'statuses/conversation/\'. check_plain($account->name) .\',\'. check_plain($user->name));
+    }
+   */
   ?>');
   $handler->override_option('footer_format', '3');
   $handler->override_option('footer_empty', 0);
   $handler->override_option('empty', '<?php
-  $account = user_load(array(\'uid\' => arg(1)));
-  global $user;
-  if ($user->uid == $account->uid) {
-    echo \'No one has mentioned you yet.\';
-  }
-  else {
-    echo \'No one has mentioned \'. check_plain($account->name) .\'.\';
+  if (arg(0) == \'user\') {
+    $account = user_load(array(\'uid\' => arg(1)));
+    global $user;
+    if ($user->uid == $account->uid) {
+      echo \'No one has mentioned you yet.\';
+    }
+    else {
+      echo \'No one has mentioned \'. check_plain($account->name) .\'.\';
+    }
   }
   ?>');
   $handler->override_option('empty_format', '3');

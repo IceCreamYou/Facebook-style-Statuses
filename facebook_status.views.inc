@@ -11,9 +11,7 @@
  */
 function facebook_status_views_data() {
   //Basic table information.
-
   $data['facebook_status']['table']['group']  = t('Facebook-style Statuses');
-
   $data['users']['table']['join'] = array(
     'facebook_status' => array(
       'left_field' => 'uid',
@@ -24,6 +22,7 @@ function facebook_status_views_data() {
     'users' => array(
       'left_field' => 'uid',
       'field' => 'uid',
+      'type' => 'INNER',
     ),
   );
 
@@ -65,7 +64,7 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Declares the User ID column.
+  //Declares the Owner UID column.
   $data['facebook_status']['uid'] = array(
     'title' => t('User ID'),
     'help' => t('The User ID of the owner of the status.'),
@@ -81,6 +80,74 @@ function facebook_status_views_data() {
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+
+  //Declares the Poster UID column.
+  $data['facebook_status']['pid'] = array(
+    'title' => t('Poster UID'),
+    'help' => t('The User ID of the poster of the status.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+
+  //Alias for Poster UID to use the name.
+  $data['facebook_status']['pid_name'] = array(
+    'title' => t('Poster Name'),
+    'help' => t('The name of the user who posted the status.'),
+    'field' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_field_poster',
+      'click sortable' => FALSE,
+    ),
+    'filter' => array(
+      'field' => 'pid',
+      'handler' => 'views_handler_filter_user_name',
+    ),
+    'sort' => array(
+      'field' => 'pid',
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'field' => 'pid',
+      'handler' => 'views_handler_argument_user_uid',
+    ),
+  );
+
+  //Alias for extras for the poster.
+  $data['facebook_status']['pid_extra'] = array(
+    'title' => t('Cross-Posting'),
+    'help' => t('Handling that recognizes the difference between a user posting on its own profile and a user posting on another profile.'),
+    'field' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_field_cross',
+      'click sortable' => FALSE,
+      'label' => t('Users'),
+    ),
+    'filter' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_filter_own',
+      'label' => t('Restrict to own statuses'),
+    ),
+  );
+  $data['facebook_status']['pid_extra_2'] = array(
+    'title' => t('Not own statuses'),
+    'help' => t("Does not show statuses posted to one's own profile."),
+    'filter' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_filter_not_own',
+      'label' => t("Restrict to others' statuses"),
     ),
   );
 
@@ -155,10 +222,11 @@ function facebook_status_views_data_alter(&$data) {
       'title' => t('Users'),
       'label' => t('Users'),
       'help' => t('Add a relationship to gain access to information related to the users who submitted the relevant statuses.'),
-      'relationship table' => 'facebook_status',
+      'relationship table' => 'users',
       'relationship field' => 'uid',
-      'base' => 'users',
+      'base' => 'facebook_status',
       'field' => 'uid',
+      'type' => 'INNER',
       'handler' => 'facebook_status_views_handler_relationship',
     ),
   );
@@ -173,14 +241,26 @@ function facebook_status_views_handlers() {
       'path' => drupal_get_path('module', 'facebook_status'),
     ),
     'handlers' => array(
-      'facebook_status_views_handler_relationship' => array(
-        'parent' => 'views_handler_relationship',
+      'facebook_status_views_handler_field_cross' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_poster' => array(
+        'parent' => 'views_handler_field_user',
+      ),
+      'facebook_status_views_handler_field_status' => array(
+        'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_filter' => array(
         'parent' => 'views_handler_filter_boolean_operator',
       ),
-      'facebook_status_views_handler_field_status' => array(
-        'parent' => 'views_handler_field',
+      'facebook_status_views_handler_filter_own' => array(
+        'parent' => 'views_handler_filter_boolean_operator',
+      ),
+      'facebook_status_views_handler_filter_not_own' => array(
+        'parent' => 'views_handler_filter_boolean_operator',
+      ),
+      'facebook_status_views_handler_relationship' => array(
+        'parent' => 'views_handler_relationship',
       ),
     ),
   );

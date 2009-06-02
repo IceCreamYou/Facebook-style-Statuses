@@ -15,7 +15,7 @@
  */
 function facebook_status_help($path, $arg) {
   if ($path == 'admin/help#facebook_status') {
-    return t('Allows users the ability to have a Facebook-style "status." Please see the <a href="http://drupal.org/project/facebook_status" rel="nofollow">Project page</a> for more information.');
+    return t('Allows users the ability to have a Facebook-style "status" or to post messages on the profiles of other users. Please see the <a href="http://drupal.org/project/facebook_status" rel="nofollow">Project page</a> for more information.');
   }
 }
 
@@ -78,12 +78,14 @@ function facebook_status_menu() {
     'page callback' => '_facebook_status_user_autocomplete',
     'access arguments' => array('access administration pages'),
     'type' => MENU_CALLBACK,
+    'file' => 'facebook_status.admin.inc',
   );
   $items['statuses/openapi'] = array(
     'title' => 'Status Open API',
     'page callback' => '_facebook_status_openapi',
     'access arguments' => array('use open API'),
     'type' => MENU_CALLBACK,
+    'file' => 'facebook_status.openapi.inc',
   );
   $items['facebook_status/js'] = array(
     'title' => 'Save status update form',
@@ -278,13 +280,12 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  *   have permission to view the status.
  */
 function theme_facebook_status_item($status = FALSE) {
+  global $user;
   if (!$status) {
-    $status_orig = facebook_status_get_status(0, 0, 1, -1, FALSE);
-    $status = $status_orig[0];
+    $status = _facebook_status_get_status_fast($user->uid);
   }
   $owner = user_load(array('uid' => $status->uid));
   $poster = user_load(array('uid' => $status->pid));
-  global $user;
   if (!user_access('view all statuses') && $user->uid != $owner->uid && $user->uid != $poster->uid) {
     return FALSE;
   }
@@ -300,20 +301,26 @@ function theme_facebook_status_item($status = FALSE) {
       $status->status = t('does not have a status.');
     }
   }
+  $status_text = _facebook_status_run_filter($status->status);
+  //Invokes hook_facebook_status_render($owner, $poster, $status).
+  $functions = module_invoke_all('facebook_status_render', $owner, $poster, $status_text);
+  foreach ($functions as $function => $args) {
+    $status_text = call_user_func_array($function, array_merge(array($status_text), $args));
+  }
   $edit = '';
   if ($status_exists && (($user->uid != $owner->uid && user_access('edit all statuses')) || ($user->uid == $poster->uid && user_access('edit own status')))) {
-    $edit = ' '. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete');
+    $edit = ' <span id="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
-  $args = array('@status' => $status->status, '%time' => $time, '!edit' => $edit);
+  $args = array('!status' => $status_text, '%time' => $time, '!edit' => $edit);
   if ($owner->uid == $poster->uid) {
     $args['!user'] = $owner_name;
     if (variable_get('facebook_status_concat', 1)) {
       if (_facebook_status_possessive($status->status)) {
-        $output = t('!user@status %time!edit', $args);
+        $output = t('!user!status %time!edit', $args);
       }
       else {
-        $output = t('!user @status %time!edit', $args);
+        $output = t('!user !status %time!edit', $args);
       }
     }
     else {
@@ -323,12 +330,11 @@ function theme_facebook_status_item($status = FALSE) {
   else {
     $args['!owner'] = $owner_name;
     $args['!poster'] = $poster_name;
-    $output = t('!poster»!owner: @status %time!edit', $args);
-  }
-  //Invokes hook_facebook_status_render($owner, $poster, $status).
-  $functions = module_invoke_all('facebook_status_render', $owner, $poster, $output);
-  foreach ($functions as $function => $args) {
-    $output = call_user_func_array($function, array_merge(array($output), $args));
+    $args['!conversation'] = '';
+    if (module_exists('views') && $owner->uid != $poster->uid) {
+      $args['!conversation'] = ' '. l(t('Conversation'), 'statuses/conversation/'. check_plain($owner->name) .','. check_plain($poster->name));
+    }
+    $output = t('!poster &raquo; !owner: !status %time!edit!conversation', $args);
   }
   return $output;
 }
@@ -355,8 +361,8 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE) {
       return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('_facebook_status_status', $account, $size) .'</div>';
     }
   }
-  $status = facebook_status_get_status($account->uid, $account->uid, 1, -1, FALSE);
-  return theme('facebook_status_item', $status[0]);
+  $status = _facebook_status_get_status_fast($account->uid);
+  return theme('facebook_status_item', $status);
 }
 
 /**
@@ -381,27 +387,6 @@ function theme_facebook_status_time($status_time) {
   else {
     return format_date($status_time, 'small');
   }
-}
-
-
-/**
- * Builds flag links to display for statuses.
- *
- * @param $sid
- *   The Status ID of the status for which flags should be built.
- * @return
- *   Themed flag links.
- */
-function theme_facebook_status_flag_create($sid) {
-  if (!module_exists('flag')) {
-    return '';
-  }
-  $links = array();
-  $result = db_query("SELECT name FROM {flags} WHERE content_type = 'facebook_status'");
-  while ($name = db_fetch_object($result)) {
-    $links[] = flag_create_link($name->name, $sid);
-  }
-  return implode(' ', $links);
 }
 
 //====
@@ -584,7 +569,7 @@ function facebook_status_has_status($uid = FALSE, $pid = FALSE) {
  * @param $sid
  *   The Status ID.
  * @return
- *   A full status object containing sid, status, status_time, and uid.
+ *   A full status object containing sid, status, status_time, uid, and pid.
  */
 function facebook_status_load($sid) {
   return db_fetch_object(db_query("SELECT * FROM {facebook_status} WHERE sid = %d", $sid));
@@ -633,12 +618,12 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
     $your = t("!user's", array('!user' => theme('username', $account)));
   }
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
-  $status = facebook_status_get_status($account->uid, $account->uid, 1, -1, FALSE);
-  if ($new_status != $status[0]->status && $account->uid) {
+  $status = _facebook_status_get_status_fast($account->uid);
+  if ($new_status != $status->status && $account->uid) {
     //If a new status is submitted on one's own profile within 10 seconds of the old one, we assume the user didn't mean to post the first one.
-    if (time() - $status[0]->status_time < 10 && $account->uid != $user->uid) {
+    if (time() - $status->status_time < 10 && $account->uid != $user->uid) {
       $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
-      db_query($sql, $new_status, $time, $status[0]->sid);
+      db_query($sql, $new_status, $time, $status->sid);
     }
     else {
       $object = array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid, 'pid' => $user->uid);
@@ -770,180 +755,27 @@ function _facebook_status_possessive($status) {
 }
 
 /**
- * Handles the Open API.
+ * Helper function that runs filters on statuses.
  */
-function _facebook_status_openapi() {
-  if (!flood_is_allowed('facebook_status_flood_user', variable_get('facebook_status_flood_user', 60))) {
-    echo t('You have exceeded the maximum number of open-API accesses per hour. Please try again later.');
+function _facebook_status_run_filter($status) {
+  if (variable_get('facebook_status_filter', 1) != 'none') {
+    return check_markup($status, variable_get('facebook_status_filter', 1));
   }
-  flood_register_event('facebook_status_flood_user');
-  $name = $_GET['name'];
-  $count = $_GET['count'];
-  $type = $_GET['type'];
-  $format = $_GET['format'];
-  if ($format != 'json' && $format != 'xml' && $format != 'short' && $format) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo t('invalid "format" parameter');
-    return;
-  }
-  if ((!is_numeric($count) || round($count) != $count || $count < 1 || $count > 25) && $format != 'short' && $count) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo t('"count" parameter must be a positive integer no larger than 25');
-    return;
-  }
-  if (($type == 'tag' || $type == 'user' || $type == 'userref') && !$name) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo t('if "type" is "tag" or "user" or "userref" you must use the "name" parameter as well');
-    return;
-  }
-  if ($type && $type != 'tag' && $type != 'user' && $type != 'public' && $type != 'userref' && $type != 'trend') {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo t('invalid "type" parameter');
-    return;
-  }
-  if (($type == 'tag' || $type == 'trend') && (!module_exists('facebook_status_tags') || !module_exists('taxonomy'))) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo 'invalid "type" parameter';
-    return;
-  }
-  if ($type == 'userref' && !module_exists('facebook_status_tags')) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo t('invalid "type" parameter');
-    return;
-  }
-  if ($type == 'trend' && $name && $name != 'day' && $name != 'week' && $name != 'month' && $name != 'year' && $name != 'all') {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo t('if the "name" parameter is specified with type "trend" then it must be one of "day" "week" "month" "year" "all"');
-    return;
-  }
-  if (!$type && !$name) {
-    $type = 'public';
-  }
-  if (!$type && $name) {
-    $type = 'user';
-  }
-  if (!$count || $format == 'short') {
-    $count = 1;
-  }
-  if (!$format) {
-    $format = 'short';
-  }
-  if ($type == 'user' || $type == 'userref') {
-    $account = user_load(array('name' => $name));
-    if (!$account->uid) {
-      drupal_set_header('Content-Type: text/html; charset: utf-8');
-      echo 'invalid name';
-      return;
-    }
-  }
-
-  $statuses = array();
-  $terms = array();
-  switch ($type) {
-    case 'tag':
-      $statuses = facebook_status_tags_get_statuses($name, 'term', $count);
-      break;
-    case 'userref':
-      $statuses = facebook_status_tags_get_statuses($name, 'user', $count);
-      break;
-    case 'user':
-      $statuses = facebook_status_get_status($account->uid, $account->uid, $count, 0, TRUE);
-      break;
-    case 'public':
-      $statuses = facebook_status_get_statuses(array(), array(), $count, FALSE);
-      break;
-    case 'trend':
-      $terms = facebook_status_tags_popular_terms($count, $name);
-      break;
-  }
-  if ((empty($statuses) && $type != 'trend') || (empty($terms) && $type == 'trend')) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    echo t('no statuses match your criteria');
-    return;
-  }
-  $clean = array();
-  $xml = '';
-  foreach ($statuses as $status) {
-    $array = array(
-      'text' => check_plain($status->status),
-      'time' => $status->status_time,
-      'sid' => $status->sid,
-      'uid' => $status->uid,
-    );
-    $xml .= '
-  <status>
-'. format_xml_elements($array) .'
-  </status>';
-    $clean[] = $array;
-  }
-  foreach ($terms as $term) {
-    $array = array(
-      'name' => check_plain($term->name),
-      'tid' => $term->tid,
-      'popularity' => $term->popularity,
-    );
-    $xml .= '
-  <term>
-'. format_xml_elements($array) .'
-  </term>';
-    $clean[] = $array;
-  }
-  if ($format == 'xml') {
-    drupal_set_header('Content-Type: application/xml; charset: utf-8');
-    echo '<?xml version="1.0" encoding="UTF-8"?>
-';
-    if ($type != 'trend') {
-      echo '<statuses>'. $xml .'
-</statuses>';
-    }
-    else {
-      echo '<terms>'. $xml .'
-</terms>';
-    }
-  }
-  else if ($format == 'json') {
-    drupal_json($clean);
-  }
-  else if ($format == 'short') {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
-    if ($type != 'trend') {
-      echo $clean[0]['text'];
-    }
-    else {
-      echo $clean[0]['name'];
-    }
-  }
+  return check_plain($status);
 }
 
 /**
- * Autocompletes multiple-username textfields.
- * Some awkwardness exists if a user has quotes or commas in their username.
- * Adapted from taxonomy.module.
+ * Gets the most recent status posted by a user on her own profile.
+ * Operates almost 6 times faster than facebook_status_get_status().
+ * Equivalent to facebook_status_get_status($uid, $uid, 1, -1, FALSE).
  *
- * @param $string
- *   The list of names.
+ * @param $uid
+ *   The User ID of the user whose latest status should be retrieved.
+ * @return
+ *   A status object.
  */
-function _facebook_status_user_autocomplete($string = '') {
-  $array = drupal_explode_tags($string);
-  //The user enters a comma-separated list of names. We only autocomplete the last name.
-  $search = trim(array_pop($array));
-  $matches = array();
-  if ($search != '') {
-    $result = db_query_range("SELECT DISTINCT(name) FROM {users}
-      WHERE status <> 0 AND uid <> 0 AND LOWER(name) LIKE LOWER('%s%%')
-      ORDER BY name ASC", $search, 0, 10);
-    $prefix = count($array) ? implode(', ', $array) .', ' : '';
-    while ($user = db_fetch_object($result)) {
-      $name = $user->name;
-      //Commas and quotes in terms are special cases, so encode them.
-      //Use strpos() to check if they exist first since str_replace() is costly.
-      if (strpos($user->name, ',') !== FALSE || strpos($user->name, '"') !== FALSE) {
-        $name = '"'. str_replace('"', '""', $user->name) .'"';
-      }
-      $matches[$prefix . $name] = check_plain($user->name);
-    }
-  }
-  drupal_json($matches);
+function _facebook_status_get_status_fast($uid) {
+  return db_fetch_object(db_query("SELECT * FROM {facebook_status} WHERE uid = %d AND pid = %d ORDER BY sid DESC", $uid, $uid));
 }
 
 //======
@@ -984,8 +816,7 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE) {
     if (variable_get('facebook_status_concat', 1)) {
       $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
     }
-    $status = facebook_status_get_status($account->uid, $account->uid, 1, -1, FALSE);
-    $status = $status[0];
+    $status = _facebook_status_get_status_fast($account->uid);
     if ($status->status_time) {
       $default = $status->status;
     }
@@ -1112,30 +943,8 @@ function facebook_status_save_js() {
   unset($new_form['slider']['#prefix']);
   unset($new_form['status']['#suffix']);
   $output = theme('status_messages') . drupal_render($new_form);
-
   //Return the results.
   drupal_json(array('status' => TRUE, 'data' => $output));
-}
-
-//===========================
-//SELF-INTEGRATION (FILTERS).
-//===========================
-
-/**
- * Implementation of hook_facebook_status_render().
- */
-function facebook_status_facebook_status_render($account, $status) {
-  return array('_facebook_status_run_filter' => array());
-}
-
-/**
- * Helper function that runs the statuses.
- */
-function _facebook_status_run_filter($status) {
-  if (variable_get('facebook_status_filter', 1) != 'none') {
-    return check_markup($status, variable_get('facebook_status_filter', 1));
-  }
-  return check_plain($status);
 }
 
 //====================
@@ -1146,8 +955,7 @@ function _facebook_status_run_filter($status) {
  * Note that Actions integration is not present, even though Triggers
  * integration is. That's because there's really no easily conceivable action
  * that Facebook-style Statuses should define except to display a message to the
- * user. However, that action is already available, just through the UI for all
- * hooks. Use the triggerunlock module, which lets you use any action with any
+ * user. Use the triggerunlock module, which lets you use any action with any
  * hook, to access the display message action with facebook_status triggers.
  * Of course, you can also write your own.
  */
@@ -1405,71 +1213,6 @@ function facebook_status_flag_default_flags() {
  * and the 'facebook_status_flag_update' variable tells us if this is true.
  */
 if (module_exists('flag') && variable_get('facebook_status_flag_update', FALSE)) {
-  /**
-   * Adds a new flag type.
-   * This is here because the Flag module does not support magic include files.
-   */
-  class facebook_status_flag extends flag_flag {
-    function _load_content($content_id) {
-      return is_numeric($content_id) ? facebook_status_load($content_id) : NULL;
-    }
-    function applies_to_content_object($status) {
-      //Check for status_time == 0 so we don't flag blank statuses.
-      if ($status && $status->status_time) {
-        return TRUE;
-      }
-      return FALSE;
-    }
-    function get_content_id($status) {
-      return $status->sid;
-    }
-    function get_labels_token_types() {
-      return array('facebook_status');
-    }
-    function get_views_info() {
-      return array(
-        'views table' => 'facebook_status',
-        'join field' => 'uid',
-        'title field' => 'status',
-        'title' => t('Facebook-style Status'),
-        'help' => t('Display information about the flag set on a status.'),
-      );
-    }
-    function applies_to_content_id_array($content_ids) {
-      foreach ($content_ids as $content_id) {
-        $passed[$content_id] = TRUE;
-      }
-      return $passed;
-    }
-    function get_relevant_action_objects($content_id) {
-      return array(
-        'facebook_status' => $this->fetch_content($content_id),
-      );
-    }
-    function replace_tokens($label, $contexts, $content_id) {
-      if ($content_id && ($status = $this->fetch_content($content_id))) {
-        $contexts['facebook_status'] = $status;
-      }
-      return parent::replace_tokens($label, $contexts, $content_id);
-    }
-    function get_flag_action($content_id) {
-      $flag_action = parent::get_flag_action($content_id);
-      $status = $this->fetch_content($content_id);
-      $flag_action->content_title = $status->status;
-      $flag_action->content_url = _flag_url('user/'. $status->uid);
-      return $flag_action;
-    }
-    function rules_get_event_arguments_definition() {
-      return array(
-        'account' => array(
-          'type' => 'facebook_status',
-          'label' => t('Flagged status'),
-          'handler' => 'flag_rules_get_event_argument',
-        ),
-      );
-    }
-    function rules_get_element_argument_definition() {
-      return array('type' => 'facebook_status', 'label' => t('Flagged status'));
-    }
-  }
+  //This is here because the Flag module does not support magic include files.
+  module_load_include('inc', 'facebook_status', 'facebook_status.flag');
 }

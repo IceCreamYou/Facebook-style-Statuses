@@ -3,7 +3,7 @@
 
 /**
  * @file
- *   Allows users to have a "status."
+ *   Handles admin pages for the Facebook-style Statuses module.
  */
 
 /**
@@ -147,4 +147,35 @@ function facebook_status_admin_advanced_validate($form, &$form_state) {
   if (!is_numeric($amount) || $amount < 1 || $amount != round($amount)) {
     form_set_error('facebook_status_flood_user', t('The size of the OpenAPI Access per IP field must be a positive integer.'));
   }
+}
+
+/**
+ * Autocompletes multiple-username textfields.
+ * Some awkwardness exists if a user has quotes or commas in their username.
+ * Adapted from taxonomy.module.
+ *
+ * @param $string
+ *   The list of names.
+ */
+function _facebook_status_user_autocomplete($string = '') {
+  $array = drupal_explode_tags($string);
+  //The user enters a comma-separated list of names. We only autocomplete the last name.
+  $search = trim(array_pop($array));
+  $matches = array();
+  if ($search != '') {
+    $result = db_query_range("SELECT DISTINCT(name) FROM {users}
+      WHERE status <> 0 AND uid <> 0 AND LOWER(name) LIKE LOWER('%s%%')
+      ORDER BY name ASC", $search, 0, 10);
+    $prefix = count($array) ? implode(', ', $array) .', ' : '';
+    while ($user = db_fetch_object($result)) {
+      $name = $user->name;
+      //Commas and quotes in terms are special cases, so encode them.
+      //Use strpos() to check if they exist first since str_replace() is costly.
+      if (strpos($user->name, ',') !== FALSE || strpos($user->name, '"') !== FALSE) {
+        $name = '"'. str_replace('"', '""', $user->name) .'"';
+      }
+      $matches[$prefix . $name] = check_plain($user->name);
+    }
+  }
+  drupal_json($matches);
 }

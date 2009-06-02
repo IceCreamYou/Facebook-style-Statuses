@@ -32,7 +32,7 @@ function facebook_status_preprocess_author_pane(&$variables) {
     }
     if (!$facebook_status_status) {
       $facebook_status_status = t('does not have a status.');
-    }  
+    }
 
     //The fully themed status, including the themed username (if settings permit) and the time.
     $variables['facebook_status'] = $facebook_status;
