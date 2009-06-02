@@ -347,18 +347,20 @@ function theme_facebook_status_item($status = FALSE) {
  *   detect the relevant user automatically according to the settings.
  * @param $size
  *   The size of the status update textfield, or FALSE to use the setting.
+ * @param $view
+ *   If TRUE, appends a view of posts on the relevant user's profile.
  * @return
  *   HTML to display the status update form or FALSE if the user cannot have a
  *   status.
  */
-function theme_facebook_status_form_display($account = FALSE, $size = FALSE) {
+function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $view = FALSE) {
   global $user;
   if ($account === FALSE) {
     $account = facebook_status_choose_owner(FALSE);
   }
   if (($user->uid == $account->uid && user_access('edit own status')) || ($user->uid != $account->uid && user_access('post on all profiles'))) {
     if (!_facebook_status_exclude($account)) {
-      return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('_facebook_status_status', $account, $size) .'</div>';
+      return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('_facebook_status_status', $account, $size, $view) .'</div>';
     }
   }
   $status = _facebook_status_get_status_fast($account->uid);
@@ -789,15 +791,18 @@ function _facebook_status_get_status_fast($uid) {
  *   The $user object for the user whose profile will be posted to.
  * @param $size
  *   The size of the status update textfield, or FALSE to use the setting.
+ * @param $view
+ *   If TRUE, includes a view of posts on the relevant user's wall.
  * @return
  *   A $form array.
  */
-function _facebook_status_status($form_state, $account = NULL, $size = FALSE) {
+function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $view = FALSE) {
   global $user;
   if (isset($form_state['facebook_status'])) {
     $aid = $form_state['facebook_status']['account'];
     $account = user_load(array('uid' => $aid));
     $size = $form_state['facebook_status']['size'];
+    $view = $form_state['facebook_status']['fbss-view-value'];
   }
 
   if (!$size) {
@@ -857,6 +862,14 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE) {
     '#suffix' => '</span>',
     '#resizable' => FALSE,
   );
+  if ($view && module_exists('views')) {
+    $form['fbss-view'] = array(
+      '#value' => views_embed_view('facebook_status', 'default', $account->uid),
+      '#suffix' => '</span>',
+    );
+    unset($form['status']['#suffix']);
+    drupal_add_css($path .'/facebook_status_view.css');
+  }
   $form['account'] = array(
     '#type' => 'value',
     '#value' => $account->uid,
@@ -864,6 +877,10 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE) {
   $form['size'] = array(
     '#type' => 'value',
     '#value' => $size,
+  );
+  $form['fbss-view-value'] = array(
+    '#type' => 'value',
+    '#value' => $view,
   );
   $form['fbss-submit'] = array(
     '#type' => 'submit',
@@ -919,6 +936,7 @@ function _facebook_status_status_submit($form, &$form_state) {
   $form_state['facebook_status'] = array(
     'account' => $aid,
     'size' => $size,
+    'fbss-view-value' => $form_state['values']['fbss-view-value'],
   );
   $form_state['rebuild'] = TRUE;
 }
@@ -939,6 +957,7 @@ function facebook_status_save_js() {
   //Get HTML for the replacement form.
   $new_form['slider'] = $form['slider'];
   $new_form['status'] = $form['status'];
+  $new_form['fbss-view'] = $form['fbss-view'];
   //Prevent duplicate wrappers.
   unset($new_form['slider']['#prefix']);
   unset($new_form['status']['#suffix']);
