@@ -242,7 +242,7 @@ function facebook_status_theme($existing, $type, $theme, $path) {
   return array(
     'facebook_status_item' => array(
       'arguments' => array(
-        'status' => NULL,
+        'status' => FALSE,
       ),
     ),
     'facebook_status_form_display' => array(
@@ -281,7 +281,7 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  */
 function theme_facebook_status_item($status = FALSE) {
   global $user;
-  if (!$status) {
+  if ($status === FALSE) {
     $status = _facebook_status_get_status_fast($user->uid);
   }
   $owner = user_load(array('uid' => $status->uid));
@@ -770,7 +770,7 @@ function _facebook_status_run_filter($status) {
 
 /**
  * Gets the most recent status posted by a user on her own profile.
- * Operates almost 6 times faster than facebook_status_get_status().
+ * Operates over 5 times faster than facebook_status_get_status().
  * Equivalent to facebook_status_get_status($uid, $uid, 1, -1, FALSE).
  *
  * @param $uid
@@ -779,7 +779,11 @@ function _facebook_status_run_filter($status) {
  *   A status object.
  */
 function _facebook_status_get_status_fast($uid) {
-  return db_fetch_object(db_query("SELECT * FROM {facebook_status} WHERE uid = %d AND pid = %d ORDER BY sid DESC", $uid, $uid));
+  $status = db_fetch_object(db_query("SELECT * FROM {facebook_status} WHERE uid = %d AND pid = %d ORDER BY sid DESC", $uid, $uid));
+  if (!$status) {
+    $status = (object) array('uid' => $uid, 'pid' => $uid, 'status' => '', 'status_time' => 0);
+  }
+  return $status;
 }
 
 //======
