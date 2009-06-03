@@ -2,7 +2,7 @@
 
 #-facebook-status-status .view {
   clear: both;
-  float: right;
+  float: left;
 }
 
 #-facebook-status-status #facebook_status_chars, #-facebook-status-status #edit-fbss-submit {

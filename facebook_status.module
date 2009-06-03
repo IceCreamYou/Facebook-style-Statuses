@@ -348,7 +348,9 @@ function theme_facebook_status_item($status = FALSE) {
  * @param $size
  *   The size of the status update textfield, or FALSE to use the setting.
  * @param $view
- *   If TRUE, appends a view of posts on the relevant user's profile.
+ *   The machine name of a view of statuses to append to the status update form.
+ *   This view should take one argument - the User ID of the user whose profile
+ *   is being viewed.
  * @return
  *   HTML to display the status update form or FALSE if the user cannot have a
  *   status.
@@ -792,7 +794,9 @@ function _facebook_status_get_status_fast($uid) {
  * @param $size
  *   The size of the status update textfield, or FALSE to use the setting.
  * @param $view
- *   If TRUE, includes a view of posts on the relevant user's wall.
+ *   The machine name of a view of statuses to append to the status update form.
+ *   This view should take one argument - the User ID of the user whose profile
+ *   is being viewed.
  * @return
  *   A $form array.
  */
@@ -864,7 +868,7 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
   );
   if ($view && module_exists('views')) {
     $form['fbss-view'] = array(
-      '#value' => views_embed_view('facebook_status', 'default', $account->uid),
+      '#value' => views_embed_view($view, 'default', $account->uid),
       '#suffix' => '</span>',
     );
     unset($form['status']['#suffix']);
@@ -1148,6 +1152,24 @@ function facebook_status_twitter($account, $status) {
   $twitter_account = $twitter_accounts[$data['facebook_status_twitter']];
   module_load_include('inc', 'twitter');
   twitter_set_status($twitter_account['screen_name'], $twitter_account['password'], $status);
+}
+
+//==========================
+//SMS FRAMEWORK INTEGRATION.
+//==========================
+
+/**
+ * Implementation of hook_sms_incoming().
+ */
+function facebook_status_sms_incoming($op, $number, $message, $options = NULL) {
+  global $user;
+  if ($op == 'process' && $user->uid && drupal_substr($message, 0, 3) == 's: ') {
+    $message = drupal_substr($message, 3);
+    if (drupal_strlen($message) > variable_get('facebook_status_length', 192)) {
+      $message = drupal_substr($message, 0, variable_get('facebook_status_length', 192) - 3) .'...';
+    }
+    facebook_status_save_status($user, $message);
+  }
 }
 
 //=================
