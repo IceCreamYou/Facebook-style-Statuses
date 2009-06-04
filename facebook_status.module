@@ -53,7 +53,16 @@ function facebook_status_menu() {
     'page arguments' => array('facebook_status_form_display'),
     'access arguments' => array('edit own status'),
     'description' => 'Allows users to post items to their status from other sites.',
-    'type' => 'MENU_SUGGESTED_ITEM',
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+  $items['statuses/conversation'] = array(
+    'title' => 'Conversation',
+    'title callback' => '_facebook_status_conversation_title',
+    'page callback' => '_facebook_status_conversation',
+    'access arguments' => array('post on all profiles'),
+    'description' => 'Shows a conversation view with a form to contribute to the conversation if applicable.',
+    'type' => MENU_CALLBACK,
+    'file' => 'facebook_status.conversation.inc',
   );
   $items['statuses/%facebook_status/edit'] = array(
     'title' => 'Edit status',
@@ -95,6 +104,30 @@ function facebook_status_menu() {
     'type' => MENU_CALLBACK,
   );
   return $items;
+}
+
+/**
+ * Generates the title for the conversation page.
+ */
+function _facebook_status_conversation_title() {
+  $args = explode(',', arg(2));
+  if (count($args) === 1 && $args[0] == $user->uid) {
+    //The argument fails.
+    return t('Conversation');
+  }
+  if (is_numeric($args[0])) {
+    if (!$args[1]) {
+      $args[1] = $GLOBALS['user']->uid;
+    }
+    $account1 = user_load(array('uid' => $args[0]));
+    $account2 = user_load(array('uid' => $args[1]));
+    //Technically, we don't know which one is the owner and which one is the poster, but it makes no difference.
+    return t('Conversation between @owner and @poster', array('@owner' => $account1->name, '@poster' => $account2->name));
+  }
+  if (!$args[1]) {
+    $args[1] = $GLOBALS['user']->name;
+  }
+  return t('Conversation between @owner and @poster', array('@owner' => $args[0], '@poster' => $args[1]));
 }
 
 /**
@@ -308,7 +341,7 @@ function theme_facebook_status_item($status = FALSE) {
     $status_text = call_user_func_array($function, array_merge(array($status_text), $args));
   }
   $edit = '';
-  if ($status_exists && (($user->uid != $owner->uid && user_access('edit all statuses')) || ($user->uid == $poster->uid && user_access('edit own status')))) {
+  if ($status_exists && (user_access('edit all statuses') || ($user->uid == $poster->uid && user_access('edit own status')))) {
     $edit = ' <span id="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
@@ -324,7 +357,7 @@ function theme_facebook_status_item($status = FALSE) {
       }
     }
     else {
-      $output = t('@fbsstatus %time!edit', $args);
+      $output = t('!status %time!edit', $args);
     }
   }
   else {
@@ -876,7 +909,6 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
       '#suffix' => '</span>',
     );
     unset($form['status']['#suffix']);
-    drupal_add_css($path .'/facebook_status_view.css');
   }
   $form['account'] = array(
     '#type' => 'value',
@@ -1247,6 +1279,25 @@ function facebook_status_flag_default_flags() {
     'status' => FALSE,
     'link_type' => 'confirm',
     'locked' => array('name', 'global', 'types', 'show_on_page', 'show_on_teaser', 'show_on_form', 'status', 'link_type'),
+  );
+  $flags[] = array(
+    'content_type' => 'user',
+    'name' => 'follow',
+    'title' => t('Follow'),
+    'roles' => array('2'),
+    'global' => FALSE,
+    'types' => array('-'),
+    'flag_short' => t('Follow'),
+    'flag_long' => '',
+    'flag_message' => t('Following'),
+    'unflag_short' => t('Unfollow'),
+    'unflag_long' => '',
+    'unflag_message' => '',
+    'show_on_page' => TRUE,
+    'show_on_teaser' => FALSE,
+    'show_on_form' => FALSE,
+    'status' => FALSE,
+    'locked' => array('name', 'global', 'types', 'show_on_teaser', 'show_on_form', 'status'),
   );
   return $flags;
 }

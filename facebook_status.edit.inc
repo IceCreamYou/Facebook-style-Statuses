@@ -135,6 +135,12 @@ function _facebook_status_delete(&$form_state, $status) {
 function _facebook_status_delete_confirm($form, &$form_state) {
   facebook_status_delete_status($form_state['values']['status']);
   drupal_set_message(t('Status deleted.'));
+  if ($_GET['destination']) {
+    $form_state['redirect'] = $_GET['destination'];
+  }
+  else {
+    $form_state['redirect'] = 'user';
+  }
 }
 
 /**

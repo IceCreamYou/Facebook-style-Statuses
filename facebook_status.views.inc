@@ -150,6 +150,16 @@ function facebook_status_views_data() {
       'label' => t("Restrict to others' statuses"),
     ),
   );
+  $data['facebook_status']['respond'] = array(
+    'title' => t('Conversation link'),
+    'help' => t('Links to the view of the conversation where appropriate.'),
+    'field' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_field_respond',
+      'click sortable' => FALSE,
+      'label' => t('View conversation'),
+    ),
+  );
 
   //Declares the status message timestamp column.
   $data['facebook_status']['status_time'] = array(
@@ -246,6 +256,9 @@ function facebook_status_views_handlers() {
       ),
       'facebook_status_views_handler_field_poster' => array(
         'parent' => 'views_handler_field_user',
+      ),
+      'facebook_status_views_handler_field_respond' => array(
+        'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_status' => array(
         'parent' => 'views_handler_field',

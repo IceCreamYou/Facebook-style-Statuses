@@ -15,12 +15,11 @@
 }
 
 #-facebook-status-status #edit-fbss-submit {
-  float: left;
   margin: 0.25em 0 0 0;
 }
 
 #-facebook-status-status #edit-twitter-wrapper {
-  clear: both;
+  clear: none;
   margin: 0;
 }
 
@@ -29,7 +28,6 @@
 }
 
 #-facebook-status-status #facebook_status_chars {
-  float: left;
   margin-left: 0.25em;
 }
 
@@ -37,6 +35,11 @@
   clear: none;
 }
 
-#facebook_status_edit_delete {
+#facebook_status_edit_delete, .facebook_status_conversation_link {
   font-size: 80%;
+}
+
+#-facebook-status-status .view {
+  clear: both;
+  float: left;
 }
