@@ -686,7 +686,7 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
   }
   //Trigger integration.
   if (module_exists('trigger')) {
-    module_invoke_all('facebook_status', 'submitted', $account, $user);
+    module_invoke_all('facebook_status', 'fbss_submitted', $account, $user);
   }
   //Activity integration.
   facebook_status_activity($account, $user, $object);
@@ -1050,9 +1050,11 @@ function facebook_status_hook_info() {
 
 /**
  * Implementation of hook_facebook_status().
+ * or
+ * Implementation of hook_trigger_name().
  */
 function facebook_status_facebook_status($op, $owner, $poster) {
-  if (!in_array($op, array('submitted'))) {
+  if (!in_array($op, array('fbss_submitted'))) {
     return;
   }
   $aids = _trigger_get_hook_aids('facebook_status', $op);
@@ -1080,7 +1082,7 @@ function facebook_status_activity_info() {
     $info->api = 2;
     $info->name = 'facebook_status';
     $info->object_type = 'facebook_status';
-    $info->objects = array('owner' => 'user', 'poster' => 'user');
+    $info->objects = array('owner' => 'facebook_status', 'poster' => 'user');
     $info->hooks = array('facebook_status' => array('fbss_submitted'));
     return $info;
   }
@@ -1126,36 +1128,6 @@ function facebook_status_activityapi(&$activity, $op) {
       $activity = array();
     }
   }
-}
-
-/**
- * Implementation of hook_activity_access_api().
- * Activity 2.
- */
-function facebook_status_activity_access_api() {
-  return array('realms' => array('facebook_status' => 'Facebook-style Statuses'));
-}
-
-/**
- * Implementation of hook_activity_grants().
- * Activity 2.
- */
-function facebook_status_activity_grants($activity, $object, $type) {
-  return array(
-    'facebook_status' => array($activity->uid),
-  );
-}
-
-/**
- * Implementation of hook_activity_access_grants().
- * Activity 2.
- */
-function facebook_status_activity_access_grants($acccount) {
-  return array(
-    'facebook_status' => array(
-      $account->uid,
-    ),
-  );
 }
 
 /**
