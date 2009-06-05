@@ -53,7 +53,7 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Alias for Status ID to add an extra filter.
+  //Alias for Status ID to extend its use.
   $data['facebook_status']['sid_extra'] = array(
     'title' => t('Last Status per User'),
     'help' => t('Shows only the last status update for each user'),
@@ -61,6 +61,24 @@ function facebook_status_views_data() {
       'field' => 'sid',
       'handler' => 'facebook_status_views_handler_filter',
       'label' => t('Last Status per User'),
+    ),
+  );
+  $data['facebook_status']['edit'] = array(
+    'title' => t('Edit'),
+    'help' => t('Shows a link to edit the status to users with permission to see it.'),
+    'field' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_views_handler_field_edit',
+      'click sortable' => FALSE,
+    ),
+  );
+  $data['facebook_status']['delete'] = array(
+    'title' => t('Delete'),
+    'help' => t('Shows a link to delete the status to users with permission to see it.'),
+    'field' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_views_handler_field_delete',
+      'click sortable' => FALSE,
     ),
   );
 
@@ -265,6 +283,12 @@ function facebook_status_views_handlers() {
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_cross_pic' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_delete' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_edit' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_poster' => array(

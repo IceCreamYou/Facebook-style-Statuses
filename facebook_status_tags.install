@@ -64,6 +64,8 @@ function facebook_status_tags_install() {
  */
 function facebook_status_tags_uninstall() {
   drupal_uninstall_schema('facebook_status_tags');
-  variable_del('facebook_status_tags_vid');
   variable_del('facebook_status_tags_url');
+  variable_del('facebook_status_tags_vid');
+  variable_del('facebook_status_tags_time');
+  variable_del('facebook_status_tags_count');
 }

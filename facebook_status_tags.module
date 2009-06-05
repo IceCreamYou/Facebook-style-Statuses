@@ -27,6 +27,61 @@ function facebook_status_tags_help($path, $arg) {
 }
 
 /**
+ * Implementation of hook_block().
+ */
+function facebook_status_tags_block($op = 'list', $delta = 0, $edit = NULL) {
+  if ($op == 'list') {
+    $block['facebook_status_popular_tags']['info'] = t('Facebook-style Statuses Popular Tags');
+    return $block;
+  }
+  else if ($op == 'view' && $delta == 'facebook_status_popular_tags') {
+    $block['subject'] = t('Popular tags');
+    $block['content'] = theme('facebook_status_popular_tags');
+    return $block;
+  }
+  else if ($op == 'configure' && $delta == 'facebook_status_popular_tags') {
+    $form['facebook_status'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Facebook-style Statuses Settings'),
+      '#collapsible' => TRUE,
+      '#weight' => -4,
+      '#tree' => TRUE,
+    );
+    $form['facebook_status']['facebook_status_tags_count'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of items to display'),
+      '#default_value' => variable_get('facebook_status_tags_count', 5),
+      '#element_validate' => array('facebook_status_tags_block_validate'),
+      '#size' => 3,
+      '#maxlength' => 3,
+    );
+    $options = drupal_map_assoc(array('day', 'week', 'month', 'year', 'all'));
+    $form['facebook_status']['facebook_status_tags_time'] = array(
+      '#type' => 'select',
+      '#title' => t('Length of time'),
+      '#description' => t('Only consider statuses submitted within this time period while looking for popular tags.'),
+      '#default_value' => variable_get('facebook_status_tags_time', 'all'),
+      '#options' => $options,
+    );
+    return $form;
+  }
+  else if ($op == 'save' && $delta == 'facebook_status_popular_tags') {
+    variable_set('facebook_status_tags_count', $edit['facebook_status']['facebook_status_tags_count']);
+    variable_set('facebook_status_tags_time', $edit['facebook_status']['facebook_status_tags_time']);
+  }
+}
+
+/**
+ * The validate function for the settings on the block form.
+ */
+function facebook_status_tags_block_validate($form, &$form_state) {
+  $count = $form_state['values']['facebook_status']['facebook_status_tags_count'];
+  if (!is_numeric($count) || $count != round($count) || $count < 1) {
+    form_set_error('facebook_status][facebook_status_tags_count', t('The number of items to display must be a positive integer.'));
+  }
+}
+
+/**
  * Implementation of hook_form_FORM_ID_alter().
  */
 function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, &$form_state) {
@@ -52,6 +107,47 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
     );
     return $form;
   }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function facebook_status_tags_theme($existing, $type, $theme, $path) {
+  return array(
+    'facebook_status_popular_tags' => array(
+      'arguments' => array(
+        'count' => NULL,
+        'time' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Themes a list of popular statuses.
+ *
+ * @param $count
+ *   The number of tags to show.
+ * @param $time
+ *   Statuses within this amount of time will be considered when searching for
+ *   popular tags. Can be one of 'day,' 'week,' 'month,' 'year,' 'all.'
+ * @return
+ *   An HTML representation of a list of tags.
+ */
+function theme_facebook_status_popular_tags($count = NULL, $time = NULL) {
+  if (!$count) {
+    $count = variable_get('facebook_status_tags_count', 5);
+  }
+  if (!$time) {
+    $time = variable_get('facebook_status_tags_time', 'all');
+  }
+  $terms = facebook_status_tags_popular_terms($count, $time);
+  $items = array();
+  foreach ($terms as $term) {
+    $term_link = l($term->name, 'statuses/term/'. check_plain($term->name));
+    $items[] = t('!term (@count)', array('!term' => $term_link, '@count' => $term->popularity));
+  }
+  return theme('item_list', $items);
 }
 
 //====
