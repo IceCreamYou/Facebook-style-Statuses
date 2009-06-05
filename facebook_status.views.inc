@@ -150,6 +150,16 @@ function facebook_status_views_data() {
       'label' => t("Restrict to others' statuses"),
     ),
   );
+  $data['facebook_status']['crosspost_users_pics'] = array(
+    'title' => t('Users with Pictures'),
+    'help' => t("Either a themed username or the username of the poster and owner of the status, depending on the context, and including pictures."),
+    'field' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_field_cross_pic',
+      'click sortable' => FALSE,
+      'label' => t('Users with Pictures'),
+    ),
+  );
   $data['facebook_status']['respond'] = array(
     'title' => t('Conversation link'),
     'help' => t('Links to the view of the conversation where appropriate.'),
@@ -252,6 +262,9 @@ function facebook_status_views_handlers() {
     ),
     'handlers' => array(
       'facebook_status_views_handler_field_cross' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_cross_pic' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_poster' => array(

@@ -99,11 +99,24 @@ function facebook_status_menu() {
   $items['facebook_status/js'] = array(
     'title' => 'Save status update form',
     'page callback' => 'facebook_status_save_js',
-    'access callback' => '_facebook_status_can_edit',
+    'access callback' => '_facebook_status_access_js',
     'access arguments' => FALSE,
     'type' => MENU_CALLBACK,
   );
   return $items;
+}
+
+/**
+ * Access callback for the JS callback.
+ */
+function _facebook_status_access_js() {
+  //Technically, we should check if users with the "edit own status" permission are editing their own status.
+  //However, there's no way to do that, and it's not necessary because that check is in the original theme function.
+  //Furthermore, it's almost impossible to query the JS callback page in a way that would change the status by any method other than using the original form.
+  if (user_access('edit all statuses') || user_access('post on all profiles') || user_access('edit own status')) {
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**
@@ -656,6 +669,8 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
   }
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = _facebook_status_get_status_fast($account->uid);
+  //This will be used to save the status and notify Activity.
+  $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid, 'pid' => $user->uid);
   if ($new_status != $status->status && $account->uid) {
     //If a new status is submitted on one's own profile within 10 seconds of the old one, we assume the user didn't mean to post the first one.
     if (time() - $status->status_time < 10 && $account->uid != $user->uid) {
@@ -663,7 +678,6 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
       db_query($sql, $new_status, $time, $status->sid);
     }
     else {
-      $object = array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid, 'pid' => $user->uid);
       drupal_write_record('facebook_status', $object);
     }
     $new_id = db_result(db_query("SELECT MAX(sid) FROM {facebook_status}"));
@@ -675,7 +689,7 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
     module_invoke_all('facebook_status', 'submitted', $account, $user);
   }
   //Activity integration.
-  facebook_status_activity($account, $user, $new_status);
+  facebook_status_activity($account, $user, $object);
   //Rules integration.
   if (module_exists('rules')) {
     rules_invoke_event('facebook_status_update', $account, $new_status);
@@ -1057,27 +1071,46 @@ function facebook_status_facebook_status($op, $owner, $poster) {
 
 /**
  * Implementation of hook_activity_info().
+ * Activity 1 and 2.
  */
 function facebook_status_activity_info() {
-  $token_types['facebook_status'] = t('Facebook-style Statuses');
+  //This function only exists if Activity 2.x is in use.
+  if (function_exists('activity_action_info')) {
+    $info = new stdClass();
+    $info->api = 2;
+    $info->name = 'facebook_status';
+    $info->object_type = 'facebook_status';
+    $info->objects = array('owner' => 'user', 'poster' => 'user');
+    $info->hooks = array('facebook_status' => array('fbss_submitted'));
+    return $info;
+  }
+  //We're using Activity 1.x.
   return array(
-    'ops' => array('update' => t('Submit Status Update')),
-    'types' => $token_types,
+    'ops' => array(
+      'update' => t('Submit Status Update')
+    ),
+    'types' => array('facebook_status' => 'Facebook-style Statuses'),
     'roles' => array(
       'owner' => array(
         '#name' => t('Owner'),
         '#description' => t('The user whose profile the status was posted on.'),
-        '#default' => 'You have a new post on your profile.',
+        '#default' => array(
+          'update' => 'You have a new post on your profile.',
+        ),
       ),
       'poster' => array(
         '#name' => t('Poster'),
         '#description' => t('The user who posted the status.'),
-        '#default' => "You posted a status on [owner]'s profile.",
+        '#default' => array(
+          'update' => "You posted a status on [owner]'s profile.",
+        ),
       ),
       'all' => array(
         '#name' => t('All'),
         '#description' => t('Everyone who can see status updates.'),
-        '#default' => "[poster] posted on [owner]'s profile.",
+        '#default' => array(
+          'update' => "[poster] posted on [owner]'s profile.",
+        ),
       ),
     ),
   );
@@ -1085,14 +1118,44 @@ function facebook_status_activity_info() {
 
 /** 
  * Implementation of hook_activityapi().
- * I have no idea why this is actually necessary.
+ * Activity 1.
  */
 function facebook_status_activityapi(&$activity, $op) {
-  if ($op == 'load') {
-    if ($activity['data']['module'] == 'facebook_status' && user_access('view all statuses')) {
+  if ($op == 'load' && $activity['data']['module'] == 'facebook_status') {
+    if (!user_access('view all statuses')) {
       $activity = array();
     }
   }
+}
+
+/**
+ * Implementation of hook_activity_access_api().
+ * Activity 2.
+ */
+function facebook_status_activity_access_api() {
+  return array('realms' => array('facebook_status' => 'Facebook-style Statuses'));
+}
+
+/**
+ * Implementation of hook_activity_grants().
+ * Activity 2.
+ */
+function facebook_status_activity_grants($activity, $object, $type) {
+  return array(
+    'facebook_status' => array($activity->uid),
+  );
+}
+
+/**
+ * Implementation of hook_activity_access_grants().
+ * Activity 2.
+ */
+function facebook_status_activity_access_grants($acccount) {
+  return array(
+    'facebook_status' => array(
+      $account->uid,
+    ),
+  );
 }
 
 /**
@@ -1116,8 +1179,7 @@ function facebook_status_token_list($type = 'all') {
  */
 function facebook_status_token_values($type, $data = NULL, $options = array()) {
   if ($type == 'facebook_status' && !empty($data)) {
-    $status_time = $data['status_time'];
-    $data['status-time'] = theme('facebook_status_time', $status_time);
+    $data['status-time'] = theme('facebook_status_time', $data['status_time']);
     return $data;
   }
 }
@@ -1125,18 +1187,21 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
 /**
  * Handles recording activity messages.
  *
- * @param $account
- *   The $user object of the owner of the status.
+ * @param $owner
+ *   The $user object of the user on whose profile the status was posted.
+ * @param $poster
+ *   The $user object of the user who posted the status.
  * @param $status
  *   The status object containing the status to record. Requires at least the
  *   status and status_time.
  */
 function facebook_status_activity($owner, $poster, $status) {
-  if (!module_exists('activity')) {
+  //If we're using Activity 2, this function doesn't need to be run.
+  if (!module_exists('activity') || function_exists('activity_action_info')) {
     return FALSE;
   }
   //Privacy setting check.
-  if (activity_user_privacy_optout($account)) {
+  if (activity_user_privacy_optout($poster)) {
     return FALSE;
   }
   $data = array(
@@ -1150,10 +1215,9 @@ function facebook_status_activity($owner, $poster, $status) {
     ACTIVITY_ALL => 'all',
     $owner->uid => 'owner',
   );
-  if ($owner->uid != $poster->uid) {
-    $target_users_roles[$poster->uid] = 'poster';
-  }
-  activity_insert($account->uid, 'facebook_status', 'status', 'update', $data, $target_users_roles);
+  //If $owner->uid == $poster->uid, this will just overwrite the owner role.
+  $target_users_roles[$poster->uid] = 'poster';
+  activity_insert($poster->uid, 'facebook_status', 'facebook_status', 'update', $data, $target_users_roles);
 }
 
 //==================
