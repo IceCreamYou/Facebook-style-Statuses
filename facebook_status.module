@@ -676,6 +676,7 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
     if (time() - $status->status_time < 10 && $account->uid != $user->uid) {
       $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
       db_query($sql, $new_status, $time, $status->sid);
+      $object->sid = $status->sid;
     }
     else {
       drupal_write_record('facebook_status', $object);
@@ -684,11 +685,11 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
     //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid).
     module_invoke_all('facebook_status_save', $account, $new_status, $new_id);
   }
-  //Trigger integration.
-  if (module_exists('trigger')) {
-    module_invoke_all('facebook_status', 'fbss_submitted', $account, $user);
+  //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
+  if (module_exists('trigger') && $time) {
+    module_invoke_all('facebook_status', 'fbss_submitted', $account, $user, $object);
   }
-  //Activity integration.
+  //Activity 1 integration.
   facebook_status_activity($account, $user, $object);
   //Rules integration.
   if (module_exists('rules')) {
@@ -1053,17 +1054,25 @@ function facebook_status_hook_info() {
  * or
  * Implementation of hook_trigger_name().
  */
-function facebook_status_facebook_status($op, $owner, $poster) {
+function facebook_status_facebook_status($op, $owner, $poster, $status) {
   if (!in_array($op, array('fbss_submitted'))) {
     return;
   }
   $aids = _trigger_get_hook_aids('facebook_status', $op);
+  //Token (via Activity 2) won't know about the status when it sees the users unless we include it somewhere in the user objects.
+  $owner->facebook_status = $status;
+  $poster->facebook_status = $status;
+
   $context = array(
     'hook' => 'facebook_status',
     'op' => $op,
     'owner' => $owner,
     'poster' => $poster,
   );
+  //If we're using Activity 2, 'user' is for posting to one's own profile.
+  if (function_exists('activity_action_info')) {
+    $context['fbss-user'] = $poster;
+  }
   actions_do(array_keys($aids), $poster, $context);
 }
 
@@ -1082,7 +1091,7 @@ function facebook_status_activity_info() {
     $info->api = 2;
     $info->name = 'facebook_status';
     $info->object_type = 'facebook_status';
-    $info->objects = array('owner' => 'facebook_status', 'poster' => 'user');
+    $info->objects = array('Owner' => 'owner', 'Poster' => 'poster', 'Self' => 'fbss-user');
     $info->hooks = array('facebook_status' => array('fbss_submitted'));
     return $info;
   }
@@ -1134,12 +1143,13 @@ function facebook_status_activityapi(&$activity, $op) {
  * Implementation of hook_token_list().
  */
 function facebook_status_token_list($type = 'all') {
-  if ($type == 'facebook_status') {
+  if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster' || $type = 'fbss-user') {
     $tokens['facebook_status'] = array(
       'operation' => t('The operation that took place. Always "update."'),
       'owner' => t('The user whose profile the status was posted on.'),
       'poster' => t('The user who posted the status.'),
-      'status' => t('The new status.'),
+      'status-unformatted' => t('The new status, emphasized and with HTML escaped but no filters or anything run over it.'),
+      'status-themed' => t('The new status completely themed, including usernames and times.'),
       'status-time' => t('The time the status was submittted.'),
     );
     return $tokens;
@@ -1150,9 +1160,22 @@ function facebook_status_token_list($type = 'all') {
  * Implementation of hook_token_values().
  */
 function facebook_status_token_values($type, $data = NULL, $options = array()) {
+  //Activity 1. Not sure this works. If it doesn't it's because $data is an object.
   if ($type == 'facebook_status' && !empty($data)) {
     $data['status-time'] = theme('facebook_status_time', $data['status_time']);
     return $data;
+  }
+  //Activity 2.
+  else if (($type == 'owner' || $type == 'poster' || $type = 'fbss-user') && !empty($data)) {
+    $status = $data->facebook_status;
+    return array(
+      'operation' => t('update'),
+      'owner' => theme('username', user_load(array('uid' => $status->uid))),
+      'poster' => theme('username', user_load(array('uid' => $status->pid))),
+      'status-unformatted' => theme('placeholder', $status->status),
+      'status-themed' => theme('facebook_status_item', $status),
+      'status-time' => theme('facebook_status_time', $status->status_time),
+    );
   }
 }
 
@@ -1180,7 +1203,8 @@ function facebook_status_activity($owner, $poster, $status) {
     'operation' => 'update',
     'owner' => theme('username', $owner),
     'poster' => theme('username', $poster),
-    'status' => check_plain($status->status),
+    'status-unformatted' => check_plain($status->status),
+    'status-themed' => theme('facebook_status_item', $status),
     'status_time' => $status->status_time,
   );
   $target_users_roles = array(
