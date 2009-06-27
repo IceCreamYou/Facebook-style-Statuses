@@ -218,35 +218,6 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Declares the most recent status update for the relevant user.
-  $data['users']['latest_update'] = array(
-    'title' => t('Latest Status Update'),
-    'help' => t('The text of the latest Facebook-style Status update.'),
-    'field' => array(
-      'handler' => 'facebook_status_views_handler_field_latest_update',
-      'click sortable' => TRUE,
-    ),
-  );
-
-  //Declares the time for the most recent status update for the relevant user.
-  $data['users']['latest_update_time'] = array(
-    'title' => t('Latest Status Update Time'),
-    'help' => t('The time that the latest Facebook-style Status update was posted.'),
-    'field' => array(
-      'handler' => 'facebook_status_views_handler_field_latest_update_date',
-      'click sortable' => TRUE,
-    ),
-  );
-
-  //Allow sorting on the Status ID.
-  $data['users']['latest_update_sid'] = array(
-    'title' => t('Latest Status Update Status ID'),
-    'help' => t('The Status ID of the latest Facebook-style Status update.'),
-    'sort' => array(
-      'handler' => 'facebook_status_views_handler_sort_latest_update',
-    ),
-  );
-
   return $data;
 }
 
