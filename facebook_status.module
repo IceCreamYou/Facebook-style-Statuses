@@ -902,10 +902,14 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
     'ttype' => variable_get('facebook_status_type', 'textfield'))
   ), 'setting');
   $form = array('#cache' => TRUE);
+  //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
+  $form['opendiv'] = array(
+    '#value' => '<div id="facebook_status_replace">',
+  );
   $form['slider'] = array(
-    '#prefix' => '<span id="facebook_status_replace">',
     '#value' => '<span id="facebook_status_slider">'. $slider .'</span>',
   );
+  //Textfield and textarea properties are mixed here, but it doesn't matter because only the relevant ones will get used.
   $form['status'] = array(
     '#type' => variable_get('facebook_status_type', 'textfield'),
     '#field_prefix' => $prefix,
@@ -915,16 +919,27 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
     '#maxlength' => $maxlength,
     '#default_value' => $default,
     '#attributes' => array('class' => 'facebook_status_text'),
-    '#suffix' => '</span>',
     '#resizable' => FALSE,
   );
+  $form['chars'] = array(
+    '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
+  );
+  $data = unserialize($account->data);
+  if (module_exists('twitter') && $data['facebook_status_twitter'] && $account->uid == $GLOBALS['user']->uid && variable_get('facebook_status_twitter', 1)) {
+    $form['twitter'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Post to Twitter'),
+    );
+  }
   if ($view && module_exists('views')) {
     $form['fbss-view'] = array(
       '#value' => views_embed_view($view, 'default', $account->uid),
-      '#suffix' => '</span>',
     );
-    unset($form['status']['#suffix']);
   }
+  //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
+  $form['closediv'] = array(
+    '#value' => '</div>',
+  );
   $form['account'] = array(
     '#type' => 'value',
     '#value' => $account->uid,
@@ -949,16 +964,6 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
     'effect' => 'fade',
     'method' => 'replace',
   );
-  $form['chars'] = array(
-    '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
-  );
-  $data = unserialize($account->data);
-  if (module_exists('twitter') && $data['facebook_status_twitter'] && $account->uid == $GLOBALS['user']->uid && variable_get('facebook_status_twitter', 1)) {
-    $form['twitter'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Post to Twitter'),
-    );
-  }
   //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');
   return $form;
@@ -1009,13 +1014,15 @@ function facebook_status_save_js() {
   $form_id = array_shift($args);
   drupal_process_form($form_id, $form, $form_state);
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
-  //Get HTML for the replacement form.
+  //Get HTML for the replacement form. Only these elements will be AHAH-refreshed.
   $new_form['slider'] = $form['slider'];
   $new_form['status'] = $form['status'];
+  $new_form['chars'] = $form['chars'];
+  $new_form['twitter'] = $form['twitter'];
   $new_form['fbss-view'] = $form['fbss-view'];
-  //Prevent duplicate wrappers.
-  unset($new_form['slider']['#prefix']);
-  unset($new_form['status']['#suffix']);
+  //If the $form['fbss-submit']['#ahah']['wrapper'] div was found in a #prefix or #suffix of a form element that we re-rendered here,
+  //then we would have to unset() it to prevent duplicate wrappers. However, we have a somewhat unique implementation in which the wrappers
+  //are actually their own elements, so this is not an issue.
   $output = theme('status_messages') . drupal_render($new_form);
   //Return the results.
   drupal_json(array('status' => TRUE, 'data' => $output));
