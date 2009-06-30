@@ -12,7 +12,7 @@
 class facebook_status_views_handler_field_delete extends views_handler_field {
   function render($values) {
     $status = facebook_status_load($values->facebook_status_sid);
-    if (user_access('edit all statuses') || (user_access('edit own status') && $status->pid == $GLOBALS['user']->uid)) {
+    if (_facebook_status_can_edit($status, TRUE)) {
       drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
       return '<span id="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
     }

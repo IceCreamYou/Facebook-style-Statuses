@@ -21,6 +21,56 @@ function facebook_status_views_default_views() {
   $view->disabled = FALSE;
   $handler = $view->new_display('default', 'Statuses', 'default');
   $handler->override_option('fields', array(
+    'edit' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'strip_tags' => 0,
+        'html' => 0,
+      ),
+      'exclude' => 1,
+      'id' => 'edit',
+      'table' => 'facebook_status',
+      'field' => 'edit',
+      'relationship' => 'none',
+    ),
+    'delete' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'strip_tags' => 0,
+        'html' => 0,
+      ),
+      'exclude' => 1,
+      'id' => 'delete',
+      'table' => 'facebook_status',
+      'field' => 'delete',
+      'relationship' => 'none',
+    ),
     'respond' => array(
       'label' => '',
       'alter' => array(
@@ -100,9 +150,10 @@ function facebook_status_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] <em>[status_time]</em> <span class="facebook_status_conversation_link">[respond]</span>',
+        'text' => '[pid_extra] [status] <em>[status_time]</em> [edit] [delete] [respond]',
         'make_link' => 0,
         'path' => '',
+        'link_class' => '',
         'alt' => '',
         'prefix' => '',
         'suffix' => '',
@@ -143,6 +194,7 @@ function facebook_status_views_default_views() {
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
       'title' => '%1\'s Statuses',
+      'breadcrumb' => '',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
       'validate_type' => 'php',
@@ -159,6 +211,7 @@ function facebook_status_views_default_views() {
       'validate_user_roles' => array(
         '2' => 0,
         '3' => 0,
+        '4' => 0,
       ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
@@ -166,13 +219,13 @@ function facebook_status_views_default_views() {
       'default_argument_fixed' => '',
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
-        'panel' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
         '1' => 0,
+        '2' => 0,
       ),
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
@@ -183,19 +236,24 @@ function facebook_status_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '$account = user_load(array(\'name\' => $argument));
-                  if ($account->uid) {
-                    $handler->argument = $account->name;
-                    return TRUE;
-                  }
-                  else {
-                    $account = user_load(array(\'uid\' => $argument));
-                    if ($account->uid) {
-                      $handler->argument = $account->name;
-                      return TRUE;
-                    }
-                  }
-                  return FALSE;',
+      'validate_argument_php' => '$account = user_load(array(\'uid\' => $argument));
+  if ($account->uid) {
+    $handler->argument = $account->name;
+    $uid = TRUE;
+  }
+  $account2 = user_load(array(\'name\' => $argument));
+  if ($account2->uid) {
+    $handler->argument = $account2->name;
+    $name = TRUE;
+  }
+  if ($name && $uid) {
+    $handler->argument = $account->name;
+    return TRUE;
+  }
+  else if ($name || $uid) {
+    return TRUE;
+  }
+  return FALSE;',
     ),
   ));
   $handler->override_option('filters', array(
@@ -233,24 +291,27 @@ function facebook_status_views_default_views() {
     'type' => 'perm',
     'perm' => 'view all statuses',
   ));
+  $handler->override_option('cache', array(
+    'type' => 'none',
+  ));
   $handler->override_option('title', 'Statuses');
   $handler->override_option('empty', '<?php
-      $account = user_load(array(\'uid\' => arg(1)));
-      if (!$account->uid) {
-        echo t(\'This user has no statuses yet.\');
-        return;
-      }
-      $count = facebook_status_has_status(arg(1));
-      if (!$count) {
-        global $user;
-        if ($user->uid == $account->uid) {
-          echo t(\'You have no statuses yet.\');
-        }
-        else {
-          echo t(\'@name has no statuses yet.\', array(\'@name\' => check_plain($account->name)));
-        }
-      }
-      ?>');
+          $account = user_load(array(\'uid\' => arg(1)));
+          if (!$account->uid) {
+            echo t(\'This user has no statuses yet.\');
+            return;
+          }
+          $count = facebook_status_has_status(arg(1));
+          if (!$count) {
+            global $user;
+            if ($user->uid == $account->uid) {
+              echo t(\'You have no statuses yet.\');
+            }
+            else {
+              echo t(\'@name has no statuses yet.\', array(\'@name\' => check_plain($account->name)));
+            }
+          }
+          ?>');
   $handler->override_option('empty_format', '3');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', '1');
@@ -314,6 +375,56 @@ function facebook_status_views_default_views() {
   $view->disabled = FALSE;
   $handler = $view->new_display('default', 'Latest Status', 'default');
   $handler->override_option('fields', array(
+    'edit' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'strip_tags' => 0,
+        'html' => 0,
+      ),
+      'exclude' => 1,
+      'id' => 'edit',
+      'table' => 'facebook_status',
+      'field' => 'edit',
+      'relationship' => 'none',
+    ),
+    'delete' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'strip_tags' => 0,
+        'html' => 0,
+      ),
+      'exclude' => 1,
+      'id' => 'delete',
+      'table' => 'facebook_status',
+      'field' => 'delete',
+      'relationship' => 'none',
+    ),
     'respond' => array(
       'label' => '',
       'alter' => array(
@@ -390,9 +501,10 @@ function facebook_status_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] <em>[status_time]</em> [respond]',
+        'text' => '[pid_extra] [status] <em>[status_time]</em> [edit] [delete] [respond]',
         'make_link' => 0,
         'path' => '',
+        'link_class' => '',
         'alt' => '',
         'prefix' => '',
         'suffix' => '',
@@ -455,6 +567,9 @@ function facebook_status_views_default_views() {
   $handler->override_option('access', array(
     'type' => 'perm',
     'perm' => 'view all statuses',
+  ));
+  $handler->override_option('cache', array(
+    'type' => 'none',
   ));
   $handler->override_option('title', 'Latest Status Updates');
   $handler->override_option('use_ajax', TRUE);

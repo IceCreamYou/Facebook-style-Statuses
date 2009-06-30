@@ -35,8 +35,9 @@
   clear: none;
 }
 
-#facebook_status_edit_delete, .facebook_status_conversation_link {
-  font-size: 80%;
+#facebook_status_edit_delete, #facebook_status_conversation_link {
+  font-size: 90%;
+  margin-left: 0.5em;
 }
 
 #-facebook-status-status .view {

@@ -78,7 +78,7 @@ function facebook_status_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('_facebook_status_delete', 1),
     'access callback' => '_facebook_status_can_edit',
-    'access arguments' => array(1),
+    'access arguments' => array(1, TRUE),
     'type' => MENU_CALLBACK,
     'file' => 'facebook_status.edit.inc',
   );
@@ -302,11 +302,6 @@ function facebook_status_theme($existing, $type, $theme, $path) {
         'status_time' => time(),
       ),
     ),
-    'facebook_status_flag_create' => array(
-      'arguments' => array(
-        'sid' => FALSE,
-      ),
-    ),
   );
 }
 
@@ -354,8 +349,11 @@ function theme_facebook_status_item($status = FALSE) {
     $status_text = call_user_func_array($function, array_merge(array($status_text), $args));
   }
   $edit = '';
-  if ($status_exists && (user_access('edit all statuses') || ($user->uid == $poster->uid && user_access('edit own status')))) {
-    $edit = ' <span id="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+  if ($status_exists && _facebook_status_can_edit($status)) {
+    $edit = '<span id="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+  }
+  else if ($status_exists && _facebook_status_can_edit($status, TRUE)) {
+    $edit = '<span id="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
   $args = array('!status' => $status_text, '%time' => $time, '!edit' => $edit);
@@ -742,21 +740,23 @@ function facebook_status_choose_owner($legacy = array()) {
 //=================
 
 /**
- * Determines if the current user can edit the relevant status.
+ * Determines if the current user can edit or delete the relevant status.
  *
- * @param $author
- *   The $user object for the author of the status. If FALSE, determine the
- *   author automatically. Can also be a status object; if it is, checks whether
- *   the current user can edit the status.
+ * @param $status
+ *   A status object to check for edit/delete permissions.
+ * @param $delete
+ *   If TRUE, checks for delete permissions; otherwise, checks for edit perms.
  * @return
- *   TRUE if the current user can edit the status; FALSE otherwise.
+ *   TRUE if the current user can edit or delete the status; FALSE otherwise.
  */
-function _facebook_status_can_edit($author = FALSE) {
+function _facebook_status_can_edit($status, $delete = FALSE) {
   global $user;
-  if (!$author) {
-    $author = facebook_status_choose_owner(FALSE);
+  //Editing and deleting is allowed if the status was posted by the current user or the current user can edit/delete any status.
+  if (($user->uid == $status->pid && user_access('edit own status')) || user_access('edit all statuses')) {
+    return TRUE;
   }
-  if (($user->uid == $author->uid && user_access('edit own status')) || user_access('edit all statuses')) {
+  //Deletion is allowed if the status was posted on the profile of the current user.
+  if ($delete && $user->uid == $status->uid && user_access('edit own status')) {
     return TRUE;
   }
   return FALSE;
@@ -990,9 +990,7 @@ function _facebook_status_status_submit($form, &$form_state) {
   if ($form_state['values']['twitter']) {
     facebook_status_twitter($account, $new_status);
   }
-
   $message = facebook_status_save_status($account, $new_status);
-
   $form_state['facebook_status'] = array(
     'account' => $aid,
     'size' => $size,
@@ -1020,6 +1018,8 @@ function facebook_status_save_js() {
   $new_form['chars'] = $form['chars'];
   $new_form['twitter'] = $form['twitter'];
   $new_form['fbss-view'] = $form['fbss-view'];
+  //Clear the status form after it's already been submitted once to prevent confusion.
+  unset($new_form['status']['#default_value']);
   //If the $form['fbss-submit']['#ahah']['wrapper'] div was found in a #prefix or #suffix of a form element that we re-rendered here,
   //then we would have to unset() it to prevent duplicate wrappers. However, we have a somewhat unique implementation in which the wrappers
   //are actually their own elements, so this is not an issue.
