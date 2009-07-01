@@ -111,7 +111,7 @@ function _facebook_status_edit_submit($form, &$form_state) {
  * The delete status confirmation form.
  */
 function _facebook_status_delete(&$form_state, $status) {
-  $form['infotext'] = array('#value' => t('Are you sure you want to permanently delete the status %status?', array('%status' => $status->status)));
+  $form['infotext'] = array('#value' => '<p>'. t('Are you sure you want to permanently delete the status %status?', array('%status' => $status->status)) .'</p>');
   $form['confirm'] = array(
     '#type' => 'submit',
     '#value' => t('Confirm'),

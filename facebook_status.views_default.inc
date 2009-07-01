@@ -295,24 +295,26 @@ function facebook_status_views_default_views() {
     'type' => 'none',
   ));
   $handler->override_option('title', 'Statuses');
-  $handler->override_option('empty', '<?php
-          $account = user_load(array(\'uid\' => arg(1)));
-          if (!$account->uid) {
-            echo t(\'This user has no statuses yet.\');
-            return;
-          }
-          $count = facebook_status_has_status(arg(1));
-          if (!$count) {
-            global $user;
-            if ($user->uid == $account->uid) {
-              echo t(\'You have no statuses yet.\');
+  if (module_exists('php')) {
+    $handler->override_option('empty', '<?php
+            $account = user_load(array(\'uid\' => arg(1)));
+            if (!$account->uid) {
+              echo t(\'This user has no statuses yet.\');
+              return;
             }
-            else {
-              echo t(\'@name has no statuses yet.\', array(\'@name\' => check_plain($account->name)));
+            $count = facebook_status_has_status(arg(1));
+            if (!$count) {
+              global $user;
+              if ($user->uid == $account->uid) {
+                echo t(\'You have no statuses yet.\');
+              }
+              else {
+                echo t(\'@name has no statuses yet.\', array(\'@name\' => check_plain($account->name)));
+              }
             }
-          }
-          ?>');
-  $handler->override_option('empty_format', '3');
+            ?>');
+    $handler->override_option('empty_format', '3');
+  }
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', '1');
   $handler->override_option('use_more', 1);
