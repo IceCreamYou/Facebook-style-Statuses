@@ -566,31 +566,33 @@ function facebook_status_tags_views_default_views() {
       return FALSE;',
     ),
   ));
-  $handler->override_option('footer', '<?php
-  /*
-    //Adds a link to view your conversation with the user whose profile you are viewing.
-    global $user;
-    $account = user_load(array(\'uid\' => arg(1)));
-    if ($account->uid != $user->uid) {
-      echo l(\'View mentions between you and \'. $account->name, \'statuses/conversation/\'. check_plain($account->name) .\',\'. check_plain($user->name));
+  if (module_exists('php')) {
+    $handler->override_option('footer', '<?php
+    /*
+      //Adds a link to view your conversation with the user whose profile you are viewing.
+      global $user;
+      $account = user_load(array(\'uid\' => arg(1)));
+      if ($account->uid != $user->uid) {
+        echo l(\'View mentions between you and \'. $account->name, \'statuses/conversation/\'. check_plain($account->name) .\',\'. check_plain($user->name));
+      }
+     */
+    ?>');
+    $handler->override_option('footer_format', '3');
+    $handler->override_option('footer_empty', 0);
+    $handler->override_option('empty', '<?php
+    if (arg(0) == \'user\') {
+      $account = user_load(array(\'uid\' => arg(1)));
+      global $user;
+      if ($user->uid == $account->uid) {
+        echo \'No one has mentioned you yet.\';
+      }
+      else {
+        echo \'No one has mentioned \'. check_plain($account->name) .\'.\';
+      }
     }
-   */
-  ?>');
-  $handler->override_option('footer_format', '3');
-  $handler->override_option('footer_empty', 0);
-  $handler->override_option('empty', '<?php
-  if (arg(0) == \'user\') {
-    $account = user_load(array(\'uid\' => arg(1)));
-    global $user;
-    if ($user->uid == $account->uid) {
-      echo \'No one has mentioned you yet.\';
-    }
-    else {
-      echo \'No one has mentioned \'. check_plain($account->name) .\'.\';
-    }
+    ?>');
+    $handler->override_option('empty_format', '3');
   }
-  ?>');
-  $handler->override_option('empty_format', '3');
   $handler->override_option('items_per_page', 5);
   $handler->override_option('use_pager', '0');
   $handler->override_option('pager_element', 11);
