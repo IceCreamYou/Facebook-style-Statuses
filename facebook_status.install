@@ -44,7 +44,6 @@ function facebook_status_schema() {
         'type' => 'text',
         'length' => 1024,
         'not null' => TRUE,
-        'default' => '',
         'description' => 'The status text.',
       ),
     ),
@@ -143,7 +142,6 @@ function facebook_status_update_6202() {
     'type' => 'text',
     'length' => 1024,
     'not null' => TRUE,
-    'default' => '',
     'description' => 'The status text.',
   );
   db_change_field($result, 'facebook_status', 'status', 'status', $spec);
@@ -168,6 +166,7 @@ function facebook_status_uninstall() {
   //Remove tables.
   drupal_uninstall_schema('facebook_status');
   //Remove variables.
+  variable_del('facebook_status_twitter_default');
   variable_del('facebook_status_twitter_special');
   variable_del('facebook_status_special_user');
   variable_del('facebook_status_hide_status');
@@ -181,6 +180,7 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_filter');
   variable_del('facebook_status_legacy');
   variable_del('facebook_status_length');
+  variable_del('facebook_status_ahah');
   variable_del('facebook_status_size');
   variable_del('facebook_status_type');
 }

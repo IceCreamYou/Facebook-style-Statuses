@@ -149,6 +149,8 @@ function _facebook_status_conversation_title() {
 function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
   if ($op == 'list') {
     $block['facebook_status']['info'] = t('Facebook-style Statuses');
+    $block['facebook_status']['visibility'] = 0;
+    $block['facebook_status']['pages'] = 'share-status';
     return $block;
   }
   else if ($op == 'view' && $delta == 'facebook_status') {
@@ -169,6 +171,9 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
       '#collapsible' => TRUE,
       '#weight' => -4,
       '#tree' => TRUE,
+    );
+    $form['facebook_status']['info'] = array(
+      '#value' => '<p>'. t('Note: you should not allow multiple status update forms to appear on the same page, so avoid showing this block at user/* and share-status. <a href="!more">More info</a>', array('!more' => 'http://drupal.org/node/421128#blocks')) .'</p>',
     );
     $form['facebook_status']['facebook_status_special_user'] = array(
       '#type' => 'textfield',
@@ -258,6 +263,21 @@ function facebook_status_form_twitter_account_list_form_alter(&$form, &$form_sta
   $data = unserialize($account->data);
 
   if (!empty($options) && variable_get('facebook_status_twitter', 1)) {
+    $default_setting = variable_get('facebook_status_twitter_default', 'off');
+    if ($default_setting == 'on-user' || $default_setting == 'off-user') {
+      if (!isset($data['facebook_status_twitter_default'])) {
+        $data['facebook_status_twitter_default'] = 0;
+        if ($default_setting == 'on-user') {
+          $data['facebook_status_twitter_default'] = 1;
+        }
+      }
+      $form['facebook_status_twitter_default'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enable "Post to Twitter" checkbox for status updates by default'),
+        '#default_value' => $data['facebook_status_twitter_default'],
+        '#weight' => -1,
+      );
+    }
     $form_state['#account'] = $account;
     $form['facebook_status_twitter'] = array(
       '#type' => 'select',
@@ -277,7 +297,10 @@ function facebook_status_form_twitter_account_list_form_alter(&$form, &$form_sta
 function facebook_status_twitter_submit($form, &$form_state) {
   $account = $form_state['#account'];
   if ($account) {
-    user_save($account, array('facebook_status_twitter' => $form_state['values']['facebook_status_twitter']), 'twitter');
+    user_save($account, array(
+      'facebook_status_twitter' => $form_state['values']['facebook_status_twitter'],
+      'facebook_status_twitter_default' => $form_state['values']['facebook_status_twitter_default'],
+    ), 'twitter');
   }
 }
 
@@ -406,7 +429,7 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
   }
   if (($user->uid == $account->uid && user_access('edit own status')) || ($user->uid != $account->uid && user_access('post on all profiles'))) {
     if (!_facebook_status_exclude($account)) {
-      return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('_facebook_status_status', $account, $size, $view) .'</div>';
+      return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view) .'</div>';
     }
   }
   $status = _facebook_status_get_status_fast($account->uid);
@@ -834,6 +857,27 @@ function _facebook_status_get_status_fast($uid) {
   return $status;
 }
 
+/**
+ * Gets the default value for the "Post to Twitter" checkbox on the status update form.
+ *
+ * @param $account
+ *   The user account object for the user whose checkbox will be displayed.
+ * @return
+ *   The default value for the checkbox (1 or 0).
+ */
+function _facebook_status_twitter_get_default($account) {
+  $data = unserialize($account->data);
+  $default_setting = variable_get('facebook_status_twitter_default', 'off');
+  $return = 0;
+  if ($default_setting == 'on-user' || $default_setting == 'on') {
+    $return = 1;
+  }
+  if (($default_setting == 'on-user' || $default_setting == 'off-user') && isset($data['facebook_status_twitter_default'])) {
+    return $data['facebook_status_twitter_default'];
+  }
+  return $return;
+}
+
 //======
 //FORMS.
 //======
@@ -852,7 +896,7 @@ function _facebook_status_get_status_fast($uid) {
  * @return
  *   A $form array.
  */
-function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $view = FALSE) {
+function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view = FALSE) {
   global $user;
   if (isset($form_state['facebook_status'])) {
     $aid = $form_state['facebook_status']['account'];
@@ -929,6 +973,7 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
     $form['twitter'] = array(
       '#type' => 'checkbox',
       '#title' => t('Post to Twitter'),
+      '#default_value' => _facebook_status_twitter_get_default($account),
     );
   }
   if ($view && module_exists('views')) {
@@ -955,15 +1000,17 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
   $form['fbss-submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
-    '#submit' => array('_facebook_status_status_submit'),
+    '#submit' => array('facebook_status_box_submit'),
     '#attributes' => array('class' => 'facebook_status_submit'),
   );
-  $form['fbss-submit']['#ahah'] = array(
-    'path' => 'facebook_status/js',
-    'wrapper' => 'facebook_status_replace',
-    'effect' => 'fade',
-    'method' => 'replace',
-  );
+  if (variable_get('facebook_status_ahah', 1)) {
+    $form['fbss-submit']['#ahah'] = array(
+      'path' => 'facebook_status/js',
+      'wrapper' => 'facebook_status_replace',
+      'effect' => 'fade',
+      'method' => 'replace',
+    );
+  }
   //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');
   return $form;
@@ -972,7 +1019,7 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
 /**
  * Validate function for the status update form.
  */
-function _facebook_status_status_validate($form, &$form_state) {
+function facebook_status_box_validate($form, &$form_state) {
   $maxlen = variable_get('facebook_status_length', 192);
   if (drupal_strlen($form_state['values']['status']) > $maxlen) {
     form_set_error('status', t('The status must be no longer than %chars characters.', array('%chars' => $maxlen)));
@@ -982,7 +1029,7 @@ function _facebook_status_status_validate($form, &$form_state) {
 /**
  * Submit function for the status update form.
  */
-function _facebook_status_status_submit($form, &$form_state) {
+function facebook_status_box_submit($form, &$form_state) {
   $size = $form_state['values']['size'];
   $aid = $form_state['values']['account'];
   $account = user_load(array('uid' => $aid));

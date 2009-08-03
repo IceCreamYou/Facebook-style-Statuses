@@ -23,6 +23,20 @@ function facebook_status_admin($form_state) {
     '#default_value' => variable_get('facebook_status_legacy', array('user' => 'user')),
     '#options' => array('node' => t('Nodes'), 'user' => t('User profiles')),
   );
+  if (module_exists('twitter')) {
+    $form['facebook_status_twitter_default'] = array(
+      '#type' => 'radios',
+      '#title' => t('Default Twitter option'),
+      '#default_value' => variable_get('facebook_status_twitter_default', 'off'),
+      '#required' => TRUE,
+      '#options' => array(
+        'on' => t('Always enabled by default'),
+        'off' => t('Always disabled by default'),
+        'on-user' => t('Let the user choose (enabled is default)'),
+        'off-user' => t('Let the user choose (disabled is default)'),
+      ),
+    );
+  }
   $form['facebook_status_type'] = array(
     '#type' => 'select',
     '#title' => t('Form type'),
@@ -113,6 +127,12 @@ function facebook_status_admin_advanced($form_state) {
     '#type' => 'checkbox',
     '#title' => t('Hide status above textfield'),
     '#default_value' => variable_get('facebook_status_hide_status', 0),
+  );
+  $form['facebook_status_ahah'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use AHAH to refresh the status update form without refreshing the page'),
+    '#description' => t("You should leave this checked unless you know what you're doing."),
+    '#default_value' => variable_get('facebook_status_ahah', 1),
   );
   $form['facebook_status_size_long'] = array(
     '#type' => 'textfield',
