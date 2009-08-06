@@ -296,7 +296,7 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
     if ($own == TRUE) {
       $restrict = 'uid = pid AND ';
     }
-    $result = db_query("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE ". $restrict ."type = 'term' GROUP BY rid ORDER BY count DESC");
+    $result = db_query_range("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE ". $restrict ."type = 'term' GROUP BY rid ORDER BY count DESC", 0, $count);
   }
   else if (in_array($time, array('day', 'week', 'month', 'year'))) {
     $times = array(
@@ -309,8 +309,8 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
     if ($own == TRUE) {
       $restrict = 'f.uid = f.pid AND ';
     }
-    $result = db_query("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
-      WHERE ". $restrict ."t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time);
+    $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
+      WHERE ". $restrict ."t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time, 0, $count);
   }
   $terms = array();
   while ($obj = db_fetch_object($result)) {
