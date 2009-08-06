@@ -327,52 +327,56 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
 
 /**
  * Replaces tags with a themed version.
- * Will not work on tags containing $op, a space, or an apostrophe.
+ * Will not work on tags containing '@', '#', a space, or unusual punctuation.
  *
- * @param $text
- *   The text in which to replace usernames.
- * @param $op
- *   The character that indicates that the subsequent text could be a username.
- *   Use the 'at' character (@) for usernames and the 'hash' character (#) for
- *   taxonomy terms.
+ * @param $subject
+ *   The text in which to replace tags.
+ * @param $new
+ *   If TRUE, this function just finds tags. Otherwise, it finds and replaces them.
  * @return
- *   The filtered text.
+ *   If $new is FALSE, returns the filtered text. If $new is TRUE, returns a
+ *   nested array of tags. The outer array is keyed by type ('@' and '#').
  */
-function _facebook_status_tags_filter($text, $op = '@') {
-  $pattern = '/([\s]'. $op .'.+\b)|(^'. $op .'.+\b)/U';
-  preg_match_all($pattern, $text, $matches);
-
-  $links = array();
-  foreach ($matches[0] as $match) {
-    if ($op == '@') {
-      $account = user_load(array('name' => drupal_substr(trim($match), 1)));
-    }
-    else if ($op == '#' && module_exists('taxonomy') && variable_get('facebook_status_tags_vid', -1) != -1) {
-      $term = _facebook_status_tags_get_term(drupal_substr(trim($match), 1));
-    }
-    $link = $op;
-    if (drupal_substr($match, 0, 1) == ' ') {
-      $link = ' '. $op;
-    }
-    if ($op == '@') {
-      if ($account->uid) {
-        $link .= theme('username', $account);
-      }
-    }
-    else if ($op == '#') {
-      if (!empty($term)) {
-        $dest = _facebook_status_tags_resolve($term);
-        if ($dest) {
-          $link .= l($term->name, $dest);
+function _facebook_status_tags_filter($subject, $new = FALSE) {
+  $words = str_word_count($subject, 2, '@#1234567890-_');
+  $search = array();
+  $replace = array();
+  $items = array('@' => array(), '#' => array());
+  foreach ($words as $pos => $word) {
+    $op = drupal_substr($word, 0, 1);
+    $match = drupal_substr($word, 1);
+    if (($op == '@' || $op == '#') && strpos($word, '@', 1) === FALSE && strpos($word, '#', 1) === FALSE) {
+      if ($op == '@') {
+        $account = user_load(array('name' => $match));
+        if ($account->uid) {
+          $link = $op . theme('username', $account);
+          $items['@'][] = $account;
         }
       }
+      else if (variable_get('facebook_status_tags_vid', -1) != -1) {
+        $term = _facebook_status_tags_get_term($match);
+        //If the term does not exist, create it.
+        if (empty($term)) {
+          $term = array(
+            'vid' => variable_get('facebook_status_tags_vid', -1),
+            'name' => $match,
+          );
+          taxonomy_save_term($term);
+        }
+        $dest = _facebook_status_tags_resolve($term);
+        $link = $op . l($term->name, $dest);
+        $items['#'][] = $term;
+      }
+      if ($link) {
+        $search[] = $word;
+        $replace[] = $link;
+      }
     }
-    if (trim($link) == $op) {
-      $link = $match;
-    }
-    $links[] = $link;
   }
-  return str_replace($matches[0], $links, $text);
+  if (!$new) {
+    return str_replace($search, $replace, $subject);
+  }
+  return $items;
 }
 
 /**
@@ -402,9 +406,7 @@ function _facebook_status_tags_resolve($term) {
  * Replaces both the username and hash tags.
  */
 function _facebook_status_tags_replace($text) {
-  $text = _facebook_status_tags_filter($text, '@');
-  $text = _facebook_status_tags_filter($text, '#');
-  return $text;
+  return _facebook_status_tags_filter($text);
 }
 
 /**
@@ -429,49 +431,39 @@ function facebook_status_tags_facebook_status_render($owner, $poster, $status) {
  * Implementation of hook_facebook_status_save().
  */
 function facebook_status_tags_facebook_status_save($account, $status, $sid) {
+  $matches = _facebook_status_tags_filter($status, TRUE);
   //Users.
-  $pattern = '/([\s]@.+\b)|(^@.+\b)/U';
-  preg_match_all($pattern, $status, $matches);
-  $matches = $matches[0];
   $old_matches = array();
-  foreach ($matches as $match) {
-    $match = drupal_substr(trim($match), 1);
-    $account = user_load(array('name' => $match));
-    if ($account->uid) {
-      if (!in_array($match, $old_matches)) {
-        $array = array('sid' => $sid, 'rid' => $account->uid, 'type' => 'user', 'name' => $match);
-        drupal_write_record('facebook_status_tags', $array);
-      }
-      $old_matches[] = $match;
+  foreach ($matches['@'] as $account) {
+    if (!in_array($account->uid, $old_matches)) {
+      $array = array(
+        'sid' => $sid,
+        'rid' => $account->uid,
+        'type' => 'user',
+        'name' => $account->name,
+      );
+      drupal_write_record('facebook_status_tags', $array);
+      $old_matches[] = $account->uid;
     }
   }
-
+  
   //Terms.
   if (!module_exists('taxonomy') || variable_get('facebook_status_tags_vid', -1) == -1) {
     return;
   }
-  $pattern = '/([\s]#.+\b)|(^#.+\b)/U';
-  preg_match_all($pattern, $status, $matches);
-  $matches = $matches[0];
   $old_matches = array();
-  foreach ($matches as $match) {
-    $match = drupal_substr(trim($match), 1);
-    //If the term does not exist, create it.
-    $term = _facebook_status_tags_get_term($match);
-    if (empty($term)) {
-      $term = array(
-        'vid' => variable_get('facebook_status_tags_vid', -1),
-        'name' => $match,
-        'description' => '',
-        'weight' => 0,
+  foreach ($matches['#'] as $term) {
+    $term = (object) $term;
+    if (!in_array($term->tid, $old_matches)) {
+      $array = array(
+        'sid' => $sid,
+        'rid' => $term->tid,
+        'type' => 'term',
+        'name' => $term->name,
       );
-      taxonomy_save_term($term);
-    }
-    if (!in_array($match, $old_matches)) {
-      $array = array('sid' => $sid, 'rid' => $term->tid, 'type' => 'term', 'name' => $match);
       drupal_write_record('facebook_status_tags', $array);
+      $old_matches[] = $term->tid;
     }
-    $old_matches[] = $match;
   }
 }
 
