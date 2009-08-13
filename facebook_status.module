@@ -1332,7 +1332,9 @@ function facebook_status_sms_incoming($op, $number, $message, $options = NULL) {
 function facebook_status_popups() {
   return array(
     'facebook_status_box' => array(
-      '#facebook_status_edit_delete a',
+      '#facebook_status_edit_delete a' => array(
+        'updateMethod' => 'reload',
+      ),
     ),
   );
 }
