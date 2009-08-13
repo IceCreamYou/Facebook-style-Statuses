@@ -36,30 +36,10 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
 }
 
 /**
- * Displays the user picture. Similar to theme('user_picture', $account) but
- * does not have problems with some themes floating the picture or wrapping it
- * in a div. However, this function is stylistically poor etiquette: the
- * technically correct way to do this would be to use CSS to format the output
- * of the original theme function, and the second-best way would be to write a
- * new theme function.
+ * Displays the user picture with fixes for unfortunate magic found in Garland
+ * and other themes.
  */
 function facebook_status_display_user_picture($account) {
-  $picture = '';
-  if (variable_get('user_pictures', 0)) {
-    if (!empty($account->picture) && file_exists($account->picture)) {
-      $picture = file_create_url($account->picture);
-    }
-    else if (variable_get('user_picture_default', '')) {
-      $picture = variable_get('user_picture_default', '');
-    }
-    if ($picture) {
-      $alt = t("@user's picture", array('@user' => $account->name));
-      $picture = '<img src="'. check_url($picture) .'" alt="'. check_plain($alt) .'" />';
-      if (!empty($account->uid) && user_access('access user profiles')) {
-        $attributes = array('attributes' => array('title' => t('View user profile.'), 'class' => 'facebook_status_user_picture'), 'html' => TRUE);
-        $picture = l($picture, 'user/'. $account->uid, $attributes);
-      }
-    }
-  }
-  return $picture;
+  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
+  return theme('user_picture', $account);
 }
