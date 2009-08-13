@@ -1322,6 +1322,21 @@ function facebook_status_sms_incoming($op, $number, $message, $options = NULL) {
   }
 }
 
+//=======================
+//POPUPS API INTEGRATION.
+//=======================
+
+/**
+ * Implementation of hook_popups().
+ */
+function facebook_status_popups() {
+  return array(
+    'facebook_status_box' => array(
+      '#facebook_status_edit_delete a',
+    ),
+  );
+}
+
 //=================
 //FLAG INTEGRATION.
 //=================
