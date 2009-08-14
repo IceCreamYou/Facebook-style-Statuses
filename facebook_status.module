@@ -883,6 +883,13 @@ function _facebook_status_twitter_get_default($account) {
 //======
 
 /**
+ * Preserved for some minor level of backwards-compatibility.
+ */
+function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $view = FALSE) {
+  return facebook_status_box($form_state, $account, $size, $view);
+}
+
+/**
  * The status form.
  *
  * @param $account
