@@ -42,7 +42,7 @@ function facebook_status_schema() {
       ),
       'status' => array(
         'type' => 'text',
-        'length' => 1024,
+        //'length' => 1024,
         'not null' => TRUE,
         'description' => 'The status text.',
       ),
@@ -140,7 +140,7 @@ function facebook_status_update_6202() {
   //Use 1024 in case special characters require extra room.
   $spec = array(
     'type' => 'text',
-    'length' => 1024,
+    //'length' => 1024,
     'not null' => TRUE,
     'description' => 'The status text.',
   );
