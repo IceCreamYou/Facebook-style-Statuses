@@ -886,6 +886,9 @@ function _facebook_status_twitter_get_default($account) {
  * Preserved for some minor level of backwards-compatibility.
  */
 function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $view = FALSE) {
+  $backtrace = debug_backtrace();
+  $fn = $backtrace[1]['function'];
+  watchdog('facebook_status', 'function _facebook_status_status() is deprecated in favor of facebook_status_box(). Called from %function', array('%function' => $fn));
   return facebook_status_box($form_state, $account, $size, $view);
 }
 
