@@ -357,6 +357,9 @@ function theme_facebook_status_item($status = FALSE) {
   $poster_name = theme('username', $poster);
   $status_exists = TRUE;
   if (!$status->status) {
+    if (variable_get('facebook_status_hide_blank', 0) == 1) {
+      return '';
+    }
     $status_exists = FALSE;
     if (variable_get('facebook_status_concat', 1) == 0) {
       $status->status = t('!user does not have a status.', array('!user' => $owner_name));

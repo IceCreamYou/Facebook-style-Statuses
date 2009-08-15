@@ -168,6 +168,7 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_special_user');
   variable_del('facebook_status_hide_status');
   variable_del('facebook_status_flag_update');
+  variable_del('facebook_status_hide_blank');
   variable_del('facebook_status_flood_user');
   variable_del('facebook_status_size_long');
   variable_del('facebook_status_default');

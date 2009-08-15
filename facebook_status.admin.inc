@@ -107,7 +107,7 @@ function facebook_status_admin_validate($form, &$form_state) {
     form_set_error('facebook_status_size', t('The size of the status update field must be a positive integer.'));
   }
   //21844 is 65535 / 3 - 1. In MySQL, 65535 is the maximum number of bytes a
-  //text column can hold, and in UTF8 each character takes 3 bytes of storage. 
+  //text column can hold, and in UTF8 each character takes 3 bytes of storage.
   $size = $form_state['values']['facebook_status_length'];
   if (!is_numeric($size) || $size < 1 || $size != round($size) || $size > 21844) {
     form_set_error('facebook_status_length', t('The maximum status length must be a positive integer no greater than 21844.'));
@@ -129,6 +129,11 @@ function facebook_status_admin_advanced($form_state) {
     '#type' => 'checkbox',
     '#title' => t('Hide status above textfield'),
     '#default_value' => variable_get('facebook_status_hide_status', 0),
+  );
+  $form['facebook_status_hide_blank'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide blank and empty statuses above textfield'),
+    '#default_value' => variable_get('facebook_status_hide_blank', 0),
   );
   $form['facebook_status_ahah'] = array(
     '#type' => 'checkbox',
