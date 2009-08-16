@@ -376,10 +376,10 @@ function theme_facebook_status_item($status = FALSE) {
   }
   $edit = '';
   if ($status_exists && _facebook_status_can_edit($status)) {
-    $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+    $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $_GET['q']))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
   }
   else if ($status_exists && _facebook_status_can_edit($status, TRUE)) {
-    $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+    $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $_GET['q']))) .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
   $args = array('!status' => $status_text, '%time' => $time, '!edit' => $edit);
