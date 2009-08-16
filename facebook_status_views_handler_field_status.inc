@@ -11,11 +11,11 @@
  */
 class facebook_status_views_handler_field_status extends views_handler_field {
   function render($values) {
-    $output = _facebook_status_run_filter($values->facebook_status_status);
-    $functions = module_invoke_all('facebook_status_render', user_load(array('uid' => $values->uid)), $output, TRUE);
-    foreach ($functions as $function => $args) {
-      $output = call_user_func_array($function, array_merge(array($output), $args));
-    }
-    return $output;
+    $status_text = _facebook_status_run_filter($values->facebook_status_status);
+    $owner = user_load(array('uid' => $values->uid));
+    $poster = user_load(array('uid' => $values->pid));
+    $status = facebook_status_load($values->sid);
+    drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
+    return $status_text;
   }
 }

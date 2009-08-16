@@ -403,16 +403,6 @@ function _facebook_status_tags_resolve($term) {
 }
 
 /**
- * Replaces both the username and hash tags.
- */
-function _facebook_status_tags_replace($text) {
-  //$text comes in pre-encoded. Temporarily replace the single-quote character
-  //encoding so it doesn't get unintentionally linkified.
-  $text = _facebook_status_tags_filter(str_replace('&#039;', "'", $text));
-  return str_replace("'", '&#039;', $text);
-}
-
-/**
  * Gets a taxonomy term by name.
  */
 function _facebook_status_tags_get_term($name) {
@@ -424,10 +414,12 @@ function _facebook_status_tags_get_term($name) {
 //=================
 
 /**
- * Implementation of hook_facebook_status_render().
+ * Implementation of hook_facebook_status_render_alter().
  */
-function facebook_status_tags_facebook_status_render($owner, $poster, $status) {
-  return array('_facebook_status_tags_replace' => array());
+function facebook_status_tags_facebook_status_render_alter(&$status_text, $owner, $poster, $status) {
+  //$status_text comes in pre-encoded. Temporarily replace the single-quote
+  //character encoding so it doesn't get unintentionally linkified.
+  $status_text = str_replace("'", '&#039;', _facebook_status_tags_filter(str_replace('&#039;', "'", $status_text)));
 }
 
 /**

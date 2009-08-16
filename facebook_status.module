@@ -369,11 +369,8 @@ function theme_facebook_status_item($status = FALSE) {
     }
   }
   $status_text = _facebook_status_run_filter($status->status);
-  //Invokes hook_facebook_status_render($owner, $poster, $status).
-  $functions = module_invoke_all('facebook_status_render', $owner, $poster, $status_text);
-  foreach ($functions as $function => $args) {
-    $status_text = call_user_func_array($function, array_merge(array($status_text), $args));
-  }
+  //Invokes hook_facebook_status_render_alter(&$status_text, $owner, $poster, $status).
+  drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
   $edit = '';
   if ($status_exists && _facebook_status_can_edit($status)) {
     $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $_GET['q']))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
