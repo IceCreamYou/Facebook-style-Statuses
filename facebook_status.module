@@ -723,6 +723,16 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
   if (module_exists('twitter') && user_access('use global twitter account') && variable_get('facebook_status_twitter_special', 0) && $account->name == variable_get('facebook_status_special_user', '')) {
     twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
   }
+  //Appbar integration.
+  if (module_exists('appbar')) {
+    if ($account->uid == $user->uid) {
+      appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $user->uid);
+    }
+    else {
+      appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $user), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $account->uid);
+      appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $account), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $user->uid);
+    }
+  }
 
   //A message to show to the user if necessary.
   return t('!possessive status has been updated.', array('!possessive' => $your));
@@ -1349,6 +1359,21 @@ function facebook_status_popups() {
         'updateMethod' => 'reload',
       ),
     ),
+  );
+}
+
+//===================
+//APPBAR INTEGRATION.
+//===================
+
+/**
+ * Implementation of hook_appbar_id().
+ */
+function facebook_status_appbar_id() {
+  return array(
+    'facebook_status-update-own' => t('Facebook-style Statuses update (to own profile)'),
+    'facebook_status-update-owner' => t('Facebook-style Statuses update (recipient)'),
+    'facebook_status-update-poster' => t('Facebook-style Statuses update (poster)'),
   );
 }
 
