@@ -10,6 +10,7 @@
  * Handles the Open API.
  */
 function _facebook_status_openapi() {
+  drupal_set_header('Content-Type: text/html; charset: utf-8');
   if (!flood_is_allowed('facebook_status_flood_user', variable_get('facebook_status_flood_user', 60))) {
     echo t('You have exceeded the maximum number of open-API accesses per hour. Please try again later.');
   }
@@ -19,37 +20,37 @@ function _facebook_status_openapi() {
   $type = $_GET['type'];
   $format = $_GET['format'];
   if ($format != 'json' && $format != 'xml' && $format != 'short' && $format) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 400 Bad Request');
     echo t('invalid "format" parameter');
     return;
   }
   if ((!is_numeric($count) || round($count) != $count || $count < 1 || $count > 25) && $format != 'short' && $count) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 400 Bad Request');
     echo t('"count" parameter must be a positive integer no larger than 25');
     return;
   }
   if (($type == 'tag' || $type == 'user' || $type == 'userref') && !$name) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 400 Bad Request');
     echo t('if "type" is "tag" or "user" or "userref" you must use the "name" parameter as well');
     return;
   }
   if ($type && $type != 'tag' && $type != 'user' && $type != 'public' && $type != 'userref' && $type != 'trend') {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 400 Bad Request');
     echo t('invalid "type" parameter');
     return;
   }
   if (($type == 'tag' || $type == 'trend') && (!module_exists('facebook_status_tags') || !module_exists('taxonomy'))) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 400 Bad Request');
     echo 'invalid "type" parameter';
     return;
   }
   if ($type == 'userref' && !module_exists('facebook_status_tags')) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 400 Bad Request');
     echo t('invalid "type" parameter');
     return;
   }
   if ($type == 'trend' && $name && $name != 'day' && $name != 'week' && $name != 'month' && $name != 'year' && $name != 'all') {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 400 Bad Request');
     echo t('if the "name" parameter is specified with type "trend" then it must be one of "day" "week" "month" "year" "all"');
     return;
   }
@@ -68,7 +69,7 @@ function _facebook_status_openapi() {
   if ($type == 'user' || $type == 'userref') {
     $account = user_load(array('name' => $name));
     if (!$account->uid) {
-      drupal_set_header('Content-Type: text/html; charset: utf-8');
+      drupal_set_header('HTTP/1.x 400 Bad Request');
       echo 'invalid name';
       return;
     }
@@ -94,7 +95,7 @@ function _facebook_status_openapi() {
       break;
   }
   if ((empty($statuses) && $type != 'trend') || (empty($terms) && $type == 'trend')) {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 204 No Content');
     echo t('no statuses match your criteria');
     return;
   }
@@ -126,7 +127,7 @@ function _facebook_status_openapi() {
     $clean[] = $array;
   }
   if ($format == 'xml') {
-    drupal_set_header('Content-Type: application/xml; charset: utf-8');
+    drupal_set_header('HTTP/1.x 200 OK');
     echo '<?xml version="1.0" encoding="UTF-8"?>
 ';
     if ($type != 'trend') {
@@ -142,7 +143,7 @@ function _facebook_status_openapi() {
     drupal_json($clean);
   }
   else if ($format == 'short') {
-    drupal_set_header('Content-Type: text/html; charset: utf-8');
+    drupal_set_header('HTTP/1.x 200 OK');
     if ($type != 'trend') {
       echo $clean[0]['text'];
     }
