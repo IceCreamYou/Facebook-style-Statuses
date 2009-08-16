@@ -406,7 +406,10 @@ function _facebook_status_tags_resolve($term) {
  * Replaces both the username and hash tags.
  */
 function _facebook_status_tags_replace($text) {
-  return _facebook_status_tags_filter($text);
+  //$text comes in pre-encoded. Temporarily replace the single-quote character
+  //encoding so it doesn't get unintentionally linkified.
+  $text = _facebook_status_tags_filter(str_replace('&#039;', "'", $text));
+  return str_replace("'", '&#039;', $text);
 }
 
 /**
