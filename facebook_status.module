@@ -376,10 +376,10 @@ function theme_facebook_status_item($status = FALSE) {
   }
   $edit = '';
   if ($status_exists && _facebook_status_can_edit($status)) {
-    $edit = '<span id="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+    $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
   }
   else if ($status_exists && _facebook_status_can_edit($status, TRUE)) {
-    $edit = '<span id="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+    $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
   $args = array('!status' => $status_text, '%time' => $time, '!edit' => $edit);
@@ -1345,7 +1345,7 @@ function facebook_status_sms_incoming($op, $number, $message, $options = NULL) {
 function facebook_status_popups() {
   return array(
     'facebook_status_box' => array(
-      '#facebook_status_edit_delete a' => array(
+      '.facebook_status_edit_delete a' => array(
         'updateMethod' => 'reload',
       ),
     ),
