@@ -43,6 +43,7 @@
 #facebook-status-box .view {
   clear: both;
   float: left;
+  width: 100%;
 }
 
 /* Fix magic from Garland and others. */

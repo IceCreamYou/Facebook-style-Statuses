@@ -318,6 +318,8 @@ function facebook_status_theme($existing, $type, $theme, $path) {
       'arguments' => array(
         'account' => FALSE,
         'size' => FALSE,
+        'view' => FALSE,
+        'view_arg' => FALSE,
       ),
     ),
     'facebook_status_time' => array(
@@ -416,20 +418,22 @@ function theme_facebook_status_item($status = FALSE) {
  *   The size of the status update textfield, or FALSE to use the setting.
  * @param $view
  *   The machine name of a view of statuses to append to the status update form.
- *   This view should take one argument - the User ID of the user whose profile
- *   is being viewed.
+ *   This view should expect to receive one argument - typically the User ID of
+ *   the user whose profile is being viewed.
+ * @param $view_arg
+ *   This is a very specific hack for the default conversation view.
  * @return
  *   HTML to display the status update form or FALSE if the user cannot have a
  *   status.
  */
-function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $view = FALSE) {
+function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $view = FALSE, $view_arg = FALSE) {
   global $user;
   if ($account === FALSE) {
     $account = facebook_status_choose_owner(FALSE);
   }
   if (($user->uid == $account->uid && user_access('edit own status')) || ($user->uid != $account->uid && user_access('post on all profiles'))) {
     if (!_facebook_status_exclude($account)) {
-      return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view) .'</div>';
+      return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view, $view_arg) .'</div>';
     }
   }
   $status = _facebook_status_get_status_fast($account->uid);
@@ -911,18 +915,21 @@ function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $v
  *   The size of the status update textfield, or FALSE to use the setting.
  * @param $view
  *   The machine name of a view of statuses to append to the status update form.
- *   This view should take one argument - the User ID of the user whose profile
- *   is being viewed.
+ *   This view should expect to receive one argument - typically the User ID of
+ *   the user whose profile is being viewed.
+ * @param $view_arg
+ *   This is a very specific hack for the default conversation view.
  * @return
  *   A $form array.
  */
-function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view = FALSE) {
+function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view = FALSE, $view_arg = FALSE) {
   global $user;
   if (isset($form_state['facebook_status'])) {
     $aid = $form_state['facebook_status']['account'];
     $account = user_load(array('uid' => $aid));
     $size = $form_state['facebook_status']['size'];
     $view = $form_state['facebook_status']['fbss-view-value'];
+    $view_arg = $form_state['facebook_status']['fbss-view-arg'];
   }
 
   if (!$size) {
@@ -997,8 +1004,16 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     );
   }
   if ($view && module_exists('views')) {
+    $rendered_view = views_embed_view($view, 'default', $account->uid);
+    //A very specific hack for the default conversation view.
+    if ($view_arg && $view = 'facebook_status_cross_post') {
+      $arg = $view_arg;
+      $temp = explode(',', $arg);
+      $arg2 = $temp[1] .','. $temp[0];
+      $rendered_view = views_embed_view($view, 'default', $arg, $arg2);
+    }
     $form['fbss-view'] = array(
-      '#value' => views_embed_view($view, 'default', $account->uid),
+      '#value' => $rendered_view,
     );
   }
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
@@ -1016,6 +1031,10 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   $form['fbss-view-value'] = array(
     '#type' => 'value',
     '#value' => $view,
+  );
+  $form['fbss-view-arg'] = array(
+    '#type' => 'value',
+    '#value' => $view_arg,
   );
   $form['fbss-submit'] = array(
     '#type' => 'submit',
@@ -1062,6 +1081,7 @@ function facebook_status_box_submit($form, &$form_state) {
     'account' => $aid,
     'size' => $size,
     'fbss-view-value' => $form_state['values']['fbss-view-value'],
+    'fbss-view-arg' => $form_state['values']['fbss-view-arg'],
   );
   $form_state['rebuild'] = TRUE;
 }

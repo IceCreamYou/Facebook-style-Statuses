@@ -13,6 +13,10 @@
  * submitted.
  */
 function _facebook_status_conversation() {
+  if (!module_exists('views')) {
+    watchdog('facebook_status', 'Someone attempted to access the conversation page, which does not exist unless the Views module is installed.');
+    drupal_not_found();
+  }
   global $user;
   $view = 'facebook_status_cross_post';
   $args = explode(',', arg(2));
@@ -52,7 +56,7 @@ function _facebook_status_conversation() {
       }
     }
     if (user_access('post on all profiles') && $account->uid) {
-      return theme('facebook_status_form_display', $account, variable_get('facebook_status_size_long', 40), $view);
+      return theme('facebook_status_form_display', $account, variable_get('facebook_status_size_long', 40), $view, arg(2));
     }
     else if ($account->uid) {
       return views_embed_view($view, 'default', arg(2));

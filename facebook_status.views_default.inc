@@ -150,7 +150,7 @@ function facebook_status_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] <em>[status_time]</em> [edit] [delete] [respond]',
+        'text' => '[pid_extra] [status] [status_time] [edit] [delete] [respond]',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',
@@ -503,7 +503,7 @@ function facebook_status_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] <em>[status_time]</em> [edit] [delete] [respond]',
+        'text' => '[pid_extra] [status] [status_time] [edit] [delete] [respond]',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',
@@ -689,7 +689,7 @@ function facebook_status_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_name] [status] <em>[status_time]</em>',
+        'text' => '[pid_name] [status] [status_time]',
         'make_link' => 0,
         'path' => '',
         'alt' => '',
@@ -890,7 +890,7 @@ function facebook_status_views_default_views() {
   $handler->override_option('empty_format', '1');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('use_pager', 'mini');
-  $handler->override_option('use_more', 0);
+  $handler->override_option('use_more', 1);
   $handler->override_option('style_plugin', 'table');
   $handler->override_option('style_options', array(
     'grouping' => '',
