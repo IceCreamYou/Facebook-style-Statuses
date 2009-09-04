@@ -162,6 +162,16 @@ function facebook_status_admin_advanced($form_state) {
     '#maxlength' => 10,
     '#required' => TRUE,
   );
+  $form['facebook_status_default_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default text'),
+    '#description' => t('If you leave this as @laststatus, the default text in the status update form will be the last status, if it exists; '.
+      'if no statuses have been posted or the last status was blank, you can translate the default text '.
+      '(blank by default, identified by "@fbssdefault" in the translation interface). Otherwise, the text you input here '.
+      'will appear in the status update form and will not be translatable. In both cases, the default text will be '.
+      'automatically cleared when a user clicks in the status update box.'),
+    '#default_value' => variable_get('facebook_status_default_text', '@laststatus'),
+  );
   return system_settings_form($form);
 }
 

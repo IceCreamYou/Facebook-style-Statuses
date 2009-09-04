@@ -950,7 +950,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     }
     $status = _facebook_status_get_status_fast($account->uid);
     if ($status->status_time) {
-      $default = $status->status;
+      $default = str_replace(array('@laststatus', '"'), array($status->status, ''), variable_get('facebook_status_default_text', '@laststatus'));
     }
     $slider = '';
     if (!variable_get('facebook_status_hide_status', 0)) {
