@@ -949,7 +949,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
     }
     $status = _facebook_status_get_status_fast($account->uid);
-    if ($status->status_time) {
+    if ($status->status_time || variable_get('facebook_status_default_text', '@laststatus') != '@laststatus') {
       $default = str_replace(array('@laststatus', '"'), array($status->status, ''), variable_get('facebook_status_default_text', '@laststatus'));
     }
     $slider = '';
