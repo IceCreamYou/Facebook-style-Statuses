@@ -157,6 +157,17 @@ function facebook_status_update_6202() {
 }
 
 /**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6203() {
+  $result = array();
+  //In the last few cycles, some bugs were fixed that could cause blank tags to
+  //be saved. Clean up that mess.
+  $result[] = update_sql("DELETE FROM {facebook_status_tags} WHERE name = ''");
+  return $result;
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {

@@ -565,6 +565,21 @@ function facebook_status_views_default_views() {
       'field' => 'pid_extra',
       'relationship' => 'none',
     ),
+    'status' => array(
+      'operator' => '!=',
+      'value' => '',
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => FALSE,
+        'label' => '',
+      ),
+      'case' => 1,
+      'id' => 'status',
+      'table' => 'facebook_status',
+      'field' => 'status',
+      'relationship' => 'none',
+    ),
   ));
   $handler->override_option('access', array(
     'type' => 'perm',
