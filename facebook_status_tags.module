@@ -345,7 +345,7 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
   foreach ($words as $pos => $word) {
     $op = drupal_substr($word, 0, 1);
     $match = drupal_substr($word, 1);
-    if (($op == '@' || $op == '#') && strpos($word, '@', 1) === FALSE && strpos($word, '#', 1) === FALSE) {
+    if (($op == '@' || $op == '#') && strpos($word, '@', 1) === FALSE && strpos($word, '#', 1) === FALSE && $match) {
       if ($op == '@') {
         $account = user_load(array('name' => $match));
         if ($account->uid) {
