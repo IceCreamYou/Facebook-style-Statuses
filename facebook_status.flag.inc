@@ -29,10 +29,12 @@ class facebook_status_flag extends flag_flag {
   function get_views_info() {
     return array(
       'views table' => 'facebook_status',
-      'join field' => 'uid',
+      'join field' => 'sid',
       'title field' => 'status',
-      'title' => t('Facebook-style Status'),
+      'title' => t('Facebook-style Statuses'),
       'help' => t('Display information about the flag set on a status.'),
+      'counter title' => t('Facebook-style Statuses flag counter'),
+      'counter help' => t('Include this to gain access to the flag counter field.'),
     );
   }
   function applies_to_content_id_array($content_ids) {
