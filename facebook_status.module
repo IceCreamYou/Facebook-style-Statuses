@@ -1016,6 +1016,10 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       '#value' => $rendered_view,
     );
   }
+  $form['sdefault'] = array(
+    '#type' => 'value',
+    '#value' => $default,
+  );
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['closediv'] = array(
     '#value' => '</div>',
@@ -1073,10 +1077,14 @@ function facebook_status_box_submit($form, &$form_state) {
   $aid = $form_state['values']['account'];
   $account = user_load(array('uid' => $aid));
   $new_status = trim($form_state['values']['status']);
-  if ($form_state['values']['twitter']) {
-    facebook_status_twitter($account, $new_status);
+  $default = $form_state['values']['sdefault'];
+  //Don't save/tweet the status if it wasn't changed from the default.
+  if ($new_status != $default) {
+    if ($form_state['values']['twitter']) {
+      facebook_status_twitter($account, $new_status);
+    }
+    $message = facebook_status_save_status($account, $new_status);
   }
-  $message = facebook_status_save_status($account, $new_status);
   $form_state['facebook_status'] = array(
     'account' => $aid,
     'size' => $size,
@@ -1105,6 +1113,7 @@ function facebook_status_save_js() {
   $new_form['chars'] = $form['chars'];
   $new_form['twitter'] = $form['twitter'];
   $new_form['fbss-view'] = $form['fbss-view'];
+  $new_form['sdefault'] = $form['sdefault'];
   //Clear the status form after it's already been submitted once to prevent confusion.
   unset($new_form['status']['#default_value']);
   //If the $form['fbss-submit']['#ahah']['wrapper'] div was found in a #prefix or #suffix of a form element that we re-rendered here,
@@ -1255,7 +1264,7 @@ function facebook_status_token_list($type = 'all') {
  */
 function facebook_status_token_values($type, $data = NULL, $options = array()) {
   //Activity 1. Not sure this works. If it doesn't it's because $data is an object.
-  if ($type == 'facebook_status' && !empty($data)) {
+  if ($type == 'facebook_status' && !empty($data) && is_array($data)) {
     $data['status-time'] = theme('facebook_status_time', $data['status_time']);
     return $data;
   }
@@ -1329,7 +1338,7 @@ function facebook_status_views_api() {
  * Posts a status to Twitter.
  */
 function facebook_status_twitter($account, $status) {
-  if (!module_exists('twitter')) {
+  if (!module_exists('twitter') || !$status) {
     return;
   }
   global $user;
