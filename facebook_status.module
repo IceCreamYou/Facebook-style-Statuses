@@ -1248,7 +1248,6 @@ function facebook_status_activityapi(&$activity, $op) {
 function facebook_status_token_list($type = 'all') {
   if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster' || $type = 'fbss-user') {
     $tokens['facebook_status'] = array(
-      'operation' => t('The operation that took place. Always "update."'),
       'owner' => t('The user whose profile the status was posted on.'),
       'poster' => t('The user who posted the status.'),
       'status-unformatted' => t('The new status, emphasized and with HTML escaped but no filters or anything run over it.'),
@@ -1272,7 +1271,6 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
   else if (($type == 'owner' || $type == 'poster' || $type = 'fbss-user') && !empty($data)) {
     $status = $data->facebook_status;
     return array(
-      'operation' => t('update'),
       'owner' => theme('username', user_load(array('uid' => $status->uid))),
       'poster' => theme('username', user_load(array('uid' => $status->pid))),
       'status-unformatted' => theme('placeholder', $status->status),
@@ -1303,7 +1301,6 @@ function facebook_status_activity($owner, $poster, $status) {
     return FALSE;
   }
   $data = array(
-    'operation' => 'update',
     'owner' => theme('username', $owner),
     'poster' => theme('username', $poster),
     'status-unformatted' => check_plain($status->status),
