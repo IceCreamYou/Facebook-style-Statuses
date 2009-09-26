@@ -680,8 +680,7 @@ function facebook_status_delete_status($sid) {
  *   If TRUE, alerts other modules that a status has been saved. This is useful
  *   when other modules want to record their own alerts.
  * @return
- *   A translated string that can be presented to the user as a confirmation
- *   that saving the status worked.
+ *   The saved status object.
  */
 function facebook_status_save_status($account = FALSE, $new_status = '', $save_alerts = TRUE) {
   if (!$account) {
@@ -743,8 +742,7 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
     }
   }
 
-  //A message to show to the user if necessary.
-  return t('!possessive status has been updated.', array('!possessive' => $your));
+  return $object;
 }
 
 /**
