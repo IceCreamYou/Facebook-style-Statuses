@@ -676,8 +676,14 @@ function facebook_status_delete_status($sid) {
  *   The $user object for the user whose status will be saved.
  * @param $new_status
  *   The status text to be saved.
+ * @param $save_alerts
+ *   If TRUE, alerts other modules that a status has been saved. This is useful
+ *   when other modules want to record their own alerts.
+ * @return
+ *   A translated string that can be presented to the user as a confirmation
+ *   that saving the status worked.
  */
-function facebook_status_save_status($account = FALSE, $new_status = '') {
+function facebook_status_save_status($account = FALSE, $new_status = '', $save_alerts = TRUE) {
   if (!$account) {
     $account = facebook_status_choose_owner();
   }
@@ -710,28 +716,30 @@ function facebook_status_save_status($account = FALSE, $new_status = '') {
     //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid).
     module_invoke_all('facebook_status_save', $account, $new_status, $new_id);
   }
-  //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
-  if (module_exists('trigger') && $time) {
-    module_invoke_all('facebook_status', 'fbss_submitted', $account, $user, $object);
-  }
-  //Activity 1 integration.
-  facebook_status_activity($account, $user, $object);
-  //Rules integration.
-  if (module_exists('rules')) {
-    rules_invoke_event('facebook_status_update', $account, $new_status);
-  }
-  //Twitter integration.
-  if (module_exists('twitter') && user_access('use global twitter account') && variable_get('facebook_status_twitter_special', 0) && $account->name == variable_get('facebook_status_special_user', '')) {
-    twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
-  }
-  //Appbar integration.
-  if (module_exists('appbar')) {
-    if ($account->uid == $user->uid) {
-      appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $user->uid);
+  if ($save_alerts) {
+    //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
+    if (module_exists('trigger') && $time) {
+      module_invoke_all('facebook_status', 'fbss_submitted', $account, $user, $object);
     }
-    else {
-      appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $user), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $account->uid);
-      appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $account), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $user->uid);
+    //Activity 1 integration.
+    facebook_status_activity($account, $user, $object);
+    //Rules integration.
+    if (module_exists('rules')) {
+      rules_invoke_event('facebook_status_update', $account, $new_status);
+    }
+    //Twitter integration.
+    if (module_exists('twitter') && user_access('use global twitter account') && variable_get('facebook_status_twitter_special', 0) && $account->name == variable_get('facebook_status_special_user', '')) {
+      twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
+    }
+    //Appbar integration.
+    if (module_exists('appbar')) {
+      if ($account->uid == $user->uid) {
+        appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $user->uid);
+      }
+      else {
+        appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $user), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $account->uid);
+        appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $account), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $user->uid);
+      }
     }
   }
 
