@@ -168,6 +168,20 @@ function facebook_status_update_6203() {
 }
 
 /**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6204() {
+  if (!variable_get('facebook_status_twitter', 1)) {
+    variable_set('facebook_status_twitter_default', 'disabled');
+    variable_del('facebook_status_twitter');
+  }
+  return array(array(
+    'success' => TRUE,
+    'query' => t('Settings for posting statuses to Twitter updated'),
+  ));
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {
@@ -185,7 +199,6 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_size_long');
   variable_del('facebook_status_default');
   variable_del('facebook_status_exclude');
-  variable_del('facebook_status_twitter');
   variable_del('facebook_status_concat');
   variable_del('facebook_status_filter');
   variable_del('facebook_status_legacy');

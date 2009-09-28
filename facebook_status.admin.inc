@@ -35,6 +35,7 @@ function facebook_status_admin($form_state) {
         'off' => t('Always disabled by default'),
         'on-user' => t('Let the user choose (enabled is default)'),
         'off-user' => t('Let the user choose (disabled is default)'),
+        'disallow' => t('Do not allow posting to Twitter at all'),
       ),
     );
   }
@@ -113,7 +114,7 @@ function facebook_status_admin_validate($form, &$form_state) {
   if (!is_numeric($size) || $size < 1 || $size != round($size) || $size > 21844) {
     form_set_error('facebook_status_length', t('The maximum status length must be a positive integer no greater than 21844.'));
   }
-  if ($size > 140 && module_exists('twitter') && variable_get('facebook_status_twitter', 1)) {
+  if ($size > 140 && module_exists('twitter') && variable_get('facebook_status_twitter_default', 'off') != 'disallow') {
     drupal_set_message(t('The maximum number of characters allowed in a status is set to a number above 140, and users can post status updates to Twitter. These settings could allow users to post messages to Twitter which are too long for Twitter to handle, in which case Twitter will cut short those messages.'), 'warning');
   }
 }
@@ -122,13 +123,6 @@ function facebook_status_admin_validate($form, &$form_state) {
  * Advanced settings form.
  */
 function facebook_status_admin_advanced($form_state) {
-  if (module_exists('twitter')) {
-    $form['facebook_status_twitter'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Allow users to post their statuses to Twitter'),
-      '#default_value' => variable_get('facebook_status_twitter', 1),
-    );
-  }
   $form['facebook_status_hide_status'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide status above textfield'),
