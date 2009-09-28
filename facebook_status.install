@@ -172,7 +172,7 @@ function facebook_status_update_6203() {
  */
 function facebook_status_update_6204() {
   if (!variable_get('facebook_status_twitter', 1)) {
-    variable_set('facebook_status_twitter_default', 'disabled');
+    variable_set('facebook_status_twitter_default', 'disallow');
     variable_del('facebook_status_twitter');
   }
   return array(array(
