@@ -262,7 +262,7 @@ function facebook_status_form_twitter_account_list_form_alter(&$form, &$form_sta
   $account = user_load(array('uid' => arg(1)));
   $data = unserialize($account->data);
 
-  if (!empty($options) && variable_get('facebook_status_twitter_default', 'off') != 'disallow') {
+  if (count($options) > 1 && variable_get('facebook_status_twitter_default', 'off') != 'disallow') {
     $default_setting = variable_get('facebook_status_twitter_default', 'off');
     if ($default_setting == 'on-user' || $default_setting == 'off-user') {
       if (!isset($data['facebook_status_twitter_default'])) {
