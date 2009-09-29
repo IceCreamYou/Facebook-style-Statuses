@@ -1333,6 +1333,15 @@ function facebook_status_views_api() {
   return array('api' => 2);
 }
 
+/**
+ * Displays the user picture with fixes for unfortunate magic found in Garland
+ * and other themes.
+ */
+function facebook_status_display_user_picture($account) {
+  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
+  return theme('user_picture', $account);
+}
+
 //====================
 //Twitter Integration.
 //====================

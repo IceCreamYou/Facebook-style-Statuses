@@ -142,6 +142,16 @@ function facebook_status_views_data() {
       'handler' => 'views_handler_argument_user_uid',
     ),
   );
+  //Alias for poster picture.
+  $data['facebook_status']['pid_pic'] = array(
+    'title' => t('Poster picture'),
+    'help' => t('The picture of the user who posted the status.'),
+    'field' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_field_poster_pic',
+      'click sortable' => FALSE,
+    ),
+  );
 
   //Alias for extras for the poster.
   $data['facebook_status']['pid_extra'] = array(
@@ -264,6 +274,9 @@ function facebook_status_views_handlers() {
       ),
       'facebook_status_views_handler_field_poster' => array(
         'parent' => 'views_handler_field_user',
+      ),
+      'facebook_status_views_handler_field_poster_pic' => array(
+        'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_respond' => array(
         'parent' => 'views_handler_field',

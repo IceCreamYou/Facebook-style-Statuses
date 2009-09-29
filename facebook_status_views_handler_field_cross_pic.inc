@@ -34,12 +34,3 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
     }
   }
 }
-
-/**
- * Displays the user picture with fixes for unfortunate magic found in Garland
- * and other themes.
- */
-function facebook_status_display_user_picture($account) {
-  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
-  return theme('user_picture', $account);
-}
