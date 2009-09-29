@@ -964,7 +964,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     }
   }
   else {
-    $slider = theme('username', $account);
+    $slider = t('To !user', array('!user' => theme('username', $account)));
   }
 
   if (arg(0) == 'share-status') {
