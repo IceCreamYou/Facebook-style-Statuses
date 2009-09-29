@@ -27,7 +27,6 @@ function facebook_status_admin($form_state) {
     $form['facebook_status_twitter_default'] = array(
       '#type' => 'radios',
       '#title' => t('Default Twitter option'),
-      '#description' => t('Note: you must enable the "Allow users to post their statuses to Twitter" checkbox on the Advanced Settings page for this to take effect, although it should be enabled by default.'),
       '#default_value' => variable_get('facebook_status_twitter_default', 'off'),
       '#required' => TRUE,
       '#options' => array(
