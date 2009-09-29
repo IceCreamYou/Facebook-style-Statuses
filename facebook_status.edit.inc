@@ -9,7 +9,7 @@
 /**
  * The edit status form.
  */
-function _facebook_status_edit(&$form_state, $status) {
+function facebook_status_edit(&$form_state, $status) {
   $size = variable_get('facebook_status_size_long', 40);
   $maxlength = variable_get('facebook_status_length', 192);
   $account = user_load(array('uid' => $status->uid));
@@ -31,11 +31,10 @@ function _facebook_status_edit(&$form_state, $status) {
     'ttype' => variable_get('facebook_status_type', 'textfield'))
   ), 'setting');
   //Don't show the slider; we'd have to do a custom version of theme('facebook_status_item').
-  $slider = '';
+  $slider = '<strong>'. t('Original status: ') .' </strong>'. check_plain($status->status);
   $form = array('#cache' => TRUE);
   $form['slider'] = array(
-    '#prefix' => '<span id="facebook_status_replace">',
-    '#value' => '<span id="facebook_status_slider">'. $slider .'</span>',
+    '#value' => '<div id="facebook_status_update" class="clear-block"><span id="facebook_status_slider">'. $slider .'</span>',
   );
   $form['status'] = array(
     '#type' => variable_get('facebook_status_type', 'textfield'),
@@ -46,8 +45,10 @@ function _facebook_status_edit(&$form_state, $status) {
     '#maxlength' => $maxlength,
     '#default_value' => $default,
     '#attributes' => array('class' => 'facebook_status_text'),
-    '#suffix' => '</span>',
     '#resizable' => FALSE,
+  );
+  $form['chars'] = array(
+    '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
   );
   $form['sid'] = array(
     '#type' => 'value',
@@ -57,9 +58,7 @@ function _facebook_status_edit(&$form_state, $status) {
     '#type' => 'submit',
     '#value' => t('Save'),
     '#attributes' => array('class' => 'facebook_status_submit'),
-  );
-  $form['chars'] = array(
-    '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
+    '#suffix' => '</div>',
   );
   //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');
@@ -69,7 +68,7 @@ function _facebook_status_edit(&$form_state, $status) {
 /**
  * Validate function for the status update form.
  */
-function _facebook_status_edit_validate($form, &$form_state) {
+function facebook_status_edit_validate($form, &$form_state) {
   $maxlen = variable_get('facebook_status_length', 192);
   if (drupal_strlen($form_state['values']['status']) > $maxlen) {
     form_set_error('status', t('The status must be no longer than %chars characters.', array('%chars' => $maxlen)));
@@ -79,7 +78,7 @@ function _facebook_status_edit_validate($form, &$form_state) {
 /**
  * Submit function for the status update form.
  */
-function _facebook_status_edit_submit($form, &$form_state) {
+function facebook_status_edit_submit($form, &$form_state) {
   $status_old = facebook_status_load($form_state['values']['sid']);
   $account = user_load(array('uid' => $status_old->uid));
   $new_status = trim($form_state['values']['status']);

@@ -1,11 +1,11 @@
 // $Id$
 Drupal.behaviors.facebookStatus = function (context) {
-  $facebook_status_field = $('#facebook_status_update').find('#edit-status');
-  $facebook_status_chars = $('#facebook_status_update').find('#facebook_status_chars');
+  $facebook_status_field = $('#facebook_status_update #edit-status');
+  $facebook_status_chars = $('#facebook_status_update #facebook_status_chars');
   facebook_status_original_value = $facebook_status_field.val();
   fbss_maxlen = Drupal.settings.facebook_status.maxlength;
   //Clear the status field the first time it's in focus if it hasn't been changed.
-  $facebook_status_field.one('focus', function() {
+  $('#facebook-status-box #edit-status').one('focus', function() {
     facebook_status_value = $facebook_status_field.val();
     if (facebook_status_value == facebook_status_original_value) {
       $facebook_status_field.val('');

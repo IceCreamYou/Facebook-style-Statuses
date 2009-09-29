@@ -67,7 +67,7 @@ function facebook_status_menu() {
   $items['statuses/%facebook_status/edit'] = array(
     'title' => 'Edit status',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('_facebook_status_edit', 1),
+    'page arguments' => array('facebook_status_edit', 1),
     'access callback' => '_facebook_status_can_edit',
     'access arguments' => array(1),
     'type' => MENU_CALLBACK,
