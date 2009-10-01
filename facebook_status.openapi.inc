@@ -128,6 +128,7 @@ function _facebook_status_openapi() {
   }
   if ($format == 'xml') {
     drupal_set_header('HTTP/1.x 200 OK');
+    drupal_set_header('Content-Type: application/xml; charset=utf-8');
     echo '<?xml version="1.0" encoding="UTF-8"?>
 ';
     if ($type != 'trend') {
