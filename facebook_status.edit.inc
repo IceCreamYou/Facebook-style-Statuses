@@ -27,6 +27,7 @@ function facebook_status_edit(&$form_state, $status) {
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_css($path .'/facebook_status.css');
   drupal_add_js(array('facebook_status' => array(
+    'autofocus' => TRUE,
     'maxlength' => $maxlength,
     'ttype' => variable_get('facebook_status_type', 'textfield'))
   ), 'setting');

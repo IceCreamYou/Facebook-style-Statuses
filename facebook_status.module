@@ -975,6 +975,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_css($path .'/facebook_status.css');
   drupal_add_js(array('facebook_status' => array(
+    'autofocus' => (arg(0) == 'share-status'),
     'maxlength' => $maxlength,
     'ttype' => variable_get('facebook_status_type', 'textfield'))
   ), 'setting');
@@ -1254,8 +1255,10 @@ function facebook_status_activityapi(&$activity, $op) {
 function facebook_status_token_list($type = 'all') {
   if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster' || $type = 'fbss-user') {
     $tokens['facebook_status'] = array(
-      'owner' => t('The user whose profile the status was posted on.'),
-      'poster' => t('The user who posted the status.'),
+      'owner' => t('The themed name of the user on whose profile the status was posted.'),
+      'owner-id' => t('The User ID of the user on whose profile the status was posted.'),
+      'poster' => t('The themed name of the user who posted the status.'),
+      'poster-id' => t('The User ID of the user who posted the status.'),
       'status-unformatted' => t('The new status, emphasized and with HTML escaped but no filters or anything run over it.'),
       'status-themed' => t('The new status completely themed, including usernames and times.'),
       'status-time' => t('The time the status was submittted.'),
@@ -1278,7 +1281,9 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     $status = $data->facebook_status;
     return array(
       'owner' => theme('username', user_load(array('uid' => $status->uid))),
+      'owner-id' => $status->uid,
       'poster' => theme('username', user_load(array('uid' => $status->pid))),
+      'poster-id' => $status->pid,
       'status-unformatted' => theme('placeholder', $status->status),
       'status-themed' => theme('facebook_status_item', $status),
       'status-time' => theme('facebook_status_time', $status->status_time),
