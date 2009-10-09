@@ -229,7 +229,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d OR pid = %d', $account->uid, $account->uid);
   }
-  if ($op == 'view' && !_facebook_status_exclude($account)) {
+  if ($op == 'view' && !_facebook_status_exclude($account) && user_access('view all statuses') && (user_access('edit own status', $account) || user_access('edit all statuses', $account))) {
     if (!isset($account->content['facebook_status'])) {
       $account->content['facebook_status'] = array();
     }
@@ -254,12 +254,15 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
  * No need to check permissions since the form is already restricted.
  */
 function facebook_status_form_twitter_account_list_form_alter(&$form, &$form_state) {
+  $account = user_load(array('uid' => arg(1)));
+  if (!user_access('edit own status', $account) && !user_access('edit all statuses', $account)) {
+    return;
+  }
   $result = db_query("SELECT screen_name FROM {twitter_user} WHERE uid = %d", arg(1));
   $options = array(0 => t('None'));
   while ($option = db_fetch_array($result)) {
     $options[$option['screen_name']] = $option['screen_name'];
   }
-  $account = user_load(array('uid' => arg(1)));
   $data = unserialize($account->data);
 
   if (count($options) > 1 && variable_get('facebook_status_twitter_default', 'off') != 'disallow') {
