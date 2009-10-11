@@ -81,6 +81,15 @@ function facebook_status_views_data() {
       'click sortable' => FALSE,
     ),
   );
+  $data['facebook_status']['repost'] = array(
+    'title' => t('Re-post'),
+    'help' => t('Shows a link to re-post a status.'),
+    'field' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_views_handler_field_repost',
+      'click sortable' => FALSE,
+    ),
+  );
 
   //Declares the Owner UID column.
   $data['facebook_status']['uid'] = array(
@@ -189,13 +198,13 @@ function facebook_status_views_data() {
     ),
   );
   $data['facebook_status']['respond'] = array(
-    'title' => t('Conversation link'),
-    'help' => t('Links to the view of the conversation where appropriate.'),
+    'title' => t('Respond link'),
+    'help' => t('Links view the conversation or respond to it when appropriate.'),
     'field' => array(
       'field' => 'pid',
       'handler' => 'facebook_status_views_handler_field_respond',
       'click sortable' => FALSE,
-      'label' => t('View conversation'),
+      'label' => t('Respond to conversation'),
     ),
   );
 
@@ -276,6 +285,9 @@ function facebook_status_views_handlers() {
         'parent' => 'views_handler_field_user',
       ),
       'facebook_status_views_handler_field_poster_pic' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_repost' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_respond' => array(

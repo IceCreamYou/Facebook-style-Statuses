@@ -960,15 +960,14 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   $default = '';
   $prefix = '';
   if ($user->uid == $account->uid) {
-    //Because this text will appear exactly as-is in the textfield, we can't use a full check_plain() or filter_xss().
-    //We also translate a blank string so that the default text can be in different languages without having the restriction of being preset.
-    $default = str_replace('"', '', t('@fbssdefault', array('@fbssdefault' => '')));
+    //Translate a blank string so that the default text can be in different languages without having the restriction of being preset.
+    $default = t('@fbssdefault', array('@fbssdefault' => ''));
     if (variable_get('facebook_status_concat', 1)) {
       $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
     }
     $status = _facebook_status_get_status_fast($account->uid);
     if ($status->status_time || variable_get('facebook_status_default_text', '@laststatus') != '@laststatus') {
-      $default = str_replace(array('@laststatus', '"'), array($status->status, ''), variable_get('facebook_status_default_text', '@laststatus'));
+      $default = str_replace('@laststatus', $status->status, variable_get('facebook_status_default_text', '@laststatus'));
     }
     $slider = '';
     if (!variable_get('facebook_status_hide_status', 0)) {
@@ -981,6 +980,17 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
 
   if (arg(0) == 'share-status') {
     $default = str_replace('"', '', $_GET['s']);
+    if (is_numeric($_GET['sid'])) {
+      $rs = facebook_status_load($_GET['sid']);
+      $poster = user_load(array('uid' => $rs->pid));
+      if ($poster->uid != $user->uid && $rs->status) {
+        $default = str_replace(array('@name', '@status'), array('@'. $poster->name, $rs->status), variable_get('facebook_status_repost', '@name "@status" '));
+        $slider = '';
+      }
+    }
+    else if (is_numeric($_GET['rsid'])) {
+      $slider = t('In response to !status', array('!status' => theme('facebook_status_item', facebook_status_load($_GET['rsid']))));
+    }
   }
 
   $path = drupal_get_path('module', 'facebook_status');
@@ -1072,6 +1082,9 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       'effect' => 'fade',
       'method' => 'replace',
     );
+  }
+  if (arg(0) == 'share-status' && $_GET['destination'] && $_GET['destination'] != $_GET['q']) {
+    $form['back']['#value'] = l(t('Back'), $_GET['destination'], array('attributes' => array('class' => 'facebook-status-back')));
   }
   //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');

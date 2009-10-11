@@ -13,8 +13,7 @@ function facebook_status_edit(&$form_state, $status) {
   $size = variable_get('facebook_status_size_long', 40);
   $maxlength = variable_get('facebook_status_length', 192);
   $account = user_load(array('uid' => $status->uid));
-  //Because this text will appear exactly as-is in the textfield, we can't use a full check_plain() or filter_xss().
-  $default = str_replace('"', '', $status->status);
+  $default = $status->status;
 
   if (variable_get('facebook_status_concat', 1)) {
     $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';

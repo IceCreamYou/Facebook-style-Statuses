@@ -83,6 +83,12 @@ function facebook_status_admin($form_state) {
     '#maxlength' => 4,
     '#required' => TRUE,
   );
+  $form['facebook_status_repost'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Re-post format'),
+    '#description' => t("The format of the default message when users click a link to re-post a status. @name will be replaced with the poster's name and @status will be replaced with the status text."),
+    '#default_value' => variable_get('facebook_status_repost', '@name "@status" '),
+  );
   return system_settings_form($form);
 }
 
