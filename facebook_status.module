@@ -344,11 +344,16 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  * @param $status
  *   A full status object. If not passed, gets the last status for the relevant
  *   user automatically. If there is none, uses a default message.
+ * @param $historical
+ *   Indicates that the complete text of the rendered status will be stored
+ *   for future use. This means primarily that dynamic timestamps should be
+ *   avoided. This parameter is mainly for use with the Activity module, but
+ *   other modules saving historical records may also find it useful.
  * @return
  *   HTML to display the themed status or FALSE if the current user does not
  *   have permission to view the status.
  */
-function theme_facebook_status_item($status = FALSE) {
+function theme_facebook_status_item($status = FALSE, $historical = FALSE) {
   global $user;
   if ($status === FALSE) {
     $status = _facebook_status_get_status_fast($user->uid);
@@ -374,6 +379,7 @@ function theme_facebook_status_item($status = FALSE) {
     }
   }
   $status_text = _facebook_status_run_filter($status->status);
+  $status->historical = $historical;
   //Invokes hook_facebook_status_render_alter(&$status_text, $owner, $poster, $status).
   drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
   $edit = '';
@@ -384,6 +390,9 @@ function theme_facebook_status_item($status = FALSE) {
     $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $_GET['q']))) .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
+  if ($historical) {
+    $time = format_date($status->status_time, 'small');
+  }
   $args = array('!status' => $status_text, '%time' => $time, '!edit' => $edit);
   if ($owner->uid == $poster->uid) {
     $args['!user'] = $owner_name;
@@ -1052,7 +1061,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   );
   $form['fbss-submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save'),
+    '#value' => t('Share'),
     '#submit' => array('facebook_status_box_submit'),
     '#attributes' => array('class' => 'facebook_status_submit'),
   );
@@ -1183,7 +1192,8 @@ function facebook_status_facebook_status($op, $owner, $poster, $status) {
     'poster' => $poster,
   );
   //If we're using Activity 2, 'user' is for posting to one's own profile.
-  if (function_exists('activity_action_info')) {
+  //We also have to check for self-posting or the poster will see the self message.
+  if (function_exists('activity_action_info') && $owner->uid == $poster->uid) {
     $context['fbss-user'] = $poster;
   }
   actions_do(array_keys($aids), $poster, $context);
@@ -1192,6 +1202,12 @@ function facebook_status_facebook_status($op, $owner, $poster, $status) {
 //===============================
 //ACTIVITY AND TOKEN INTEGRATION.
 //===============================
+
+/**
+ * Note: Activity 1 integration isn't really supported. It's legacy, but it's
+ * here for those who insist on using it. This means that it won't be updated
+ * to match the changes going into Activity 2 integration.
+ */
 
 /**
  * Implementation of hook_activity_info().
@@ -1288,8 +1304,8 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       'poster' => theme('username', user_load(array('uid' => $status->pid))),
       'poster-id' => $status->pid,
       'status-unformatted' => theme('placeholder', $status->status),
-      'status-themed' => theme('facebook_status_item', $status),
-      'status-time' => theme('facebook_status_time', $status->status_time),
+      'status-themed' => theme('facebook_status_item', $status, TRUE),
+      'status-time' => format_date($status->status_time, 'small'),
     );
   }
 }
