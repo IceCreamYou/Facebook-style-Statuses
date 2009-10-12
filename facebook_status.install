@@ -188,6 +188,7 @@ function facebook_status_uninstall() {
   //Remove tables.
   drupal_uninstall_schema('facebook_status');
   //Remove variables.
+  variable_del('facebook_status_activity_self_patterns');
   variable_del('facebook_status_twitter_default');
   variable_del('facebook_status_twitter_special');
   variable_del('facebook_status_default_text');

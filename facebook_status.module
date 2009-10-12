@@ -308,6 +308,60 @@ function facebook_status_twitter_submit($form, &$form_state) {
 }
 
 /**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function facebook_status_form_activity_form_alter(&$form, &$form_state) {
+  if ($form_state['storage']['values']['triggers']['module'] == 'facebook_status' && $form_state['storage']['values']['operations']['operation'] = 'fbss_submitted') {
+    foreach (activity_enabled_languages() as $id => $language) {
+      $form["{$id}_fieldset"]['everyone-pattern-'. $id]['#title'] = t('Public message (one user to another)');
+      $form["{$id}_fieldset"]['everyone-pattern-'. $id]['#description'] = t('Using the available tokens, enter a message as how it should <strong>appear to anyone who is <em>not</em> the poster or owner</strong> of this particular status.');
+      $defaults = variable_get('facebook_status_activity_self_patterns', array());
+      $form["{$id}_fieldset"]['everyone-pattern-'. $id .'-self'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Public message (self-update)'),
+        '#default_value' => isset($defaults[$id]) ? $defaults[$id] : '',
+        '#maxlength' => '254',
+        '#description' => t('Using the available tokens, enter a message as how it should <strong>appear to anyone who is <em>not</em> the author</strong> of this particular activity.'),
+      );
+    }
+    $form['facebook_status_extra'] = array('#type' => 'value', '#value' => TRUE);
+    $form['#submit'][] = 'facebook_status_activity_form_extra_submit';
+  }
+}
+
+/**
+ * Submit function for the altered Activity publishing template.
+ */
+function facebook_status_activity_form_extra_submit($form, &$form_state) {
+  if ($form_state['values']['facebook_status_extra']) {
+    $patterns = array();
+    foreach (activity_enabled_languages() as $id => $language) {
+      $patterns[$id] = $form_state['values']['everyone-pattern-'. $id .'-self'];
+    }
+    variable_set('facebook_status_activity_self_patterns', $patterns);
+  }
+}
+
+/**
+ * Implemenation of hook_activity_message_recorded().
+ */
+function facebook_status_activity_message_recorded($record, $context) {
+  if ($context['owner']->uid == $context['poster']->uid) {
+    $patterns = variable_get('facebook_status_activity_self_patterns', array());
+    $types = array(
+      'owner' => $context['owner'],
+      'poster' => $context['poster'],
+      'fbss-user' => $context['fbss-user'],
+    );
+    $rows = db_query("SELECT language, amid FROM {activity_targets} WHERE uid = 0 AND aid = %d", $record->aid);
+    while ($row = db_fetch_object($rows)) {
+      $message = token_replace_multiple($patterns[$row->language], $types, '[', ']', array(), TRUE);
+      db_query("UPDATE {activity_messages} SET message = '%s' WHERE amid = %d", $message, $row->amid);
+    }
+  }
+}
+
+/**
  * Implementation of hook_theme().
  */
 function facebook_status_theme($existing, $type, $theme, $path) {
