@@ -85,7 +85,7 @@ function facebook_status_edit_submit($form, &$form_state) {
 
   global $user;
   //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
-  $time = time();
+  $time = $status_old->status_time;
   if ($new_status === '') {
     $time = 0;
   }
@@ -104,6 +104,16 @@ function facebook_status_edit_submit($form, &$form_state) {
     $form_state['redirect'] = array('share-status');
   }
   drupal_set_message(t('Status has been successfully edited.'));
+  //Trigger integration.
+  if (module_exists('trigger')) {
+    module_invoke_all('facebook_status', 'fbss_edited', $status_old->sid);
+  }
+  //Rules integration.
+  if (module_exists('rules')) {
+    $status_old->status = $new_status;
+    $status_old->status_time = $time;
+    rules_invoke_event('facebook_status_edit', $status_old);
+  }
 }
 
 /**

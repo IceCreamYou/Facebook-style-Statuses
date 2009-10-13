@@ -255,7 +255,7 @@ function facebook_status_views_data_alter(&$data) {
       'base' => 'facebook_status',
       'field' => 'uid',
       'type' => 'INNER',
-      'handler' => 'facebook_status_views_handler_relationship',
+      'handler' => 'views_handler_relationship',
     ),
   );
 }
@@ -304,9 +304,6 @@ function facebook_status_views_handlers() {
       ),
       'facebook_status_views_handler_filter_not_own' => array(
         'parent' => 'views_handler_filter_boolean_operator',
-      ),
-      'facebook_status_views_handler_relationship' => array(
-        'parent' => 'views_handler_relationship',
       ),
     ),
   );
