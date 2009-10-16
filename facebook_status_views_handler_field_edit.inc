@@ -14,7 +14,11 @@ class facebook_status_views_handler_field_edit extends views_handler_field {
     $status = facebook_status_load($values->facebook_status_sid);
     if (_facebook_status_can_edit($status)) {
       drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
-      return '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $_GET['q']))) .'</span>';
+      $q = $_GET['q'];
+      if ($q == 'facebook_status/js') {
+        $q = 'user';
+      }
+      return '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .'</span>';
     }
   }
 }

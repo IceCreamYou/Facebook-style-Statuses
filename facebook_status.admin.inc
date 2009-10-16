@@ -80,7 +80,7 @@ function facebook_status_admin($form_state) {
     '#description' => t('Must be a positive integer no greater than 21844.'),
     '#default_value' => variable_get('facebook_status_length', 192),
     '#size' => 3,
-    '#maxlength' => 4,
+    '#maxlength' => 5,
     '#required' => TRUE,
   );
   $form['facebook_status_repost'] = array(

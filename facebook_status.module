@@ -423,11 +423,15 @@ function theme_facebook_status_item($status = FALSE, $historical = FALSE) {
   //Invokes hook_facebook_status_render_alter(&$status_text, $owner, $poster, $status).
   drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
   $edit = '';
+  $q = $_GET['q'];
+  if ($q = 'facebook_status/js') {
+    $q = 'share-status';
+  }
   if ($status_exists && _facebook_status_can_edit($status)) {
-    $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $_GET['q']))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+    $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
   }
   else if ($status_exists && _facebook_status_can_edit($status, TRUE)) {
-    $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $_GET['q']))) .'</span>';
+    $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
   if ($historical) {
