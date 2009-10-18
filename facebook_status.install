@@ -205,6 +205,7 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_legacy');
   variable_del('facebook_status_length');
   variable_del('facebook_status_repost');
+  variable_del('facebook_status_nl2br');
   variable_del('facebook_status_ahah');
   variable_del('facebook_status_size');
   variable_del('facebook_status_type');

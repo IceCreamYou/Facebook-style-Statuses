@@ -425,7 +425,11 @@ function facebook_status_tags_facebook_status_render_alter(&$status_text, $owner
 /**
  * Implementation of hook_facebook_status_save().
  */
-function facebook_status_tags_facebook_status_save($account, $status, $sid) {
+function facebook_status_tags_facebook_status_save($account, $status, $sid, $edit = FALSE) {
+  //If the status was just edited, the tags could have changed, so we flush them.
+  if ($edit) {
+    db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
+  }
   $matches = _facebook_status_tags_filter($status, TRUE);
   //Users.
   $old_matches = array();

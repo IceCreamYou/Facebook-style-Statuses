@@ -138,6 +138,12 @@ function facebook_status_admin_advanced($form_state) {
     '#title' => t('Hide blank and empty statuses above textfield'),
     '#default_value' => variable_get('facebook_status_hide_blank', 0),
   );
+  $form['facebook_status_nl2br'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Convert line breaks'),
+    '#description' => t('By default, line breaks in the status update form are ignored. If you use an input filter to fix that, the status text will appear on a different line than the username and other information. Enabling this setting allows line breaks to appear without the side-effect of the input filter.'),
+    '#default_value' => variable_get('facebook_status_nl2br', 0),
+  );
   $form['facebook_status_ahah'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use AHAH to refresh the status update form without refreshing the page'),

@@ -419,12 +419,15 @@ function theme_facebook_status_item($status = FALSE, $historical = FALSE) {
     }
   }
   $status_text = _facebook_status_run_filter($status->status);
+  if (variable_get('facebook_status_nl2br', 0)) {
+    $status_text = nl2br($status_text);
+  }
   $status->historical = $historical;
   //Invokes hook_facebook_status_render_alter(&$status_text, $owner, $poster, $status).
   drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
   $edit = '';
   $q = $_GET['q'];
-  if ($q = 'facebook_status/js') {
+  if ($q == 'facebook_status/js') {
     $q = 'share-status';
   }
   if ($status_exists && _facebook_status_can_edit($status)) {
@@ -487,10 +490,8 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
   if ($account === FALSE) {
     $account = facebook_status_choose_owner(FALSE);
   }
-  if (($user->uid == $account->uid && user_access('edit own status')) || ($user->uid != $account->uid && user_access('post on all profiles'))) {
-    if (!_facebook_status_exclude($account)) {
-      return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view, $view_arg) .'</div>';
-    }
+  if (facebook_status_can_post($account, $user)) {
+    return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view, $view_arg) .'</div>';
   }
   if ($view && module_exists('views')) {
     $rendered_view = views_embed_view($view, 'default', $account->uid);
@@ -783,8 +784,8 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
       drupal_write_record('facebook_status', $object);
     }
     $new_id = db_result(db_query("SELECT MAX(sid) FROM {facebook_status}"));
-    //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid).
-    module_invoke_all('facebook_status_save', $account, $new_status, $new_id);
+    //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid, $edit).
+    module_invoke_all('facebook_status_save', $account, $new_status, $new_id, FALSE);
   }
   if ($save_alerts) {
     //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
@@ -847,6 +848,34 @@ function facebook_status_choose_owner($legacy = array()) {
     global $user;
     return $user;
   }
+}
+
+/**
+ * Determines whether a user has permission to post a message on another user's
+ * profile.
+ *
+ * @param $owner
+ *   The $user object for the user onto whose profile the message will be
+ *   posted. If not specified, the module automatically determines the user.
+ * @param $poster
+ *   The $user object for the user posting the message. If not specified, the
+ *   current user is assumed.
+ * @return
+ *   TRUE if $poster has permission to post on $owner's profile;
+ *   FALSE otherwise.
+ */
+function facebook_status_can_post($owner = NULL, $poster = NULL) {
+  if (empty($owner)) {
+    $owner = facebook_status_choose_owner(FALSE);
+  }
+  if (empty($poster)) {
+    $poster = $GLOBALS['user'];
+  }
+  $allow = TRUE;
+  //Invokes hook_facebook_status_post_access_alter($allow, $owner, $poster).
+  drupal_alter($allow, $owner, $poster);
+  return (($user->uid == $account->uid && user_access('edit own status')) || ($user->uid != $account->uid && user_access('post on all profiles')))
+    && !_facebook_status_exclude($owner) && $allow;
 }
 
 //=================
