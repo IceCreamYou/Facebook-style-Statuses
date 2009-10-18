@@ -1123,6 +1123,20 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       '#default_value' => _facebook_status_twitter_get_default($account),
     );
   }
+  $form['fbss-submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Share'),
+    '#submit' => array('facebook_status_box_submit'),
+    '#attributes' => array('class' => 'facebook_status_submit'),
+  );
+  if (variable_get('facebook_status_ahah', 1)) {
+    $form['fbss-submit']['#ahah'] = array(
+      'path' => 'facebook_status/js',
+      'wrapper' => 'facebook_status_replace',
+      'effect' => 'fade',
+      'method' => 'replace',
+    );
+  }
   if ($view && module_exists('views')) {
     $rendered_view = views_embed_view($view, 'default', $account->uid);
     //A very specific hack for the default conversation view.
@@ -1160,20 +1174,6 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     '#type' => 'value',
     '#value' => $view_arg,
   );
-  $form['fbss-submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Share'),
-    '#submit' => array('facebook_status_box_submit'),
-    '#attributes' => array('class' => 'facebook_status_submit'),
-  );
-  if (variable_get('facebook_status_ahah', 1)) {
-    $form['fbss-submit']['#ahah'] = array(
-      'path' => 'facebook_status/js',
-      'wrapper' => 'facebook_status_replace',
-      'effect' => 'fade',
-      'method' => 'replace',
-    );
-  }
   if (arg(0) == 'share-status' && $_GET['destination'] && $_GET['destination'] != $_GET['q']) {
     $form['back']['#value'] = l(t('Back'), $_GET['destination'], array('attributes' => array('class' => 'facebook-status-back')));
   }
@@ -1235,6 +1235,7 @@ function facebook_status_save_js() {
   $new_form['status'] = $form['status'];
   $new_form['chars'] = $form['chars'];
   $new_form['twitter'] = $form['twitter'];
+  $new_form['fbss_submit'] = $form['fbss-submit'];
   $new_form['fbss-view'] = $form['fbss-view'];
   $new_form['sdefault'] = $form['sdefault'];
   //Clear the status form after it's already been submitted once to prevent confusion.

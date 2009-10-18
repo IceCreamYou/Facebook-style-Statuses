@@ -19,7 +19,6 @@
 
 #facebook-status-box #edit-fbss-submit,
 #facebook-status-edit #edit-fbss-submit {
-  display: block;
   margin: 0.25em 0 0 0;
 }
 
@@ -49,7 +48,6 @@
 
 #facebook-status-box .view {
   clear: both;
-  float: left;
   width: 100%;
 }
 
