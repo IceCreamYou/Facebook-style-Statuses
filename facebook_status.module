@@ -787,6 +787,9 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
     //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid, $edit).
     module_invoke_all('facebook_status_save', $account, $new_status, $new_id, FALSE);
   }
+  else if ($new_status == $status->status) {
+    $object->sid = $status->sid;
+  }
   if ($save_alerts) {
     //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
     if (module_exists('trigger') && $time) {

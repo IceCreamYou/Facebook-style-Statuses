@@ -17,7 +17,7 @@ class facebook_status_views_handler_field_status extends views_handler_field {
     }
     $owner = user_load(array('uid' => $values->uid));
     $poster = user_load(array('uid' => $values->pid));
-    $status = facebook_status_load($values->sid);
+    $status = facebook_status_load($values->facebook_status_sid);
     drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
     return $status_text;
   }
