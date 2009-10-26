@@ -327,25 +327,40 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
 
 /**
  * Replaces tags with a themed version.
- * Will not work on tags containing '@', '#', a space, or unusual punctuation.
+ *
+ * Tags can be in the following formats:
+ *   - #hashtag
+ *   - @userreference
+ *   - [#tag with word-break characters]
  *
  * @param $subject
  *   The text in which to replace tags.
  * @param $new
- *   If TRUE, this function just finds tags. Otherwise, it finds and replaces them.
+ *   If TRUE, this function just finds tags. Otherwise, it finds and replaces
+ *   them.
  * @return
  *   If $new is FALSE, returns the filtered text. If $new is TRUE, returns a
  *   nested array of tags. The outer array is keyed by type ('@' and '#').
  */
 function _facebook_status_tags_filter($subject, $new = FALSE) {
-  $words = str_word_count($subject, 2, '@#1234567890-_');
+  $pattern = '%(\A(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|(\[(#|@).+?\])%u';
+
+  preg_match_all($pattern, $subject, $matches);
+  $words = $matches[0];
+  //Order the results by descending length so that "#the #therapy" matches
+  //"#the" and "#therapy" instead of "#the" twice and "#therapy" never.
+  uasort($words, '_facebook_status_tags_sort');
   $search = array();
   $replace = array();
   $items = array('@' => array(), '#' => array());
-  foreach ($words as $pos => $word) {
+  foreach ($words as $word) {
+    if (strpos($word, '[') === 0) {
+      $word = drupal_substr($word, 1, -1);
+      $sb = TRUE;
+    }
     $op = drupal_substr($word, 0, 1);
-    $match = drupal_substr($word, 1);
-    if (($op == '@' || $op == '#') && strpos($word, '@', 1) === FALSE && strpos($word, '#', 1) === FALSE && $match) {
+    $match = trim(drupal_substr($word, 1));
+    if (($op == '@' || $op == '#') && $match) {
       if ($op == '@') {
         $account = user_load(array('name' => $match));
         if ($account->uid) {
@@ -368,6 +383,9 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
         $items['#'][] = $term;
       }
       if ($link) {
+        if ($sb) {
+          $word = '['. $word .']';
+        }
         $search[] = $word;
         $replace[] = $link;
       }
@@ -377,6 +395,27 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
     return str_replace($search, $replace, $subject);
   }
   return $items;
+}
+
+/**
+ * Provides a utility for sorting tags.
+ *
+ * @param $a1
+ *   The first tag to compare.
+ * @param $a2
+ *   The second tag to compare.
+ * @return
+ *   Zero if the tags are the same length, one if the first is longer, or
+ *   negative-one if the second is longer. The result is that longer strings
+ *   float up and shorter strings sink.
+ */
+function _facebook_status_tags_sort($a1, $a2) {
+  $len1 = drupal_strlen($a1);
+  $len2 = drupal_strlen($a2);
+  if ($len1 == $len2) {
+    return 0;
+  }
+  return ($len1 > $len2) ? -1 : 1;
 }
 
 /**
