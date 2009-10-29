@@ -931,12 +931,14 @@ function _facebook_status_exclude($account) {
 }
 
 /**
- * Determines if a status starts with the English possessive apostrophe-S.
+ * Determines if a status starts with the English possessive apostrophe-S
+ * or if a status in a left-to-right language starts with a colon or comma.
  *
  * @param $status
  *   The relevant status text.
  * @return
- *   TRUE if the status is possessive; FALSE otherwise.
+ *   TRUE if the status should be displayed immediately adjacent to the username
+ *   and FALSE if there should be a space between the username and status.
  */
 function _facebook_status_possessive($status) {
   //Don't use this function with Facebook Mode because there's nothing to concatenate with.
@@ -947,6 +949,10 @@ function _facebook_status_possessive($status) {
   $language = $language->language;
   $string = drupal_substr($status, 0, 3);
   if ($language == 'en' && $string == "'s ") {
+    return TRUE;
+  }
+  $string = drupal_substr($status, 0, 2);
+  if ($language->direction == LANGUAGE_LTR && ($string == ': ' || $string == ', ')) {
     return TRUE;
   }
   return FALSE;
