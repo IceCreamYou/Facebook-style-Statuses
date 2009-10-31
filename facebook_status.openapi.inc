@@ -140,10 +140,10 @@ function _facebook_status_openapi() {
 </terms>';
     }
   }
-  else if ($format == 'json') {
+  elseif ($format == 'json') {
     drupal_json($clean);
   }
-  else if ($format == 'short') {
+  elseif ($format == 'short') {
     drupal_set_header('HTTP/1.x 200 OK');
     if ($type != 'trend') {
       echo $clean[0]['text'];

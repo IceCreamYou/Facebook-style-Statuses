@@ -16,7 +16,7 @@ class facebook_status_views_handler_field_cross extends views_handler_field {
       $uid = $values->facebook_status_uid;
       $pid = $values->facebook_status_pid;
     }
-    else if ($values->facebook_status_sid) {
+    elseif ($values->facebook_status_sid) {
       $status = facebook_status_load($values->facebook_status_sid);
       $uid = $status->uid;
       $pid = $status->pid;

@@ -152,7 +152,7 @@ function facebook_status_update_6202() {
   );
   db_add_field($result, 'facebook_status', 'pid', $spec, array('indexes' => array('pid' => array('pid'))));
   //Before this field was added, users could only post on their own profiles.
-  db_query("UPDATE {facebook_status} SET pid = uid");
+  $result[] = update_sql("UPDATE {facebook_status} SET pid = uid");
   return $result;
 }
 

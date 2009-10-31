@@ -14,7 +14,7 @@ class facebook_status_views_handler_field_poster_pic extends views_handler_field
     if ($values->facebook_status_pid) {
       $pid = $values->facebook_status_pid;
     }
-    else if ($values->facebook_status_sid) {
+    elseif ($values->facebook_status_sid) {
       $status = facebook_status_load($values->facebook_status_sid);
       $pid = $status->pid;
     }

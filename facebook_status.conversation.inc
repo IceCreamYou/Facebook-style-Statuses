@@ -25,7 +25,7 @@ function _facebook_status_conversation() {
       drupal_not_found();
       return;
     }
-    else if (count($args) === 1) {
+    elseif (count($args) === 1) {
       if (is_numeric($args[0])) {
         $account = user_load(array('uid' => $args[0]));
       }
@@ -39,7 +39,7 @@ function _facebook_status_conversation() {
         if ($key === 1) {
           $key = 0;
         }
-        else if ($key === 0) {
+        elseif ($key === 0) {
           $key = 1;
         }
         $account = user_load(array('uid' => $args[$key]));
@@ -49,7 +49,7 @@ function _facebook_status_conversation() {
         if ($key === 1) {
           $key = 0;
         }
-        else if ($key === 0) {
+        elseif ($key === 0) {
           $key = 1;
         }
         $account = user_load(array('name' => $args[$key]));
@@ -58,7 +58,7 @@ function _facebook_status_conversation() {
     if (user_access('post on all profiles') && $account->uid) {
       return theme('facebook_status_form_display', $account, variable_get('facebook_status_size_long', 40), $view, arg(2));
     }
-    else if ($account->uid) {
+    elseif ($account->uid) {
       return views_embed_view($view, 'default', arg(2));
     }
     drupal_not_found();

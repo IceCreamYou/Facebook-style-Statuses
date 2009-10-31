@@ -34,12 +34,12 @@ function facebook_status_tags_block($op = 'list', $delta = 0, $edit = NULL) {
     $block['facebook_status_popular_tags']['info'] = t('Facebook-style Statuses Popular Tags');
     return $block;
   }
-  else if ($op == 'view' && $delta == 'facebook_status_popular_tags') {
+  elseif ($op == 'view' && $delta == 'facebook_status_popular_tags') {
     $block['subject'] = t('Popular tags');
     $block['content'] = theme('facebook_status_popular_tags');
     return $block;
   }
-  else if ($op == 'configure' && $delta == 'facebook_status_popular_tags') {
+  elseif ($op == 'configure' && $delta == 'facebook_status_popular_tags') {
     $form['facebook_status'] = array(
       '#type' => 'fieldset',
       '#title' => t('Facebook-style Statuses Settings'),
@@ -65,7 +65,7 @@ function facebook_status_tags_block($op = 'list', $delta = 0, $edit = NULL) {
     );
     return $form;
   }
-  else if ($op == 'save' && $delta == 'facebook_status_popular_tags') {
+  elseif ($op == 'save' && $delta == 'facebook_status_popular_tags') {
     variable_set('facebook_status_tags_count', $edit['facebook_status']['facebook_status_tags_count']);
     variable_set('facebook_status_tags_time', $edit['facebook_status']['facebook_status_tags_time']);
   }
@@ -184,14 +184,14 @@ function facebook_status_tags_get_statuses($tag, $type = 'term', $count = 1, $ui
   if (is_int($tag)) {
     $rid = 'rid = %d';
   }
-  else if (is_string($tag)) {
+  elseif (is_string($tag)) {
     $rid = "name = '%s'";
   }
   $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.". $rid ." AND fbst.type = '%s' AND (";
   if ($uid == 0 && $pid == 0) {
     $sql = "SELECT sid FROM {facebook_status_tags} WHERE ". $rid ." AND type = '%s'";
   }
-  else if ($uid == 0) {
+  elseif ($uid == 0) {
     if (is_numeric($pid)) {
       $pid = array($pid);
     }
@@ -199,7 +199,7 @@ function facebook_status_tags_get_statuses($tag, $type = 'term', $count = 1, $ui
     $sql .= implode(' OR ', array_fill(0, count($pid), 'fb.pid = %d'));
     $sql .= ')';
   }
-  else if ($pid == 0) {
+  elseif ($pid == 0) {
     if (is_numeric($uid)) {
       $uid = array($uid);
     }
@@ -268,7 +268,7 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
     if ($type == 'term') {
       $rids[] = taxonomy_get_term($rid->rid);
     }
-    else if ($type == 'user') {
+    elseif ($type == 'user') {
       $rids[] = user_load(array('uid' => $rid->rid));
     }
   }
@@ -296,9 +296,9 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
     if ($own == TRUE) {
       $restrict = 'uid = pid AND ';
     }
-    $result = db_query_range("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE ". $restrict ."type = 'term' GROUP BY rid ORDER BY count DESC", 0, $count);
+    $result = db_query_range("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE ". $restrict ."type = 'term' GROUP BY rid ORDER BY count DESC, sid DESC", 0, $count);
   }
-  else if (in_array($time, array('day', 'week', 'month', 'year'))) {
+  elseif (in_array($time, array('day', 'week', 'month', 'year'))) {
     $times = array(
       'day' => time() - (60 * 60 * 24),
       'week' => time() - (60 * 60 * 24 * 7),
@@ -368,7 +368,7 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
           $items['@'][] = $account;
         }
       }
-      else if (variable_get('facebook_status_tags_vid', -1) != -1) {
+      elseif (variable_get('facebook_status_tags_vid', -1) != -1) {
         $term = _facebook_status_tags_get_term($match);
         //If the term does not exist, create it.
         if (empty($term)) {
@@ -533,7 +533,7 @@ function facebook_status_tags_taxonomy($op, $type, $array = NULL) {
   if ($type == 'term') {
     db_query("DELETE FROM {facebook_status_tags} WHERE rid = %d AND type = 'term'", $array['tid']);
   }
-  else if ($type == 'vocabulary') {
+  elseif ($type == 'vocabulary') {
     if ($array['vid'] === variable_get('facebook_status_tags_vid', -1)) {
       //If the vocabulary is deleted, all the tags will no longer exist, so the references are invalid.
       db_query("DELETE FROM {facebook_status_tags} WHERE type = 'term'");

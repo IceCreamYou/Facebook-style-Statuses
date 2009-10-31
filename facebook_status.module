@@ -153,7 +153,7 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
     $block['facebook_status']['pages'] = 'share-status';
     return $block;
   }
-  else if ($op == 'view' && $delta == 'facebook_status') {
+  elseif ($op == 'view' && $delta == 'facebook_status') {
     if (variable_get('facebook_status_special_user', '')) {
       $account = user_load(array('name' => variable_get('facebook_status_special_user', '')));
     }
@@ -164,7 +164,7 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
     $block['content'] = theme('facebook_status_form_display', $account);
     return $block;
   }
-  else if ($op == 'configure' && $delta == 'facebook_status') {
+  elseif ($op == 'configure' && $delta == 'facebook_status') {
     $form['facebook_status'] = array(
       '#type' => 'fieldset',
       '#title' => t('Facebook-style Statuses Settings'),
@@ -193,7 +193,7 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
     }
     return $form;
   }
-  else if ($op == 'save' && $delta == 'facebook_status') {
+  elseif ($op == 'save' && $delta == 'facebook_status') {
     variable_set('facebook_status_special_user', $edit['facebook_status']['facebook_status_special_user']);
     if ($edit['facebook_status']['facebook_status_twitter_special'] && module_exists('twitter')) {
       variable_set('facebook_status_twitter_special', $edit['facebook_status']['facebook_status_twitter_special']);
@@ -433,7 +433,7 @@ function theme_facebook_status_item($status = FALSE, $historical = FALSE) {
   if ($status_exists && _facebook_status_can_edit($status)) {
     $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
   }
-  else if ($status_exists && _facebook_status_can_edit($status, TRUE)) {
+  elseif ($status_exists && _facebook_status_can_edit($status, TRUE)) {
     $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
   }
   $time = theme('facebook_status_time', $status->status_time);
@@ -524,7 +524,7 @@ function theme_facebook_status_time($status_time) {
   if (time() - $status_time < 60) {
     return t('a moment ago');
   }
-  else if (time() - $status_time < 60 * 60 * 24 * 3) {
+  elseif (time() - $status_time < 60 * 60 * 24 * 3) {
     return t('!time ago', array('!time' => format_interval(time() - $status_time, 1)));
   }
   else {
@@ -787,7 +787,7 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
     //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid, $edit).
     module_invoke_all('facebook_status_save', $account, $new_status, $new_id, FALSE);
   }
-  else if ($new_status == $status->status) {
+  elseif ($new_status == $status->status) {
     $object->sid = $status->sid;
   }
   if ($save_alerts) {
@@ -843,7 +843,7 @@ function facebook_status_choose_owner($legacy = array()) {
   if ($legacy['user'] && arg(0) == 'user' && is_numeric(arg(1))) {
     return user_load(array('uid' => arg(1)));
   }
-  else if ($legacy['node'] && arg(0) == 'node' && is_numeric(arg(1))) {
+  elseif ($legacy['node'] && arg(0) == 'node' && is_numeric(arg(1))) {
     $node = menu_get_object();
     return user_load(array('uid' => $node->uid));
   }
@@ -1085,7 +1085,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
         $slider = '';
       }
     }
-    else if (is_numeric($_GET['rsid'])) {
+    elseif (is_numeric($_GET['rsid'])) {
       $status = facebook_status_load($_GET['rsid']);
       if ($status->sid) {
         $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status)));
@@ -1302,7 +1302,7 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
     $owner = user_load(array('uid' => $status->uid));
     $poster = user_load(array('uid' => $status->pid));
   }
-  else if ($op == 'fbss_submitted') {
+  elseif ($op == 'fbss_submitted') {
     $owner = $a1;
   }
   //Token (via Activity 2) won't know about the status when it sees the users unless we include it somewhere in the user objects.
@@ -1382,13 +1382,14 @@ function facebook_status_activity_info() {
 
 /**
  * Implementation of hook_activity_message_recorded().
+ *
  * Activity 2.
- * @see facebook_status_form_activity_form_alter()
  * Note that the Activity maintainers throw a fit about this, but I think their
  * proposed solution of splitting each of the existing triggers based on where
  * the status was originally posted is completely unintuitive to end users,
  * and their API does not provide enough information to do this any other way.
  * Don't like this? Fine. Write a patch to make it better, and then we can talk.
+ * Code that makes this work is in facebook_status_form_activity_form_alter().
  */
 function facebook_status_activity_message_recorded($record, $context) {
   if ($context['hook'] == 'facebook_status' && $context['owner']->uid == $context['poster']->uid) {
@@ -1448,7 +1449,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     return $data;
   }
   //Activity 2.
-  else if (($type == 'owner' || $type == 'poster' || $type = 'fbss-user') && !empty($data)) {
+  elseif (($type == 'owner' || $type == 'poster' || $type = 'fbss-user') && !empty($data)) {
     $status = $data->facebook_status;
     return array(
       'owner' => theme('username', user_load(array('uid' => $status->uid))),
