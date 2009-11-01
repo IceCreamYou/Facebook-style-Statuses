@@ -1,7 +1,7 @@
 /* $Id$ */
 
-#facebook-status-box, #facebook-status-box #edit-status-wrapper,
-#facebook-status-edit #edit-status-wrapper {
+#facebook-status-box, #facebook-status-box #edit-fbss-status-wrapper,
+#facebook-status-edit #edit-fbss-status-wrapper {
   margin: 0;
 }
 
@@ -11,8 +11,8 @@
   margin-top: 0.25em;
 }
 
-#facebook-status-box #edit-status,
-#facebook-status-edit #edit-status {
+#facebook-status-box #edit-fbss-status,
+#facebook-status-edit #edit-fbss-status {
   float: left;
   margin: 0.25em 0.5em 0 0;
 }

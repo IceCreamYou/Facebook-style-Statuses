@@ -31,12 +31,12 @@ function facebook_status_edit(&$form_state, $status) {
     'ttype' => variable_get('facebook_status_type', 'textfield'))
   ), 'setting');
   //Don't show the slider; we'd have to do a custom version of theme('facebook_status_item').
-  $slider = '<strong>'. t('Original status: ') .' </strong>'. check_plain($status->status);
+  $slider = '<strong>'. t('Original status: ') .' </strong>'. nl2br(check_plain($status->status));
   $form = array('#cache' => TRUE);
   $form['slider'] = array(
     '#value' => '<div id="facebook_status_update" class="clear-block"><span id="facebook_status_slider">'. $slider .'</span>',
   );
-  $form['status'] = array(
+  $form['fbss-status'] = array(
     '#type' => variable_get('facebook_status_type', 'textfield'),
     '#field_prefix' => $prefix,
     '#size' => $size,
@@ -70,7 +70,7 @@ function facebook_status_edit(&$form_state, $status) {
  */
 function facebook_status_edit_validate($form, &$form_state) {
   $maxlen = variable_get('facebook_status_length', 192);
-  if (drupal_strlen($form_state['values']['status']) > $maxlen) {
+  if (drupal_strlen($form_state['values']['fbss-status']) > $maxlen) {
     form_set_error('status', t('The status must be no longer than %chars characters.', array('%chars' => $maxlen)));
   }
 }
@@ -81,7 +81,7 @@ function facebook_status_edit_validate($form, &$form_state) {
 function facebook_status_edit_submit($form, &$form_state) {
   $status_old = facebook_status_load($form_state['values']['sid']);
   $account = user_load(array('uid' => $status_old->uid));
-  $new_status = trim($form_state['values']['status']);
+  $new_status = trim($form_state['values']['fbss-status']);
 
   global $user;
   //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
@@ -131,7 +131,7 @@ function _facebook_status_delete(&$form_state, $status) {
     '#value' => t('Cancel'),
     '#submit' => array('_facebook_status_delete_cancel'),
   );
-  $form['status'] = array(
+  $form['status-sid'] = array(
     '#type' => 'value',
     '#value' => $status->sid,
   );
@@ -142,7 +142,7 @@ function _facebook_status_delete(&$form_state, $status) {
  * Deletes a status.
  */
 function _facebook_status_delete_confirm($form, &$form_state) {
-  facebook_status_delete_status($form_state['values']['status']);
+  facebook_status_delete_status($form_state['values']['status-sid']);
   drupal_set_message(t('Status deleted.'));
   if ($_GET['destination']) {
     $form_state['redirect'] = $_GET['destination'];

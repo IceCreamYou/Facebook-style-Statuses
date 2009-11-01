@@ -1110,7 +1110,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     '#value' => '<span id="facebook_status_slider">'. $slider .'</span>',
   );
   //Textfield and textarea properties are mixed here, but it doesn't matter because only the relevant ones will get used.
-  $form['status'] = array(
+  $form['fbss-status'] = array(
     '#type' => variable_get('facebook_status_type', 'textfield'),
     '#field_prefix' => $prefix,
     '#size' => $size,
@@ -1201,7 +1201,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
  */
 function facebook_status_box_validate($form, &$form_state) {
   $maxlen = variable_get('facebook_status_length', 192);
-  if (drupal_strlen($form_state['values']['status']) > $maxlen) {
+  if (drupal_strlen($form_state['values']['fbss-status']) > $maxlen) {
     form_set_error('status', t('The status must be no longer than %chars characters.', array('%chars' => $maxlen)));
   }
 }
@@ -1213,7 +1213,7 @@ function facebook_status_box_submit($form, &$form_state) {
   $size = $form_state['values']['size'];
   $aid = $form_state['values']['account'];
   $account = user_load(array('uid' => $aid));
-  $new_status = trim($form_state['values']['status']);
+  $new_status = trim($form_state['values']['fbss-status']);
   $default = $form_state['values']['sdefault'];
   //Don't save/tweet the status if it wasn't changed from the default.
   if ($new_status != $default) {
@@ -1246,10 +1246,10 @@ function facebook_status_save_js() {
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
   //Get HTML for the replacement form. Only these elements will be AHAH-refreshed.
   $new_form['slider'] = $form['slider'];
-  $new_form['status'] = $form['status'];
+  $new_form['fbss-status'] = $form['fbss-status'];
   $new_form['chars'] = $form['chars'];
   $new_form['twitter'] = $form['twitter'];
-  $new_form['fbss_submit'] = $form['fbss-submit'];
+  $new_form['fbss-submit'] = $form['fbss-submit'];
   $new_form['fbss-view'] = $form['fbss-view'];
   $new_form['sdefault'] = $form['sdefault'];
   //Clear the status form after it's already been submitted once to prevent confusion.
