@@ -240,10 +240,14 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
       '#title' => t('Status'),
     );
     $size = variable_get('facebook_status_size_long', 40);
+    $view = FALSE;
+    if (module_exists('views') && variable_get('facebook_status_profile_view', 'facebook_status')) {
+      $view = variable_get('facebook_status_profile_view', 'facebook_status');
+    }
     $account->content['facebook_status']['status'] = array(
       '#type' => 'user_profile_item',
       '#title' => '',
-      '#value' => theme('facebook_status_form_display', $account, $size),
+      '#value' => theme('facebook_status_form_display', $account, $size, $view),
       '#attributes' => array('class' => 'facebook_status profile'),
     );
   }

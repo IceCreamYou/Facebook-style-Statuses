@@ -192,6 +192,7 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_twitter_default');
   variable_del('facebook_status_twitter_special');
   variable_del('facebook_status_default_text');
+  variable_del('facebook_status_profile_view');
   variable_del('facebook_status_special_user');
   variable_del('facebook_status_hide_status');
   variable_del('facebook_status_flag_update');

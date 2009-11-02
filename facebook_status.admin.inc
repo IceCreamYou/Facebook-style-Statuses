@@ -150,6 +150,22 @@ function facebook_status_admin_advanced($form_state) {
     '#description' => t("You should leave this checked unless you know what you're doing."),
     '#default_value' => variable_get('facebook_status_ahah', 1),
   );
+  if (module_exists('views')) {
+    $views = views_get_all_views();
+    $list = array('' => t('None'));
+    foreach ($views as $name => $view) {
+      if ($view->disabled == 0) {
+        $list[$name] = $name;
+      }
+    }
+    $form['facebook_status_profile_view'] = array(
+      '#type' => 'select',
+      '#title' => t('Show a view on the profile'),
+      '#description' => t('This is only relevant for the core profile, meaning it will not work if you override the default profile. <strong>The default facebook_status view is recommended. Other views may not work correctly.</strong>'),
+      '#default_value' => variable_get('facebook_status_profile_view', $list['facebook_status']),
+      '#options' => $list,
+    );
+  }
   $form['facebook_status_size_long'] = array(
     '#type' => 'textfield',
     '#title' => t('Long status update field size'),
