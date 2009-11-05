@@ -881,7 +881,7 @@ function facebook_status_can_post($owner = NULL, $poster = NULL) {
   $allow = TRUE;
   //Invokes hook_facebook_status_post_access_alter($allow, $owner, $poster).
   drupal_alter($allow, $owner, $poster);
-  return (($user->uid == $account->uid && user_access('edit own status')) || ($user->uid != $account->uid && user_access('post on all profiles')))
+  return (($owner->uid == $poster->uid && user_access('edit own status', $poster)) || ($owner->uid != $poster->uid && user_access('post on all profiles', $poster)))
     && !_facebook_status_exclude($owner) && $allow;
 }
 
