@@ -20,6 +20,7 @@
 #facebook-status-box #edit-fbss-submit,
 #facebook-status-edit #edit-fbss-submit {
   margin: 0.25em 0 0 0;
+  display: block;
 }
 
 #facebook-status-box #edit-twitter-wrapper {
