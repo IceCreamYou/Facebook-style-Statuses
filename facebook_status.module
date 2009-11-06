@@ -325,10 +325,9 @@ function facebook_status_form_activity_form_alter(&$form, &$form_state) {
       $form["{$id}_fieldset"]['everyone-pattern-'. $id]['#description'] = t('Using the available tokens, enter a message as how it should <strong>appear to anyone who is <em>not</em> the poster or owner</strong> of this particular status.');
       $defaults = variable_get('facebook_status_activity_self_patterns', array());
       $form["{$id}_fieldset"]['everyone-pattern-'. $id .'-self'] = array(
-        '#type' => 'textfield',
+        '#type' => 'textarea',
         '#title' => t('Public message (self-update)'),
         '#default_value' => isset($defaults[$op][$id]) ? $defaults[$op][$id] : '',
-        '#maxlength' => '254',
         '#description' => t('Using the available tokens, enter a message as how it should <strong>appear to anyone who is <em>not</em> the author</strong> of this particular activity.'),
       );
     }
@@ -743,6 +742,28 @@ function facebook_status_delete_status($sid) {
   //Invokes hook_facebook_status_delete($sid).
   module_invoke_all('facebook_status_delete', $sid);
   db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
+  
+  //Delete Activity 2 records.
+  if (module_exists('activity') && function_exists('activity_action_info') && _facebook_status_check_activity_eid_exists()) {
+    $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $sid);
+    $records = array();
+    while ($record = db_fetch_object($result)) {
+      $records[] = $record->aid;
+    }
+    activity_delete($records);
+  }
+}
+
+function _facebook_status_check_activity_eid_exists() {
+  $result = db_fetch_array(db_query_range("SELECT * FROM {activity}", 0, 1));
+  //There should be 7 columns in the database in the latest version of Activity
+  //(with the eid column in the {activity} table). If there are no columns
+  //returned, we don't have data yet, so we assume this is a new install of the
+  //latest version.
+  if (count($result) == 6) {
+    return FALSE;
+  }
+  return TRUE;
 }
 
 /**
@@ -1324,6 +1345,7 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
   if (function_exists('activity_action_info') && $owner->uid == $poster->uid) {
     $context['fbss-user'] = $poster;
   }
+  $context['facebook_status'] = $status;
   actions_do(array_keys($aids), $poster, $context);
 }
 
@@ -1348,6 +1370,7 @@ function facebook_status_activity_info() {
     $info->api = 2;
     $info->name = 'facebook_status';
     $info->object_type = 'facebook_status';
+    $info->eid_field = 'sid';
     $info->objects = array('Owner' => 'owner', 'Poster' => 'poster', 'Self' => 'fbss-user');
     $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted'));
     return $info;
