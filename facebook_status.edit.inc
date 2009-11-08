@@ -30,8 +30,26 @@ function facebook_status_edit(&$form_state, $status) {
     'maxlength' => $maxlength,
     'ttype' => variable_get('facebook_status_type', 'textfield'))
   ), 'setting');
-  //Don't show the slider; we'd have to do a custom version of theme('facebook_status_item').
-  $slider = '<strong>'. t('Original status: ') .' </strong>'. nl2br(check_plain($status->status));
+  global $user;
+  $orig = nl2br(check_plain($status->status));
+  if ($user->uid == $status->pid && $status->pid == $status->uid) {
+    $slider = '<strong>'. t('Original status: !status', array('!status' => $orig)) .' </strong>';
+  }
+  elseif ($user->uid != $status->pid && $status->pid == $status->uid) {
+    $args = array('!user' => theme('username', user_load(array('uid' => $status->pid))), '!status' => $orig);
+    $slider = '<strong>'. t('Original status by !user: !status', $args) .' </strong>';
+  }
+  elseif ($status->pid != $status->uid) {
+    $owner = $poster = t('you');
+    if ($user->uid != $status->uid) {
+      $owner = theme('username', user_load(array('uid' => $status->uid)));
+    }
+    if ($user->uid != $status->pid) {
+      $poster = theme('username', user_load(array('uid' => $status->pid)));
+    }
+    $args = array('!poster' => $poster, '!owner' => $owner, '!status' => $orig);
+    $slider = '<strong>'. t('Original message from !poster to !owner: !status', $args) .' </strong>';
+  }
   $form = array('#cache' => TRUE);
   $form['slider'] = array(
     '#value' => '<div id="facebook_status_update" class="clear-block"><span id="facebook_status_slider">'. $slider .'</span>',

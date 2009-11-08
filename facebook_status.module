@@ -754,6 +754,14 @@ function facebook_status_delete_status($sid) {
   }
 }
 
+/**
+ * A helper function to determine whether we can implement the delete-activity-
+ * records-with-statuses feature (which is dependent on the "eid" column
+ * existing in the {activity} table in the database) for Activity 2.
+ *
+ * @todo Remove this function once Activity implements hook_update_N functions.
+ * @return TRUE if we can use this feature; FALSE otherwise.
+ */
 function _facebook_status_check_activity_eid_exists() {
   $result = db_fetch_array(db_query_range("SELECT * FROM {activity}", 0, 1));
   //There should be 7 columns in the database in the latest version of Activity
@@ -1266,6 +1274,12 @@ function facebook_status_save_js() {
   $form_state['post'] = $form['#post'] = $_POST;
   $form['#programmed'] = $form['#redirect'] = FALSE;
   $args = $form['#parameters'];
+  //This happens if someone goes directly to the JS processing page.
+  if (!is_array($args) && !$args) {
+    drupal_goto('user');
+    watchdog('facebook_status', 'Someone tried to access the JavaScript processing page for Facebook-style Statuses directly.', array(), WATCHDOG_DEBUG);
+    return;
+  }
   $form_id = array_shift($args);
   drupal_process_form($form_id, $form, $form_state);
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
@@ -1669,15 +1683,6 @@ function facebook_status_flag_definitions() {
 }
 
 /**
- * Implementation of hook_flag().
- */
-function facebook_status_flag($flag_status, $flag_object, $flagged_item_id, $flagger) {
-  if ($flag_object->name == 'facebook_status_delete' && $flag_object->content_type == 'facebook_status') {
-    facebook_status_delete_status($flagged_item_id);
-  }
-}
-
-/**
  * Implementation of hook_flag_default_flags().
  */
 function facebook_status_flag_default_flags() {
@@ -1700,28 +1705,6 @@ function facebook_status_flag_default_flags() {
     'show_on_form' => FALSE,
     'status' => TRUE,
     'locked' => array('name', 'global', 'types', 'show_on_page', 'show_on_teaser', 'show_on_form', 'status'),
-  );
-  $flags[] = array(
-    'content_type' => 'facebook_status',
-    'name' => 'facebook_status_delete',
-    'title' => t('Delete'),
-    'roles' => array(),
-    'global' => TRUE,
-    'types' => array('page'),
-    'flag_short' => t('Delete'),
-    'flag_long' => '',
-    'flag_confirmation' => t('Are you sure you want to permanently delete this status?'),
-    'flag_message' => '',
-    'unflag_short' => t('Un-delete'),
-    'unflag_long' => '',
-    'unflag_confirmation' => t('Are you sure you want to un-delete this status?'),
-    'unflag_message' => '',
-    'show_on_page' => FALSE,
-    'show_on_teaser' => FALSE,
-    'show_on_form' => FALSE,
-    'status' => FALSE,
-    'link_type' => 'confirm',
-    'locked' => array('name', 'global', 'types', 'show_on_page', 'show_on_teaser', 'show_on_form', 'status', 'link_type'),
   );
   $flags[] = array(
     'content_type' => 'user',

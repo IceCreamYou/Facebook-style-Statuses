@@ -25,8 +25,13 @@ class facebook_status_views_handler_field_respond extends views_handler_field {
         return l($title, 'statuses/conversation/'. check_plain($poster->name) .','. check_plain($owner->name), $options);
       }
       elseif ((user_access('edit own status') || user_access('edit all statuses')) && $owner->uid == $poster->uid && $poster->uid != $user->uid) {
+        $s = '@'. $poster->name .' ';
+        //Properly reference tags with word-break characters in them.
+        if (preg_match('/\b/', $poster->name)) {
+          $s = '[@'. $poster->name .'] ';
+        }
         //Evidently url() sanitizes query strings itself, so we don't have to use check_plain() here.
-        $options['query'] = array('s' => '@'. $poster->name .' ', 'rsid' => $values->facebook_status_sid, 'destination' => $_GET['q']);
+        $options['query'] = array('s' => $s, 'rsid' => $values->facebook_status_sid, 'destination' => $_GET['q']);
         return l(t('Reply'), 'share-status', $options);
       }
     }
