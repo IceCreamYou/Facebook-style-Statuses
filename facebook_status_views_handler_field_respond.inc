@@ -20,7 +20,7 @@ class facebook_status_views_handler_field_respond extends views_handler_field {
       if ($owner->uid != $poster->uid && user_access('post on all profiles')) {
         $title = t('View conversation');
         if ($owner->uid == $user->uid) {
-          $title = t('Respond');
+          $title = t('Reply');
         }
         return l($title, 'statuses/conversation/'. check_plain($poster->name) .','. check_plain($owner->name), $options);
       }
@@ -30,9 +30,12 @@ class facebook_status_views_handler_field_respond extends views_handler_field {
         if (preg_match('/.+\b.+/', $poster->name)) {
           $s = '[@'. $poster->name .'] ';
         }
-        //Evidently url() sanitizes query strings itself, so we don't have to use check_plain() here.
-        $options['query'] = array('s' => $s, 'rsid' => $values->facebook_status_sid, 'destination' => $_GET['q']);
-        return l(t('Reply'), 'share-status', $options);
+        if (variable_get('facebook_status_reply_type', 'at') == 'at') {
+          //Evidently url() sanitizes query strings itself, so we don't have to use check_plain() here.
+          $options['query'] = array('s' => $s, 'rsid' => $values->facebook_status_sid, 'destination' => $_GET['q']);
+          return l(t('Respond'), 'share-status', $options);
+        }
+        return l(t('Respond'), 'statuses/conversation/'. check_plain($poster->name) .','. check_plain($user->name), $options);
       }
     }
   }

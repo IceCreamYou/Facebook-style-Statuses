@@ -499,7 +499,7 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
   if ($view && module_exists('views')) {
     $rendered_view = views_embed_view($view, 'default', $account->uid);
     //A very specific hack for the default conversation view.
-    if ($view_arg && $view = 'facebook_status_cross_post') {
+    if ($view_arg && $view == 'facebook_status_cross_post') {
       $arg = $view_arg;
       $temp = explode(',', $arg);
       $arg2 = $temp[1] .','. $temp[0];
@@ -1668,6 +1668,19 @@ function facebook_status_views_bulk_operations_object_info() {
 function facebook_status_ajax_types(&$types) {
   $types['facebook_status_box'] = t('Facebook-style Statuses update form');
   return TRUE;
+}
+
+//===================
+//CTOOLS INTEGRATION.
+//===================
+
+/**
+ * Implementation of hook_ctools_plugin_directory().
+ */
+function facebook_status_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools') {
+    return 'ctools/' . $plugin;
+  }
 }
 
 //=================

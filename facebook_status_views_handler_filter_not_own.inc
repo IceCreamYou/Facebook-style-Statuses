@@ -12,7 +12,7 @@
 class facebook_status_views_handler_filter_not_own extends views_handler_filter_boolean_operator {
   function construct() {
     $this->definition['type'] = 'yes-no';
-    $this->definition['label'] = t("Show only others' statuses");
+    $this->definition['label'] = t("Show only posts to other users");
     $this->value_value = $this->definition['label'];
     parent::construct();
   }
