@@ -54,7 +54,7 @@ function facebook_status_admin($form_state) {
     '#type' => 'select',
     '#title' => t('Input filter'),
     '#description' => t('This input filter will run on all your statuses, so make sure it is secure.'),
-    '#default_value' => variable_get('facebook_status_filter', 1),
+    '#default_value' => variable_get('facebook_status_filter', 'none'),
     '#options' => $options,
   );
   $form['facebook_status_exclude'] = array(
@@ -87,7 +87,7 @@ function facebook_status_admin($form_state) {
     '#type' => 'textfield',
     '#title' => t('Re-post format'),
     '#description' => t("The format of the default message when users click a link to re-post a status. @name will be replaced with the poster's name and @status will be replaced with the status text."),
-    '#default_value' => variable_get('facebook_status_repost', '@name "@status" '),
+    '#default_value' => variable_get('facebook_status_repost', 'Re: @name @status '),
   );
   return system_settings_form($form);
 }

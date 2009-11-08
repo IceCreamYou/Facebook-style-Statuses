@@ -995,8 +995,8 @@ function _facebook_status_possessive($status) {
  * Helper function that runs filters on statuses.
  */
 function _facebook_status_run_filter($status) {
-  if (variable_get('facebook_status_filter', 1) != 'none') {
-    return check_markup($status, variable_get('facebook_status_filter', 1));
+  if (variable_get('facebook_status_filter', 'none') != 'none') {
+    return check_markup($status, variable_get('facebook_status_filter', 'none'));
   }
   return check_plain($status);
 }
@@ -1114,7 +1114,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       $rs = facebook_status_load($_GET['sid']);
       $poster = user_load(array('uid' => $rs->pid));
       if ($poster->uid != $user->uid && $rs->status) {
-        $default = str_replace(array('@name', '@status'), array('@'. $poster->name, $rs->status), variable_get('facebook_status_repost', '@name "@status" '));
+        $default = str_replace(array('@name', '@status'), array('@'. $poster->name, $rs->status), variable_get('facebook_status_repost', 'Re: @name @status '));
         $slider = '';
       }
     }
