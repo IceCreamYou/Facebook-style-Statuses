@@ -1114,7 +1114,12 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       $rs = facebook_status_load($_GET['sid']);
       $poster = user_load(array('uid' => $rs->pid));
       if ($poster->uid != $user->uid && $rs->status) {
-        $default = str_replace(array('@name', '@status'), array('@'. $poster->name, $rs->status), variable_get('facebook_status_repost', 'Re: @name @status '));
+        $name = '@'. $poster->name;
+        //Properly reference tags with word-break characters in them.
+        if (preg_match('/.+\b.+/', $poster->name)) {
+          $name = '[@'. $poster->name .']';
+        }
+        $default = str_replace(array('@name', '@status'), array($name, $rs->status), variable_get('facebook_status_repost', 'Re: @name @status '));
         $slider = '';
       }
     }
