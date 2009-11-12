@@ -836,6 +836,7 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
     }
     //Twitter integration.
     if (module_exists('twitter') && user_access('use global twitter account') && variable_get('facebook_status_twitter_special', 0) && $account->name == variable_get('facebook_status_special_user', '')) {
+      module_load_include('inc', 'twitter');
       twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
     }
     //Appbar integration.
@@ -1137,7 +1138,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   drupal_add_js(array('facebook_status' => array(
     'autofocus' => (arg(0) == 'share-status'),
     'maxlength' => $maxlength,
-    'ttype' => variable_get('facebook_status_type', 'textfield'))
+    'ttype' => variable_get('facebook_status_type', 'textarea'))
   ), 'setting');
   $form = array('#cache' => TRUE);
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
@@ -1149,7 +1150,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   );
   //Textfield and textarea properties are mixed here, but it doesn't matter because only the relevant ones will get used.
   $form['fbss-status'] = array(
-    '#type' => variable_get('facebook_status_type', 'textfield'),
+    '#type' => variable_get('facebook_status_type', 'textarea'),
     '#field_prefix' => $prefix,
     '#size' => $size,
     '#cols' => $size,
@@ -1586,7 +1587,6 @@ function facebook_status_twitter($account, $status) {
   $twitter_accounts = twitter_get_user_accounts($account->uid);
   $data = unserialize($account->data);
   $twitter_account = $twitter_accounts[$data['facebook_status_twitter']];
-  module_load_include('inc', 'twitter');
   twitter_set_status($twitter_account['screen_name'], $twitter_account['password'], $status);
 }
 

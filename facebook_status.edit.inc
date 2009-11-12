@@ -28,7 +28,7 @@ function facebook_status_edit(&$form_state, $status) {
   drupal_add_js(array('facebook_status' => array(
     'autofocus' => TRUE,
     'maxlength' => $maxlength,
-    'ttype' => variable_get('facebook_status_type', 'textfield'))
+    'ttype' => variable_get('facebook_status_type', 'textarea'))
   ), 'setting');
   global $user;
   $orig = nl2br(check_plain($status->status));
@@ -55,7 +55,7 @@ function facebook_status_edit(&$form_state, $status) {
     '#value' => '<div id="facebook_status_update" class="clear-block"><span id="facebook_status_slider">'. $slider .'</span>',
   );
   $form['fbss-status'] = array(
-    '#type' => variable_get('facebook_status_type', 'textfield'),
+    '#type' => variable_get('facebook_status_type', 'textarea'),
     '#field_prefix' => $prefix,
     '#size' => $size,
     '#cols' => $size,

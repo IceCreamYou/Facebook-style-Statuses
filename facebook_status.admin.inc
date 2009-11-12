@@ -42,7 +42,7 @@ function facebook_status_admin($form_state) {
     '#type' => 'select',
     '#title' => t('Form type'),
     '#description' => t('Textfields are simpler; textareas are larger and somewhat more confusing for users with JavaScript turned off.'),
-    '#default_value' => variable_get('facebook_status_type', 'textfield'),
+    '#default_value' => variable_get('facebook_status_type', 'textarea'),
     '#options' => drupal_map_assoc(array('textfield', 'textarea')),
   );
   $formats = filter_formats();
@@ -164,6 +164,15 @@ function facebook_status_admin_advanced($form_state) {
       '#description' => t('This is only relevant for the core profile, meaning it will not work if you override the default profile. <strong>The default facebook_status view is recommended. Other views may not work correctly.</strong>'),
       '#default_value' => variable_get('facebook_status_profile_view', $list['facebook_status']),
       '#options' => $list,
+    );
+    $form['facebook_status_reply_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Reply method'),
+      '#default_value' => variable_get('facebook_status_reply_type', 'at'),
+      '#options' => array(
+        'at' => t('Reply by @username reference'),
+        'convo' => t('Reply in conversation view'),
+      ),
     );
   }
   $form['facebook_status_size_long'] = array(
