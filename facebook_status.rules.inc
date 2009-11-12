@@ -45,7 +45,29 @@ function facebook_status_rules_condition_info() {
     'facebook_status_is_self' => array(
       'label' => t('Status was posted to own profile'),
       'arguments' => array(
-        'status' => array('type' => 'facebook_status', 'label' => t('The status.')),
+        'status' => array('type' => 'facebook_status', 'label' => t('The status')),
+      ),
+      'module' => 'Facebook-style Statuses',
+    ),
+    'facebook_status_can_post' => array(
+      'label' => t('User has permission to send a status-message'),
+      'arguments' => array(
+        'owner' => array('type' => 'user', 'label' => t('Owner')),
+        'poster' => array('type' => 'user', 'label' => t('Poster')),
+      ),
+      'module' => 'Facebook-style Statuses',
+    ),
+    'facebook_status_rules_condition_can_edit' => array(
+      'label' => t('User has permission to edit a status'),
+      'arguments' => array(
+        'status' => array('type' => 'facebook_status', 'label' => t('The status')),
+      ),
+      'module' => 'Facebook-style Statuses',
+    ),
+    'facebook_status_rules_condition_can_delete' => array(
+      'label' => t('User has permission to delete a status'),
+      'arguments' => array(
+        'status' => array('type' => 'facebook_status', 'label' => t('The status')),
       ),
       'module' => 'Facebook-style Statuses',
     ),
@@ -57,6 +79,20 @@ function facebook_status_rules_condition_info() {
  */
 function facebook_status_is_self($status) {
   return $status->uid == $status->pid;
+}
+
+/**
+ * Checks if the current user can edit the status.
+ */
+function facebook_status_rules_condition_can_edit($status) {
+  _facebook_status_can_edit($status);
+}
+
+/**
+ * Checks if the current user can delete the status.
+ */
+function facebook_status_rules_condition_can_delete($status) {
+  _facebook_status_can_edit($status, TRUE);
 }
 
 /**
@@ -231,7 +267,7 @@ function facebook_status_add_action($settings) {
 function facebook_status_rules_data_type_info() {
   return array(
     'facebook_status' => array(
-      'label' => t('Facebook-style Statuses'),
+      'label' => t('Facebook-style Status'),
       'class' => 'rules_data_type_facebook_status',
       'savable' => TRUE,
       'identifiable' => TRUE,

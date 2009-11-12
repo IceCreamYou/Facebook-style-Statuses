@@ -750,7 +750,9 @@ function facebook_status_delete_status($sid) {
     while ($record = db_fetch_object($result)) {
       $records[] = $record->aid;
     }
-    activity_delete($records);
+    if (!empty($records)) {
+      activity_delete($records);
+    }
   }
 }
 
@@ -935,7 +937,7 @@ function _facebook_status_can_edit($status, $delete = FALSE) {
   if (($user->uid == $status->pid && user_access('edit own status')) || user_access('edit all statuses')) {
     return TRUE;
   }
-  //Deletion is allowed if the status was posted on the profile of the current user.
+  //In addition, deletion is allowed if the status was posted on the profile of the current user.
   if ($delete && $user->uid == $status->uid && user_access('edit own status')) {
     return TRUE;
   }
@@ -1470,7 +1472,7 @@ function facebook_status_activityapi(&$activity, $op) {
  * Implementation of hook_token_list().
  */
 function facebook_status_token_list($type = 'all') {
-  if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster' || $type = 'fbss-user') {
+  if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster' || $type == 'fbss-user') {
     $tokens['facebook_status'] = array(
       'owner' => t('The themed name of the user on whose profile the status was posted.'),
       'owner-id' => t('The User ID of the user on whose profile the status was posted.'),
@@ -1496,8 +1498,11 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     return $data;
   }
   //Activity 2.
-  elseif (($type == 'owner' || $type == 'poster' || $type = 'fbss-user') && !empty($data)) {
+  elseif (($type == 'owner' || $type == 'poster' || $type == 'fbss-user' || $type == 'facebook_status') && !empty($data)) {
     $status = $data->facebook_status;
+    if (empty($status)) {
+      $status = $data;
+    }
     return array(
       'owner' => theme('username', user_load(array('uid' => $status->uid))),
       'owner-id' => $status->uid,
