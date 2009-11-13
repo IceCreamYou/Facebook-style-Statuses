@@ -48,7 +48,7 @@ function facebook_status_facebook_status_stream_content_type_edit_form(&$form, &
         $list[$name] = $name;
       }
     }
-    $form['views_name'] = array(
+    $form['view_name'] = array(
       '#type' => 'select',
       '#title' => t('View name'),
       '#description' => t('The name of the view to use as the stream. The relevant view should take one argument: the User ID of the user on whose profile this display will be shown. The facebook_status view is strongly recommended.'),
