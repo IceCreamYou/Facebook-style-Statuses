@@ -744,7 +744,7 @@ function facebook_status_delete_status($sid) {
   db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
   
   //Delete Activity 2 records.
-  if (module_exists('activity') && function_exists('activity_action_info') && _facebook_status_check_activity_eid_exists()) {
+  if (module_exists('activity') && function_exists('activity_help') && _facebook_status_check_activity_eid_exists()) {
     $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $sid);
     $records = array();
     while ($record = db_fetch_object($result)) {
@@ -1321,13 +1321,13 @@ function facebook_status_hook_info() {
     'facebook_status' => array(
       'facebook_status' => array(
         'fbss_deleted' => array(
-          'runs when' => t('A status has been deleted.'),
+          'runs when' => t('A status has been deleted'),
         ),
         'fbss_edited' => array(
-          'runs when' => t('A status has been edited.'),
+          'runs when' => t('A status has been edited'),
         ),
         'fbss_submitted' => array(
-          'runs when' => t('A user has saved a status.'),
+          'runs when' => t('A user has saved a status'),
         ),
       ),
     ),
@@ -1364,7 +1364,7 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
   );
   //In Activity 2, 'fbss-user' is for posting to one's own profile.
   //Also check for self-posting or the poster will see the self message.
-  if (function_exists('activity_action_info') && $owner->uid == $poster->uid) {
+  if (function_exists('activity_help') && $owner->uid == $poster->uid) {
     $context['fbss-user'] = $poster;
   }
   $context['facebook_status'] = $status;
@@ -1387,7 +1387,7 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
  */
 function facebook_status_activity_info() {
   //This function only exists if Activity 2.x is in use.
-  if (function_exists('activity_action_info')) {
+  if (function_exists('activity_help')) {
     $info = new stdClass();
     $info->api = 2;
     $info->name = 'facebook_status';
@@ -1530,7 +1530,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
  */
 function facebook_status_activity($owner, $poster, $status) {
   //If we're using Activity 2, this function doesn't need to be run.
-  if (!module_exists('activity') || function_exists('activity_action_info')) {
+  if (!module_exists('activity') || function_exists('activity_help')) {
     return FALSE;
   }
   //Privacy setting check.
