@@ -103,7 +103,24 @@ function facebook_status_menu() {
     'access arguments' => FALSE,
     'type' => MENU_CALLBACK,
   );
+  if (module_exists('devel_generate')) {
+    $items['admin/generate/facebook_status'] = array(
+      'title' => 'Generate statuses',
+      'description' => 'Generate a given number of statuses. Optionally delete current items.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('facebook_status_generate_form'),
+      'access callback' => '_facebook_status_generate_access',
+      'file' => 'facebook_status.generate.inc',
+    );
+  }
   return $items;
+}
+
+/**
+ * Access callback for the Generate statuses page.
+ */
+function _facebook_status_generate_access() {
+  return user_access('edit all statuses') && user_access('administer site configuration');
 }
 
 /**
@@ -799,11 +816,6 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
   if ($new_status === '') {
     $time = 0;
   }
-  //Choose "your" or "user's" depending on whether the editing user is the owner of the status.
-  $your = t('Your');
-  if ($user->uid != $account->uid) {
-    $your = t("!user's", array('!user' => theme('username', $account)));
-  }
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = _facebook_status_get_status_fast($account->uid);
   //This will be used to save the status and notify Activity.
@@ -818,9 +830,8 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
     else {
       drupal_write_record('facebook_status', $object);
     }
-    $new_id = db_result(db_query("SELECT MAX(sid) FROM {facebook_status}"));
     //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid, $edit).
-    module_invoke_all('facebook_status_save', $account, $new_status, $new_id, FALSE);
+    module_invoke_all('facebook_status_save', $account, $new_status, $object->sid, FALSE);
   }
   elseif ($new_status == $status->status) {
     $object->sid = $status->sid;
@@ -1089,7 +1100,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       $size = variable_get('facebook_status_size_long', 40);
     }
   }
-  $maxlength = variable_get('facebook_status_length', 192);
+  $maxlength = variable_get('facebook_status_length', 140);
   $default = '';
   $prefix = '';
   if ($user->uid == $account->uid) {
@@ -1241,7 +1252,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
  * Validate function for the status update form.
  */
 function facebook_status_box_validate($form, &$form_state) {
-  $maxlen = variable_get('facebook_status_length', 192);
+  $maxlen = variable_get('facebook_status_length', 140);
   if (drupal_strlen($form_state['values']['fbss-status']) > $maxlen) {
     form_set_error('status', t('The status must be no longer than %chars characters.', array('%chars' => $maxlen)));
   }
@@ -1606,8 +1617,8 @@ function facebook_status_sms_incoming($op, $number, $message, $options = NULL) {
   global $user;
   if ($op == 'process' && $user->uid && drupal_substr($message, 0, 3) == 's: ') {
     $message = drupal_substr($message, 3);
-    if (drupal_strlen($message) > variable_get('facebook_status_length', 192)) {
-      $message = drupal_substr($message, 0, variable_get('facebook_status_length', 192) - 3) .'...';
+    if (drupal_strlen($message) > variable_get('facebook_status_length', 140)) {
+      $message = drupal_substr($message, 0, variable_get('facebook_status_length', 140) - 3) .'...';
     }
     facebook_status_save_status($user, $message);
   }

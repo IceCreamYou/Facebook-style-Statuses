@@ -178,6 +178,13 @@ function facebook_status_views_default_views() {
     ),
   ));
   $handler->override_option('sorts', array(
+    'status_time' => array(
+      'order' => 'DESC',
+      'id' => 'status_time',
+      'table' => 'facebook_status',
+      'field' => 'status_time',
+      'relationship' => 'none',
+    ),
     'sid' => array(
       'order' => 'DESC',
       'id' => 'sid',
@@ -528,6 +535,13 @@ function facebook_status_views_default_views() {
     ),
   ));
   $handler->override_option('sorts', array(
+    'status_time' => array(
+      'order' => 'DESC',
+      'id' => 'status_time',
+      'table' => 'facebook_status',
+      'field' => 'status_time',
+      'relationship' => 'none',
+    ),
     'sid' => array(
       'order' => 'DESC',
       'id' => 'sid',
@@ -778,6 +792,13 @@ function facebook_status_views_default_views() {
     ),
   ));
   $handler->override_option('sorts', array(
+    'status_time' => array(
+      'order' => 'DESC',
+      'id' => 'status_time',
+      'table' => 'facebook_status',
+      'field' => 'status_time',
+      'relationship' => 'none',
+    ),
     'sid' => array(
       'order' => 'DESC',
       'id' => 'sid',

@@ -354,6 +354,7 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
   $replace = array();
   $items = array('@' => array(), '#' => array());
   foreach ($words as $word) {
+    $sb = FALSE;
     if (strpos($word, '[') === 0) {
       $word = drupal_substr($word, 1, -1);
       $sb = TRUE;

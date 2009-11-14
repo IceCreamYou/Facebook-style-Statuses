@@ -78,7 +78,7 @@ function facebook_status_admin($form_state) {
     '#type' => 'textfield',
     '#title' => t('Maximum status length'),
     '#description' => t('Must be a positive integer no greater than 21844.'),
-    '#default_value' => variable_get('facebook_status_length', 192),
+    '#default_value' => variable_get('facebook_status_length', 140),
     '#size' => 3,
     '#maxlength' => 5,
     '#required' => TRUE,

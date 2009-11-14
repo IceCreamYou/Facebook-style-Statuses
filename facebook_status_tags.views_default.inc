@@ -73,7 +73,7 @@ function facebook_status_tags_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] <em>[status_time]</em>',
+        'text' => '[pid_extra] [status] [status_time]',
         'make_link' => 0,
         'path' => '',
         'alt' => '',
@@ -97,6 +97,13 @@ function facebook_status_tags_views_default_views() {
     ),
   ));
   $handler->override_option('sorts', array(
+    'status_time' => array(
+      'order' => 'DESC',
+      'id' => 'status_time',
+      'table' => 'facebook_status',
+      'field' => 'status_time',
+      'relationship' => 'none',
+    ),
     'sid' => array(
       'order' => 'DESC',
       'id' => 'sid',
@@ -318,7 +325,7 @@ function facebook_status_tags_views_default_views() {
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] <em>[status_time]</em>',
+        'text' => '[pid_extra] [status] [status_time]',
         'make_link' => 0,
         'path' => '',
         'alt' => '',
@@ -342,6 +349,13 @@ function facebook_status_tags_views_default_views() {
     ),
   ));
   $handler->override_option('sorts', array(
+    'status_time' => array(
+      'order' => 'DESC',
+      'id' => 'status_time',
+      'table' => 'facebook_status',
+      'field' => 'status_time',
+      'relationship' => 'none',
+    ),
     'sid' => array(
       'order' => 'DESC',
       'id' => 'sid',
