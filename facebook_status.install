@@ -189,8 +189,11 @@ function facebook_status_uninstall() {
   drupal_uninstall_schema('facebook_status');
   //Remove variables.
   variable_del('facebook_status_activity_self_patterns');
+  variable_del('facebook_status_userpoints_other');
   variable_del('facebook_status_twitter_default');
   variable_del('facebook_status_twitter_special');
+  variable_del('facebook_status_userpoints_max');
+  variable_del('facebook_status_userpoints_own');
   variable_del('facebook_status_default_text');
   variable_del('facebook_status_profile_view');
   variable_del('facebook_status_special_user');
@@ -198,6 +201,7 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_flag_update');
   variable_del('facebook_status_hide_blank');
   variable_del('facebook_status_flood_user');
+  variable_del('facebook_status_reply_type');
   variable_del('facebook_status_size_long');
   variable_del('facebook_status_default');
   variable_del('facebook_status_exclude');

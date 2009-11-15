@@ -57,6 +57,12 @@ function facebook_status_tags_schema() {
  */
 function facebook_status_tags_install() {
   drupal_install_schema('facebook_status_tags');
+  drupal_set_message(t('Facebook-style Statuses Tags has been successfully installed.'.
+    'You should now <a href="!vocab">create a vocabulary</a> for use with #hashtags and <a href="!fbss">set FBSST to use it</a>.',
+    array('!vocab' => url('admin/content/taxonomy/add/vocabulary'),
+      '!fbss' => url('admin/settings/facebook_status/advanced'),
+    )
+  ));
 }
 
 /**

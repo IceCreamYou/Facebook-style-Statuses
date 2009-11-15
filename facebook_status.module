@@ -748,6 +748,9 @@ function facebook_status_delete_status($sid) {
   if (is_object($sid)) {
     $sid = $sid->sid;
   }
+  //Delete Userpoints.
+  _facebook_status_userpoints_delete($sid);
+
   //Rules integration.
   if (module_exists('rules')) {
     rules_invoke_event('facebook_status_delete', facebook_status_load($sid));
@@ -797,7 +800,7 @@ function _facebook_status_check_activity_eid_exists() {
  * Saves a status into the database.
  *
  * @param $account
- *   The $user object for the user whose status will be saved.
+ *   The $user object for the owner of the status.
  * @param $new_status
  *   The status text to be saved.
  * @param $save_alerts
@@ -829,6 +832,8 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
     }
     else {
       drupal_write_record('facebook_status', $object);
+      //Userpoints integration.
+      _facebook_status_userpoints_add($account, $object->sid);
     }
     //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid, $edit).
     module_invoke_all('facebook_status_save', $account, $new_status, $object->sid, FALSE);
@@ -1697,6 +1702,121 @@ function facebook_status_ctools_plugin_directory($module, $plugin) {
   if ($module == 'ctools') {
     return 'ctools/' . $plugin;
   }
+}
+
+//=======================
+//USERPOINTS INTEGRATION.
+//=======================
+
+/**
+ * Implementation of hook_userpoints().
+ */
+function facebook_status_userpoints($op, $params = array()) {
+  if ($op == 'setting') {
+    $form['facebook_status'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Facebook-style Statuses'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['facebook_status']['facebook_status_userpoints_own'] = array(
+      '#type' => 'textfield',
+      '#title' => t("Userpoints for changing one's own status"),
+      '#default_value' => variable_get('facebook_status_userpoints_own', 0),
+    );
+    $form['facebook_status']['facebook_status_userpoints_other'] = array(
+      '#type' => 'textfield',
+      '#title' => t("Userpoints for posting a message on another user's profile"),
+      '#default_value' => variable_get('facebook_status_userpoints_other', 0),
+    );
+    $form['facebook_status']['facebook_status_userpoints_max'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Maximum number of Userpoints from posting statuses per day'),
+      '#default_value' => variable_get('facebook_status_userpoints_max', 5),
+    );
+    $form['#validate'][] = '_facebook_status_userpoints_validate';
+    return $form;
+  }
+}
+
+/**
+ * Validate function for the Userpoints settings.
+ */
+function _facebook_status_userpoints_validate($form, &$form_state) {
+  $v = $form_state['values'];
+  if (!is_numeric($v['facebook_status_userpoints_own']) || $v['facebook_status_userpoints_own'] < 0) {
+    form_set_error('facebook_status_userpoints_own', t("Userpoints for changing one's own status must be a non-negative integer."));
+  }
+  if (!is_numeric($v['facebook_status_userpoints_other']) || $v['facebook_status_userpoints_other'] < 0) {
+    form_set_error('facebook_status_userpoints_other', t("Userpoints for posting a message on another user's profile must be a non-negative integer."));
+  }
+  if (!is_numeric($v['facebook_status_userpoints_max']) || $v['facebook_status_userpoints_max'] < 0) {
+    form_set_error('facebook_status_userpoints_max', t('The maximum number of Userpoints from posting statuses per day must be a non-negative integer.'));
+  }
+}
+
+/**
+ * Adds userpoints to the status poster's account.
+ * The current user is assumed to be the poster.
+ *
+ * @param $account
+ *   The $user account of the status owner.
+ * @param $sid
+ *   The Status ID of the status for which points will be recorded.
+ */
+function _facebook_status_userpoints_add($account, $sid) {
+  if (!module_exists('userpoints')) {
+    return;
+  }
+  if (!flood_is_allowed('facebook_status_add_userpoints', variable_get('facebook_status_userpoints_max', 5))) {
+    return;
+  }
+  flood_register_event('facebook_status_add_userpoints');
+  global $user;
+  $params = array(
+    'uid' => $user->uid,
+    'reference' => $sid,
+  );
+  if ($user->uid == $account->uid) {
+    $params['description'] = t('!user posted a new status.', array('!user' => theme('username', $user)));
+    $params['points'] = variable_get('facebook_status_userpoints_own', 0);
+    $params['operation'] = 'facebook_status add own';
+  }
+  elseif ($user->uid != $account->uid) {
+    $params['description'] = t('!poster wrote a message to !owner', array('!poster' => theme('username', $user), '!owner' => theme('username', $account)));
+    $params['points'] = variable_get('facebook_status_userpoints_other', 0);
+    $params['operation'] = 'facebook_status add other';
+  }
+  userpoints_userpointsapi($params);
+}
+
+/**
+ * Removes userpoints from the status poster's account.
+ *
+ * @param $sid
+ *   The Status ID of the status for which points will be recorded.
+ */
+function _facebook_status_userpoints_delete($sid) {
+  if (!module_exists('userpoints')) {
+    return;
+  }
+  $status = facebook_status_load($sid);
+  $poster = user_load(array('uid' => $status->pid));
+  global $user;
+  $result = db_fetch_object(db_query("SELECT points FROM {userpoints_txn} WHERE operation LIKE 'facebook_status add%%' AND reference = %d AND uid = %d", $sid, $poster->uid));
+  $params = array(
+    'uid' => $poster->uid,
+    'points' => 0 - $result->points,
+    'operation' => 'facebook_status delete',
+  );
+  if ($user->uid == $poster->uid) {
+    $params['description'] = t('!user deleted a status message.', array('!user' => theme('username', $user)));
+  }
+  elseif ($user->uid != $poster->uid) {
+    $params['description'] = t('!user deleted a message by !poster',
+      array('!user' => theme('username', $user), '!poster' => theme('username', $poster)));
+  }
+  userpoints_userpointsapi($params);
 }
 
 //=================
