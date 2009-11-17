@@ -343,7 +343,11 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
  *   nested array of tags. The outer array is keyed by type ('@' and '#').
  */
 function _facebook_status_tags_filter($subject, $new = FALSE) {
-  $pattern = '%(\A(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|(\[(#|@).+?\])%u';
+  //'%(\A(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|(\[(#|@).+?\])%u'
+  $pattern = '%(\A(#|@)(\w|(\p{L}\p{M}?))+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?))+\b)|(\[(#|@).+?\])%u';
+  if (variable_get('facebook_status_tags_alt_pattern', FALSE)) {
+    $pattern = '%(\A(#|@)\w+\b)|((?<=\s)(#|@)\w+\b)|(\[(#|@).+?\])%u';
+  }
 
   preg_match_all($pattern, $subject, $matches);
   $words = $matches[0];

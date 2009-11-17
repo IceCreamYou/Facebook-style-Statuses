@@ -85,4 +85,8 @@ function facebook_status_tags_uninstall() {
   variable_del('facebook_status_tags_vid');
   variable_del('facebook_status_tags_time');
   variable_del('facebook_status_tags_count');
+  //Although not deleting this leaves an unnecessary row in the variable table,
+  //it's a PITA for site admin to change its value, so it stays in case FBSST
+  //is ever installed again.
+  //variable_del('facebook_status_tags_alt_pattern');
 }
