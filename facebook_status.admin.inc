@@ -165,6 +165,13 @@ function facebook_status_admin_advanced($form_state) {
       '#default_value' => variable_get('facebook_status_profile_view', $list['facebook_status']),
       '#options' => $list,
     );
+    $form['facebook_status_share_view'] = array(
+      '#type' => 'select',
+      '#title' => t('Show a view on the share-status page'),
+      '#description' => t('The default facebook_status view is recommended.'),
+      '#default_value' => variable_get('facebook_status_share_view', $list['facebook_status']),
+      '#options' => $list,
+    );
     $form['facebook_status_reply_type'] = array(
       '#type' => 'select',
       '#title' => t('Reply method'),

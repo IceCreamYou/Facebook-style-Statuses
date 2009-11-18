@@ -47,10 +47,13 @@ function facebook_status_menu() {
     'type' => MENU_LOCAL_TASK,
     'file' => 'facebook_status.admin.inc',
   );
+  $size = variable_get('facebook_status_size_long', 40);
+  //The $view will be ignored if Views does not exist.
+  $view = variable_get('facebook_status_share_view', 'facebook_status');
   $items['share-status'] = array(
     'title' => 'Post to Status',
     'page callback' => 'theme',
-    'page arguments' => array('facebook_status_form_display'),
+    'page arguments' => array('facebook_status_form_display', $GLOBALS['user'], $size, $view),
     'access arguments' => array('edit own status'),
     'description' => 'Allows users to post items to their status from other sites.',
     'type' => MENU_SUGGESTED_ITEM,
@@ -1590,7 +1593,7 @@ function facebook_status_display_user_picture($account) {
 }
 
 //====================
-//Twitter Integration.
+//TWITTER INTEGRATION.
 //====================
 
 /**
