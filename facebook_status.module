@@ -1390,9 +1390,9 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
   actions_do(array_keys($aids), $poster, $context);
 }
 
-//===============================
-//ACTIVITY AND TOKEN INTEGRATION.
-//===============================
+//=====================
+//ACTIVITY INTEGRATION.
+//=====================
 
 /**
  * Note: Activity 1 integration isn't really supported. It's legacy, but it's
@@ -1414,6 +1414,7 @@ function facebook_status_activity_info() {
     $info->eid_field = 'sid';
     $info->objects = array('Owner' => 'owner', 'Poster' => 'poster', 'Self' => 'fbss-user');
     $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted'));
+    $info->realms = array('facebook_status_poster', 'facebook_status_owner');
     return $info;
   }
   //We're using Activity 1.x.
@@ -1449,14 +1450,32 @@ function facebook_status_activity_info() {
 }
 
 /**
+ * Implementation of hook_activity_grants().
+ */
+function facebook_status_activity_grants($activity, $object, $type) {
+  return array(
+    'facebook_status_owner' => array($object->uid),
+    'facebook_status_poster' => array($object->pid),
+  );
+}
+
+/**
+ * Implementation of hook_activity_access_grants().
+ */
+function facebook_status_activity_access_grants($account) {
+  return array(
+    'facebook_status_owner' => array($account->uid),
+    'facebook_status_poster' => array($account->uid),
+  );
+}
+
+/**
  * Implementation of hook_activity_message_recorded().
  *
  * Activity 2.
- * Note that the Activity maintainers throw a fit about this, but I think their
- * proposed solution of splitting each of the existing triggers based on where
- * the status was originally posted is completely unintuitive to end users,
- * and their API does not provide enough information to do this any other way.
- * Don't like this? Fine. Write a patch to make it better, and then we can talk.
+ * Note that this approach is bad, but there didn't seem to be a better way of
+ * doing it that is still intuitive to the end-user. It may be better to try to
+ * use Activity types.
  * Code that makes this work is in facebook_status_form_activity_form_alter().
  */
 function facebook_status_activity_message_recorded($record, $context) {
@@ -1486,6 +1505,46 @@ function facebook_status_activityapi(&$activity, $op) {
     }
   }
 }
+
+/**
+ * Handles recording activity messages.
+ *
+ * @param $owner
+ *   The $user object of the user on whose profile the status was posted.
+ * @param $poster
+ *   The $user object of the user who posted the status.
+ * @param $status
+ *   The status object containing the status to record. Requires at least the
+ *   status and status_time.
+ */
+function facebook_status_activity($owner, $poster, $status) {
+  //If we're using Activity 2, this function doesn't need to be run.
+  if (!module_exists('activity') || function_exists('activity_help')) {
+    return FALSE;
+  }
+  //Privacy setting check.
+  if (activity_user_privacy_optout($poster)) {
+    return FALSE;
+  }
+  $data = array(
+    'owner' => theme('username', $owner),
+    'poster' => theme('username', $poster),
+    'status-unformatted' => check_plain($status->status),
+    'status-themed' => theme('facebook_status_item', $status),
+    'status_time' => $status->status_time,
+  );
+  $target_users_roles = array(
+    ACTIVITY_ALL => 'all',
+    $owner->uid => 'owner',
+  );
+  //If $owner->uid == $poster->uid, this will just overwrite the owner role.
+  $target_users_roles[$poster->uid] = 'poster';
+  activity_insert($poster->uid, 'facebook_status', 'facebook_status', 'update', $data, $target_users_roles);
+}
+
+//==================
+//TOKEN INTEGRATION.
+//==================
 
 /**
  * Implementation of hook_token_list().
@@ -1534,42 +1593,6 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       'status-raw' => $status->status,
     );
   }
-}
-
-/**
- * Handles recording activity messages.
- *
- * @param $owner
- *   The $user object of the user on whose profile the status was posted.
- * @param $poster
- *   The $user object of the user who posted the status.
- * @param $status
- *   The status object containing the status to record. Requires at least the
- *   status and status_time.
- */
-function facebook_status_activity($owner, $poster, $status) {
-  //If we're using Activity 2, this function doesn't need to be run.
-  if (!module_exists('activity') || function_exists('activity_help')) {
-    return FALSE;
-  }
-  //Privacy setting check.
-  if (activity_user_privacy_optout($poster)) {
-    return FALSE;
-  }
-  $data = array(
-    'owner' => theme('username', $owner),
-    'poster' => theme('username', $poster),
-    'status-unformatted' => check_plain($status->status),
-    'status-themed' => theme('facebook_status_item', $status),
-    'status_time' => $status->status_time,
-  );
-  $target_users_roles = array(
-    ACTIVITY_ALL => 'all',
-    $owner->uid => 'owner',
-  );
-  //If $owner->uid == $poster->uid, this will just overwrite the owner role.
-  $target_users_roles[$poster->uid] = 'poster';
-  activity_insert($poster->uid, 'facebook_status', 'facebook_status', 'update', $data, $target_users_roles);
 }
 
 //==================
