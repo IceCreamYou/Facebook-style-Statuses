@@ -1243,11 +1243,13 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     '#type' => 'value',
     '#value' => $view_arg,
   );
+  /*
   if (module_exists('ajax')) {
     $form['#action'] = url('share-status');
     $form['#ajax'] = array('enabled' => TRUE);
     $form['fbss-submit']['#ajax'] = array('submitter' => TRUE);
   }
+   */
   if (arg(0) == 'share-status' && $_GET['destination'] && $_GET['destination'] != $_GET['q']) {
     $form['back']['#value'] = l(t('Back'), $_GET['destination'], array('attributes' => array('class' => 'facebook-status-back')));
   }
@@ -1717,10 +1719,12 @@ function facebook_status_views_bulk_operations_object_info() {
 /**
  * Implementation of hook_ajax_types().
  */
+/*
 function facebook_status_ajax_types(&$types) {
   $types['facebook_status_box'] = t('Facebook-style Statuses update form');
   return TRUE;
 }
+ */
 
 //===================
 //CTOOLS INTEGRATION.
