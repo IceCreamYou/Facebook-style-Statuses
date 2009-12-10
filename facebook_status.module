@@ -1454,13 +1454,14 @@ function facebook_status_activity_info() {
 /**
  * Implementation of hook_activity_grants().
  */
-function facebook_status_activity_grants($activity, $object, $type) {
+function facebook_status_activity_grants($activity) {
   $realms = array();
-  if ($type == 'facebook_status') {
-    $realms['facebook_status_owner'] = array($object->uid);
-    //No need to save both if they are equal. Just takes up more disk space.
-    if ($object->pid != $object->uid) {
-      $realms['facebook_status_poster'] = array($object->pid);
+  if ($activity->type == 'facebook_status') {
+    $realms['facebook_status_owner'] = array($activity->uid);
+    //No need to save both if they are equal.
+    $poster = db_fetch_array(db_query("SELECT pid FROM {facebook_status} WHERE sid = %d AND pid <> %d", $activity->eid, $activity->uid));
+    if ($poster['pid']) {
+      $realms['facebook_status_poster'] = $poster;
     }
   }
   return $realms;
