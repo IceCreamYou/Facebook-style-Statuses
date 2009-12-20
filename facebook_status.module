@@ -180,8 +180,12 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
     else {
       $account = facebook_status_choose_owner(FALSE);
     }
+    $view = FALSE;
+    if (module_exists('views') && variable_get('facebook_status_block_view', '')) {
+      $view = variable_get('facebook_status_block_view', '');
+    }
     $block['subject'] = t('Status');
-    $block['content'] = theme('facebook_status_form_display', $account);
+    $block['content'] = theme('facebook_status_form_display', $account, FALSE, $view);
     return $block;
   }
   elseif ($op == 'configure' && $delta == 'facebook_status') {
@@ -211,12 +215,31 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
         '#default_value' => variable_get('facebook_status_twitter_special', 0),
       );
     }
+    if (module_exists('views')) {
+      $views = views_get_all_views();
+      $list = array('' => t('None'));
+      foreach ($views as $name => $view) {
+        if ($view->disabled == 0) {
+          $list[$name] = $name;
+        }
+      }
+      $form['facebook_status']['facebook_status_block_view'] = array(
+        '#type' => 'select',
+        '#title' => t('Show a view on this block.'),
+        '#description' => t('The default facebook_status view is strongly recommended, if you want to use a view at all.'),
+        '#default_value' => variable_get('facebook_status_block_view', ''),
+        '#options' => $list,
+      );
+    }
     return $form;
   }
   elseif ($op == 'save' && $delta == 'facebook_status') {
     variable_set('facebook_status_special_user', $edit['facebook_status']['facebook_status_special_user']);
     if ($edit['facebook_status']['facebook_status_twitter_special'] && module_exists('twitter')) {
       variable_set('facebook_status_twitter_special', $edit['facebook_status']['facebook_status_twitter_special']);
+    }
+    if ($edit['facebook_status']['facebook_status_block_view'] && module_exists('views')) {
+      variable_set('facebook_status_block_view', $edit['facebook_status']['facebook_status_block_view']);
     }
   }
 }
