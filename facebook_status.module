@@ -225,7 +225,7 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
       }
       $form['facebook_status']['facebook_status_block_view'] = array(
         '#type' => 'select',
-        '#title' => t('Show a view on this block.'),
+        '#title' => t('Show a view on this block'),
         '#description' => t('The default facebook_status view is strongly recommended, if you want to use a view at all.'),
         '#default_value' => variable_get('facebook_status_block_view', ''),
         '#options' => $list,
@@ -235,10 +235,10 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
   }
   elseif ($op == 'save' && $delta == 'facebook_status') {
     variable_set('facebook_status_special_user', $edit['facebook_status']['facebook_status_special_user']);
-    if ($edit['facebook_status']['facebook_status_twitter_special'] && module_exists('twitter')) {
+    if (module_exists('twitter') && user_access('use global twitter account')) {
       variable_set('facebook_status_twitter_special', $edit['facebook_status']['facebook_status_twitter_special']);
     }
-    if ($edit['facebook_status']['facebook_status_block_view'] && module_exists('views')) {
+    if (module_exists('views')) {
       variable_set('facebook_status_block_view', $edit['facebook_status']['facebook_status_block_view']);
     }
   }
