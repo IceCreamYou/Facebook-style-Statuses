@@ -424,22 +424,20 @@ function facebook_status_theme($existing, $type, $theme, $path) {
 //================
 
 /**
- * Formats a status. Does not check to make sure the status belongs to the
- * relevant user if a status is passed in.
+ * Formats a status.
  *
  * @param $status
  *   A full status object. If not passed, gets the last status for the relevant
  *   user automatically. If there is none, uses a default message.
- * @param $historical
+ * @param $cacheable
  *   Indicates that the complete text of the rendered status will be stored
- *   for future use. This means primarily that dynamic timestamps should be
- *   avoided. This parameter is mainly for use with the Activity module, but
- *   other modules saving historical records may also find it useful.
+ *   for future use, so dynamic timestamps and administrative elements (like
+ *   edit/delete links) should be avoided.
  * @return
  *   HTML to display the themed status or FALSE if the current user does not
  *   have permission to view the status.
  */
-function theme_facebook_status_item($status = FALSE, $historical = FALSE) {
+function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   global $user;
   if ($status === FALSE) {
     $status = _facebook_status_get_status_fast($user->uid);
@@ -468,7 +466,7 @@ function theme_facebook_status_item($status = FALSE, $historical = FALSE) {
   if (variable_get('facebook_status_nl2br', 0)) {
     $status_text = nl2br($status_text);
   }
-  $status->historical = $historical;
+  $status->cacheable = $cacheable;
   //Invokes hook_facebook_status_render_alter(&$status_text, $owner, $poster, $status).
   drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
   $edit = '';
@@ -476,15 +474,17 @@ function theme_facebook_status_item($status = FALSE, $historical = FALSE) {
   if ($q == 'facebook_status/js') {
     $q = 'share-status';
   }
-  if ($status_exists && _facebook_status_can_edit($status)) {
-    $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
-  }
-  elseif ($status_exists && _facebook_status_can_edit($status, TRUE)) {
-    $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
-  }
   $time = theme('facebook_status_time', $status->status_time);
-  if ($historical) {
+  if ($cacheable) {
     $time = format_date($status->status_time, 'small');
+  }
+  elseif ($status_exists) {
+    if (_facebook_status_can_edit($status)) {
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+    }
+    elseif (_facebook_status_can_edit($status, TRUE)) {
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+    }
   }
   $args = array('!status' => $status_text, '%time' => $time, '!edit' => $edit);
   if ($owner->uid == $poster->uid) {
@@ -1592,6 +1592,7 @@ function facebook_status_token_list($type = 'all') {
       'status-time' => t('The time the status was submittted.'),
       'status-id' => t('The Status ID.'),
       'status-raw' => t('The completely unfiltered status text. WARNING: raw user input.'),
+      'status-edit-delete' => t('Permission-sensitive edit/delete status links.'),
     );
     return $tokens;
   }
@@ -1612,6 +1613,13 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     if (empty($status)) {
       $status = $data;
     }
+    $edit = '';
+    if (_facebook_status_can_edit($status)) {
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+    }
+    elseif (_facebook_status_can_edit($status, TRUE)) {
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+    }
     return array(
       'owner' => theme('username', user_load(array('uid' => $status->uid))),
       'owner-id' => $status->uid,
@@ -1622,6 +1630,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       'status-time' => format_date($status->status_time, 'small'),
       'status-id' => $status->sid,
       'status-raw' => $status->status,
+      'status-edit-delete' => $edit,
     );
   }
 }
