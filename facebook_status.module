@@ -688,16 +688,32 @@ function facebook_status_get_status($uid = 0, $pid = 0, $count = 1, $instance = 
  * @param $total
  *   The maximum number of statuses to return. If zero, all relevant statuses
  *   are returned.
- * @param $latest_only
- *   If TRUE, only include the latest status from each user; if FALSE, include
- *   all relevant statuses. May cause issues in MySQL 4 and PostgreSQL if TRUE.
+ * @param $params
+ *   An associative array containing boolean elements 'self only' (which causes
+ *   only statuses posted to one's own profile to be returned if TRUE, only
+ *   statuses posted to another user's profile to be returned if FALSE, and is
+ *   disregarded if NULL) and 'latest only' (which causes only the most recent
+ *   relevant status to be returned if TRUE and is disregarded otherwise). For
+ *   backwards compatibility, $params can also be a boolean instead of an array.
+ *   In this case, FALSE corresponds to an empty array, while TRUE corresponds
+ *   to both array elements being TRUE. Setting $params['latest only'] to TRUE
+ *   may cause issues in MySQL 4 and PostgreSQL.
  * @return
  *   An array of status objects.
  */
-function facebook_status_get_statuses($uids = array(), $pids = array(), $total = 0, $latest_only = FALSE) {
+function facebook_status_get_statuses($uids = array(), $pids = array(), $total = 0, $params = array()) {
+  if ($params === FALSE) {
+    $params = array();
+  }
+  elseif ($params === TRUE) {
+    $params = array(
+      'self only' => TRUE,
+      'latest only' => TRUE,
+    );
+  }
   $statuses = array();
   $args = array();
-  $sql = 'SELECT sid, uid FROM {facebook_status} WHERE status_time <> 0 ';
+  $sql = 'SELECT * FROM {facebook_status} WHERE status_time <> 0 ';
   if (!empty($uids)) {
     $args = array_merge($args, $uids);
     $uids = db_placeholders($uids);
@@ -708,24 +724,28 @@ function facebook_status_get_statuses($uids = array(), $pids = array(), $total =
     $pids = db_placeholders($pids);
     $sql .= 'AND pid IN ('. $pids .') ';
   }
+  if ($params['self only'] === TRUE) {
+    $sql .= 'AND uid = pid ';
+  }
+  elseif ($params['self only'] === FALSE) {
+    $sql .= 'AND uid <> pid ';
+  }
   $sql .= 'ORDER BY sid DESC';
-  if ($latest_only) {
-    $sql = 'SELECT sid, uid FROM ('. $subquery .') x GROUP BY uid ORDER BY sid DESC';
+  if ($params['latest only']) {
+    $sql = 'SELECT * FROM ('. $sql .') x GROUP BY uid ORDER BY sid DESC';
   }
   if ($total == 0) {
-    $result = db_query($sql);
+    $result = db_query($sql, $args);
   }
   else {
-    $result = db_query_range($sql, 0, $total);
+    $result = db_query_range($sql, $args, 0, $total);
   }
-  while ($sid = db_fetch_array($result)) {
-    if ($sid['sid']) {
-      $status = facebook_status_load($sid['sid']);
-      $statuses[$status->sid] = $status;
+  while ($status = db_fetch_object($result)) {
+    if ($status->sid) {
+      $statuses[] = $status;
     }
   }
-  krsort($statuses);
-  return array_values($statuses);
+  return $statuses;
 }
 
 /**
