@@ -51,7 +51,7 @@ function facebook_status_menu() {
   //The $view will be ignored if Views does not exist.
   $view = variable_get('facebook_status_share_view', 'facebook_status');
   $items['share-status'] = array(
-    'title' => 'Post to Status',
+    'title' => 'Post to status',
     'page callback' => 'theme',
     'page arguments' => array('facebook_status_form_display', $GLOBALS['user'], $size, $view),
     'access arguments' => array('edit own status'),
@@ -84,6 +84,13 @@ function facebook_status_menu() {
     'access arguments' => array(1, TRUE),
     'type' => MENU_CALLBACK,
     'file' => 'facebook_status.edit.inc',
+  );
+  $items['statuses/%facebook_status'] = array(
+    'title' => 'Status',
+    'page callback' => 'theme',
+    'page arguments' => array('facebook_status_item', 1),
+    'access arguments' => array('view all statuses'),
+    'type' => MENU_CALLBACK,
   );
   $items['facebook_status/autocomplete'] = array(
     'title' => 'Facebook-style Statuses user autocomplete',
@@ -245,7 +252,8 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
 }
 
 /**
- * Validate function for the Special User element in the form alter configuration.
+ * Validate function for the Special User element in the form alter
+ * configuration.
  */
 function facebook_status_alter_validate($element, &$form_state) {
   $name = $form_state['values']['facebook_status']['facebook_status_special_user'];
@@ -401,6 +409,7 @@ function facebook_status_theme($existing, $type, $theme, $path) {
     'facebook_status_item' => array(
       'arguments' => array(
         'status' => FALSE,
+        'cacheable' => FALSE,
       ),
     ),
     'facebook_status_form_display' => array(
@@ -462,6 +471,7 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
       $status->status = t('does not have a status.');
     }
   }
+  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
   $status_text = _facebook_status_run_filter($status->status);
   if (variable_get('facebook_status_nl2br', 0)) {
     $status_text = nl2br($status_text);
@@ -510,6 +520,8 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
     }
     $output = t('!poster &raquo; !owner: !status %time!edit!conversation', $args);
   }
+  //@todo: This is not documented. It was added after 6.x-2.0 was released.
+  drupal_alter('facebook_status_render_all', $output, $status);
   return $output;
 }
 
@@ -781,6 +793,9 @@ function facebook_status_has_status($uid = FALSE, $pid = FALSE) {
  *   A full status object containing sid, status, status_time, uid, and pid.
  */
 function facebook_status_load($sid) {
+  if (!is_numeric($sid)) {
+    return;
+  }
   return db_fetch_object(db_query("SELECT * FROM {facebook_status} WHERE sid = %d", $sid));
 }
 
@@ -827,8 +842,10 @@ function facebook_status_delete_status($sid) {
  * records-with-statuses feature (which is dependent on the "eid" column
  * existing in the {activity} table in the database) for Activity 2.
  *
- * @todo Remove this function once Activity implements hook_update_N functions.
- * @return TRUE if we can use this feature; FALSE otherwise.
+ * @todo
+ *   Remove this function once Activity implements hook_update_N functions.
+ * @return
+ *   TRUE if we can use this feature; FALSE otherwise.
  */
 function _facebook_status_check_activity_eid_exists() {
   $result = db_fetch_array(db_query_range("SELECT * FROM {activity}", 0, 1));
@@ -1085,7 +1102,8 @@ function _facebook_status_get_status_fast($uid) {
 }
 
 /**
- * Gets the default value for the "Post to Twitter" checkbox on the status update form.
+ * Gets the default value for the "Post to Twitter" checkbox on the status
+ * update form.
  *
  * @param $account
  *   The user account object for the user whose checkbox will be displayed.
@@ -1970,11 +1988,12 @@ function facebook_status_flag_default_flags() {
   return $flags;
 }
 
-/**
+/*
  * We have to check to make sure class flag_flag exists or we will get a WSOD.
  * The flag_flag class exists if the Flag module is loaded before this file is.
- * The Flag module is loaded first if the weight is higher in the {system} table,
- * and the 'facebook_status_flag_update' variable tells us if this is true.
+ * The Flag module is loaded first if its weight is lighter in the {system}
+ * table, and the 'facebook_status_flag_update' variable tells us if this is
+ * true.
  */
 if (module_exists('flag') && variable_get('facebook_status_flag_update', FALSE)) {
   //This is here because the Flag module does not support magic include files.
