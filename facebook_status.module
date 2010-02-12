@@ -660,7 +660,7 @@ function facebook_status_get_status($uid = 0, $pid = 0, $count = 1, $instance = 
     }
   }
   else {
-    $sql = 'SELECT sid FROM {facebook_status} WHERE 1 '. $sql;
+    $sql = 'SELECT sid FROM {facebook_status} WHERE 1=1 '. $sql;
     $total = facebook_status_has_status($uid);
     //If $count == 0 we want to get all relevant statuses, so set $count to the total number of statuses for this user so they all get included.
     if ($count == 0) {
