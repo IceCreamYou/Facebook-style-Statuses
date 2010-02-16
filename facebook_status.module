@@ -53,7 +53,7 @@ function facebook_status_menu() {
   $items['share-status'] = array(
     'title' => 'Post to status',
     'page callback' => 'theme',
-    'page arguments' => array('facebook_status_form_display', $GLOBALS['user'], $size, $view),
+    'page arguments' => array('facebook_status_form_display', FALSE, $size, $view),
     'access arguments' => array('edit own status'),
     'description' => 'Allows users to post items to their status from other sites.',
     'type' => MENU_SUGGESTED_ITEM,
