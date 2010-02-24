@@ -888,7 +888,7 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
   $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid, 'pid' => $user->uid);
   if ($new_status != $status->status && $account->uid) {
     //If a new status is submitted on one's own profile within 10 seconds of the old one, we assume the user didn't mean to post the first one.
-    if (time() - $status->status_time < 10 && $account->uid != $user->uid) {
+    if (time() - $status->status_time < 10 && $account->uid == $user->uid) {
       $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
       db_query($sql, $new_status, $time, $status->sid);
       $object->sid = $status->sid;
