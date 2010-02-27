@@ -402,6 +402,17 @@ function facebook_status_activity_form_extra_submit($form, &$form_state) {
 }
 
 /**
+ * Implementation of hook_init().
+ */
+function facebook_status_init() {
+  drupal_add_js(array('facebook_status' => array(
+    'autofocus' => (arg(0) == 'share-status' || (arg(0) == 'statuses' && is_numeric(arg(1)) && arg(2) == 'edit')),
+    'maxlength' => variable_get('facebook_status_length', 140),
+    'ttype' => variable_get('facebook_status_type', 'textarea'))
+  ), 'setting');
+}
+
+/**
  * Implementation of hook_theme().
  */
 function facebook_status_theme($existing, $type, $theme, $path) {
@@ -549,7 +560,7 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
     $account = facebook_status_choose_owner(FALSE);
   }
   if (facebook_status_can_post($account, $user)) {
-    return '<div id="facebook_status_update" class="clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view, $view_arg) .'</div>';
+    return '<div class="facebook_status_update facebook_status_update_main clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view, $view_arg) .'</div>';
   }
   if ($view && module_exists('views')) {
     $rendered_view = views_embed_view($view, 'default', $account->uid);
@@ -1217,18 +1228,13 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   $path = drupal_get_path('module', 'facebook_status');
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_css($path .'/facebook_status.css');
-  drupal_add_js(array('facebook_status' => array(
-    'autofocus' => (arg(0) == 'share-status'),
-    'maxlength' => $maxlength,
-    'ttype' => variable_get('facebook_status_type', 'textarea'))
-  ), 'setting');
   $form = array('#cache' => TRUE);
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['opendiv'] = array(
     '#value' => '<div id="facebook_status_replace">',
   );
   $form['slider'] = array(
-    '#value' => '<span id="facebook_status_slider">'. $slider .'</span>',
+    '#value' => '<span class="facebook_status_slider">'. $slider .'</span>',
   );
   //Textfield and textarea properties are mixed here, but it doesn't matter because only the relevant ones will get used.
   $form['fbss-status'] = array(
@@ -1779,20 +1785,6 @@ function facebook_status_views_bulk_operations_object_info() {
     ),
   );
 }
-
-//========================
-//AJAX MODULE INTEGRATION.
-//========================
-
-/**
- * Implementation of hook_ajax_types().
- */
-/*
-function facebook_status_ajax_types(&$types) {
-  $types['facebook_status_box'] = t('Facebook-style Statuses update form');
-  return TRUE;
-}
- */
 
 //===================
 //CTOOLS INTEGRATION.

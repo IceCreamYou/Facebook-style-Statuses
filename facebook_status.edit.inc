@@ -11,7 +11,7 @@
  */
 function facebook_status_edit(&$form_state, $status) {
   $size = variable_get('facebook_status_size_long', 40);
-  $maxlength = variable_get('facebook_status_length', 192);
+  $maxlength = variable_get('facebook_status_length', 140);
   $account = user_load(array('uid' => $status->uid));
   $default = $status->status;
 
@@ -25,11 +25,6 @@ function facebook_status_edit(&$form_state, $status) {
   $path = drupal_get_path('module', 'facebook_status');
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_css($path .'/facebook_status.css');
-  drupal_add_js(array('facebook_status' => array(
-    'autofocus' => TRUE,
-    'maxlength' => $maxlength,
-    'ttype' => variable_get('facebook_status_type', 'textarea'))
-  ), 'setting');
   global $user;
   $orig = nl2br(check_plain($status->status));
   if ($user->uid == $status->pid && $status->pid == $status->uid) {
@@ -52,7 +47,7 @@ function facebook_status_edit(&$form_state, $status) {
   }
   $form = array('#cache' => TRUE);
   $form['slider'] = array(
-    '#value' => '<div id="facebook_status_update" class="clear-block"><span id="facebook_status_slider">'. $slider .'</span>',
+    '#value' => '<div class="facebook_status_update clear-block"><span class="facebook_status_slider">'. $slider .'</span>',
   );
   $form['fbss-status'] = array(
     '#type' => variable_get('facebook_status_type', 'textarea'),
