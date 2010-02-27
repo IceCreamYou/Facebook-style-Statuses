@@ -1304,13 +1304,6 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     '#type' => 'value',
     '#value' => $view_arg,
   );
-  /*
-  if (module_exists('ajax')) {
-    $form['#action'] = url('share-status');
-    $form['#ajax'] = array('enabled' => TRUE);
-    $form['fbss-submit']['#ajax'] = array('submitter' => TRUE);
-  }
-   */
   if (arg(0) == 'share-status' && $_GET['destination'] && $_GET['destination'] != $_GET['q']) {
     $form['back']['#value'] = l(t('Back'), $_GET['destination'], array('attributes' => array('class' => 'facebook-status-back')));
   }
@@ -1352,6 +1345,10 @@ function facebook_status_box_submit($form, &$form_state) {
     'fbss-view-arg' => $form_state['values']['fbss-view-arg'],
   );
   $form_state['rebuild'] = TRUE;
+  if (!variable_get('facebook_status_ahah', 1)) {
+    $form_state['redirect'] = array($_GET['q']);
+    $form_state['rebuild'] = FALSE;
+  }
 }
 
 /**
