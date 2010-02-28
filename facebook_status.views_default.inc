@@ -243,7 +243,8 @@ function facebook_status_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '$account = user_load(array(\'uid\' => $argument));
+      'validate_argument_php' => '  $return = FALSE;
+  $account = user_load(array(\'uid\' => $argument));
   if ($account->uid) {
     $handler->argument = $account->name;
     $uid = TRUE;
@@ -255,12 +256,15 @@ function facebook_status_views_default_views() {
   }
   if ($name && $uid) {
     $handler->argument = $account->name;
-    return TRUE;
+    $return = TRUE;
   }
   else if ($name || $uid) {
-    return TRUE;
+    $return = TRUE;
+    if ($name) {
+      $account = $account2;
+    }
   }
-  return FALSE;',
+  return $return && user_access(\'edit own status\', $account) && !_facebook_status_exclude($account);',
     ),
   ));
   $handler->override_option('filters', array(
