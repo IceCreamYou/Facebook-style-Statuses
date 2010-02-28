@@ -157,17 +157,7 @@ function facebook_status_update_6202() {
 }
 
 /**
- * Implementation of hook_update_N().
- *
- * This function should have gone in facebook_status_tags.install.
- *
-function facebook_status_update_6203() {
-  $result = array();
-  //In the last few cycles, some bugs were fixed that could cause blank tags to
-  //be saved. Clean up that mess.
-  $result[] = update_sql("DELETE FROM {facebook_status_tags} WHERE name = ''");
-  return $result;
-}
+ * facebook_status_update_6203 was moved to facebook_status_tags.install.
  */
 
 /**
@@ -185,13 +175,23 @@ function facebook_status_update_6204() {
 }
 
 /**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6205() {
+  variable_del('facebook_status_activity_self_patterns');
+  return array(array(
+    'success' => TRUE,
+    'query' => t('None'),
+  ));
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {
   //Remove tables.
   drupal_uninstall_schema('facebook_status');
   //Remove variables.
-  variable_del('facebook_status_activity_self_patterns');
   variable_del('facebook_status_userpoints_other');
   variable_del('facebook_status_twitter_default');
   variable_del('facebook_status_twitter_special');

@@ -280,7 +280,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d OR pid = %d', $account->uid, $account->uid);
   }
-  if ($op == 'view' && !_facebook_status_exclude($account) && user_access('view all statuses') && (user_access('edit own status', $account) || user_access('edit all statuses', $account))) {
+  if ($op == 'view' && !_facebook_status_exclude($account) && user_access('view all statuses') && user_access('edit own status', $account)) {
     if (!isset($account->content['facebook_status'])) {
       $account->content['facebook_status'] = array();
     }
@@ -359,45 +359,6 @@ function facebook_status_twitter_submit($form, &$form_state) {
       'facebook_status_twitter' => $form_state['values']['facebook_status_twitter'],
       'facebook_status_twitter_default' => $form_state['values']['facebook_status_twitter_default'],
     ), 'twitter');
-  }
-}
-
-/**
- * Implementation of hook_form_FORM_ID_alter().
- */
-function facebook_status_form_activity_form_alter(&$form, &$form_state) {
-  if ($form_state['storage']['values']['triggers']['module'] == 'facebook_status') {
-    $op = $form_state['storage']['values']['operations']['operation'];
-    if (!in_array($op, array('fbss_deleted', 'fbss_edited', 'fbss_submitted'))) {
-      return;
-    }
-    foreach (activity_enabled_languages() as $id => $language) {
-      $form["{$id}_fieldset"]['everyone-pattern-'. $id]['#title'] = t('Public message (one user to another)');
-      $form["{$id}_fieldset"]['everyone-pattern-'. $id]['#description'] = t('Using the available tokens, enter a message as how it should <strong>appear to anyone who is <em>not</em> the poster or owner</strong> of this particular status.');
-      $defaults = variable_get('facebook_status_activity_self_patterns', array());
-      $form["{$id}_fieldset"]['everyone-pattern-'. $id .'-self'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Public message (self-update)'),
-        '#default_value' => isset($defaults[$op][$id]) ? $defaults[$op][$id] : '',
-        '#description' => t('Using the available tokens, enter a message as how it should <strong>appear to anyone who is <em>not</em> the author</strong> of this particular activity.'),
-      );
-    }
-    $form['facebook_status_extra'] = array('#type' => 'value', '#value' => TRUE);
-    $form['facebook_status_op'] = array('#type' => 'value', '#value' => $op);
-    $form['#submit'][] = 'facebook_status_activity_form_extra_submit';
-  }
-}
-
-/**
- * Submit function for the altered Activity publishing template.
- */
-function facebook_status_activity_form_extra_submit($form, &$form_state) {
-  if ($form_state['values']['facebook_status_extra']) {
-    $patterns = array();
-    foreach (activity_enabled_languages() as $id => $language) {
-      $patterns[$id] = $form_state['values']['everyone-pattern-'. $id .'-self'];
-    }
-    variable_set('facebook_status_activity_self_patterns', array($form_state['values']['facebook_status_op'] => $patterns));
   }
 }
 
@@ -918,7 +879,11 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
   if ($save_alerts) {
     //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
     if (module_exists('trigger') && $time) {
-      module_invoke_all('facebook_status', 'fbss_submitted', $account, $user, $object);
+      $op = 'fbss_submitted';
+      if ($account->uid != $user->uid) {
+        $op = 'fbss_submitted_other';
+      }
+      module_invoke_all('facebook_status', $op, $account, $user, $object);
     }
     //Activity 1 integration.
     facebook_status_activity($account, $user, $object);
@@ -1412,7 +1377,10 @@ function facebook_status_hook_info() {
           'runs when' => t('A status has been edited'),
         ),
         'fbss_submitted' => array(
-          'runs when' => t('A user has saved a status'),
+          'runs when' => t('A user has updated their status'),
+        ),
+        'fbss_submitted_other' => array(
+          'runs when' => t('A user has posted a status message to another user'),
         ),
       ),
     ),
@@ -1425,7 +1393,7 @@ function facebook_status_hook_info() {
  * Implementation of hook_trigger_name().
  */
 function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NULL) {
-  if (!in_array($op, array('fbss_deleted', 'fbss_edited', 'fbss_submitted'))) {
+  if (!in_array($op, array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other'))) {
     return;
   }
   $aids = _trigger_get_hook_aids('facebook_status', $op);
@@ -1434,7 +1402,7 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
     $owner = user_load(array('uid' => $status->uid));
     $poster = user_load(array('uid' => $status->pid));
   }
-  elseif ($op == 'fbss_submitted') {
+  elseif ($op == 'fbss_submitted' || $op == 'fbss_submitted_other') {
     $owner = $a1;
   }
   //Token (via Activity 2) won't know about the status when it sees the users unless we include it somewhere in the user objects.
@@ -1444,15 +1412,10 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
   $context = array(
     'hook' => 'facebook_status',
     'op' => $op,
-    'owner' => $owner,
+    'account' => $owner,
     'poster' => $poster,
+    'facebook_status' => $status,
   );
-  //In Activity 2, 'fbss-user' is for posting to one's own profile.
-  //Also check for self-posting or the poster will see the self message.
-  if (function_exists('activity_help') && $owner->uid == $poster->uid) {
-    $context['fbss-user'] = $poster;
-  }
-  $context['facebook_status'] = $status;
   actions_do(array_keys($aids), $poster, $context);
 }
 
@@ -1476,11 +1439,11 @@ function facebook_status_activity_info() {
     $info = new stdClass();
     $info->api = 2;
     $info->name = 'facebook_status';
-    $info->object_type = 'facebook_status';
+    $info->object_type = 'poster';
     $info->eid_field = 'sid';
-    $info->objects = array('Owner' => 'owner', 'Poster' => 'poster', 'Self' => 'fbss-user');
-    $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted'));
-    $info->realms = array('facebook_status_poster', 'facebook_status_owner');
+    $info->objects = array('Owner' => 'account', 'Poster' => 'poster');
+    $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other'));
+    $info->realms = array('facebook_status_poster' => 'Facebook-style Statuses Poster', 'facebook_status_owner' => 'Facebook-style Statuses Owner');
     return $info;
   }
   //We're using Activity 1.x.
@@ -1525,7 +1488,7 @@ function facebook_status_activity_grants($activity) {
     //No need to save both if they are equal.
     $poster = db_fetch_array(db_query("SELECT pid FROM {facebook_status} WHERE sid = %d AND pid <> %d", $activity->eid, $activity->uid));
     if ($poster['pid']) {
-      $realms['facebook_status_poster'] = $poster;
+      $realms['facebook_status_poster'] = array($poster);
     }
   }
   return $realms;
@@ -1539,31 +1502,6 @@ function facebook_status_activity_access_grants($account) {
     'facebook_status_owner' => array($account->uid),
     'facebook_status_poster' => array($account->uid),
   );
-}
-
-/**
- * Implementation of hook_activity_message_recorded().
- *
- * Activity 2.
- * Note that this approach is bad, but there didn't seem to be a better way of
- * doing it that is still intuitive to the end-user. It may be better to try to
- * use Activity types.
- * Code that makes this work is in facebook_status_form_activity_form_alter().
- */
-function facebook_status_activity_message_recorded($record, $context) {
-  if ($context['hook'] == 'facebook_status' && $context['owner']->uid == $context['poster']->uid) {
-    $patterns = variable_get('facebook_status_activity_self_patterns', array());
-    $types = array(
-      'owner' => $context['owner'],
-      'poster' => $context['poster'],
-      'fbss-user' => $context['fbss-user'],
-    );
-    $rows = db_query("SELECT language, amid FROM {activity_targets} WHERE uid = 0 AND aid = %d", $record->aid);
-    while ($row = db_fetch_object($rows)) {
-      $message = token_replace_multiple($patterns[$context['op']][$row->language], $types, '[', ']', array(), TRUE);
-      db_query("UPDATE {activity_messages} SET message = '%s' WHERE amid = %d", $message, $row->amid);
-    }
-  }
 }
 
 /** 
@@ -1612,6 +1550,19 @@ function facebook_status_activity($owner, $poster, $status) {
   //If $owner->uid == $poster->uid, this will just overwrite the owner role.
   $target_users_roles[$poster->uid] = 'poster';
   activity_insert($poster->uid, 'facebook_status', 'facebook_status', 'update', $data, $target_users_roles);
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function facebook_status_form_activity_form_alter(&$form, &$form_state) {
+  if ($form_state['storage']['values']['triggers']['hook'] == 'facebook_status') {
+    if ($form_state['storage']['values']['operations']['operation'] == 'fbss_submitted') {
+      foreach (activity_enabled_languages() as $id => $language) {
+        unset($form["{$id}_fieldset"]['poster-pattern-'. $id]);
+      }
+    }
+  }
 }
 
 //==================
