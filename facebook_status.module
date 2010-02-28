@@ -1439,7 +1439,7 @@ function facebook_status_activity_info() {
     $info = new stdClass();
     $info->api = 2;
     $info->name = 'facebook_status';
-    $info->object_type = 'poster';
+    $info->object_type = 'facebook_status';
     $info->eid_field = 'sid';
     $info->objects = array('Owner' => 'account', 'Poster' => 'poster');
     $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other'));
@@ -1485,11 +1485,8 @@ function facebook_status_activity_grants($activity) {
   $realms = array();
   if ($activity->type == 'facebook_status') {
     $realms['facebook_status_owner'] = array($activity->uid);
-    //No need to save both if they are equal.
-    $poster = db_fetch_array(db_query("SELECT pid FROM {facebook_status} WHERE sid = %d AND pid <> %d", $activity->eid, $activity->uid));
-    if ($poster['pid']) {
-      $realms['facebook_status_poster'] = array($poster);
-    }
+    $result = db_fetch_object(db_query("SELECT pid FROM {facebook_status} WHERE sid = %d", $activity->eid));
+    $realms['facebook_status_poster'] = array($result->pid);
   }
   return $realms;
 }
@@ -1554,6 +1551,7 @@ function facebook_status_activity($owner, $poster, $status) {
 
 /**
  * Implementation of hook_form_FORM_ID_alter().
+ * Activity 2.
  */
 function facebook_status_form_activity_form_alter(&$form, &$form_state) {
   if ($form_state['storage']['values']['triggers']['hook'] == 'facebook_status') {
