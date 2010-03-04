@@ -12,12 +12,6 @@
 function facebook_status_views_data() {
   //Basic table information.
   $data['facebook_status']['table']['group']  = t('Facebook-style Statuses');
-  $data['users']['table']['join'] = array(
-    'facebook_status' => array(
-      'left_field' => 'uid',
-      'field' => 'uid',
-    ),
-  );
   $data['facebook_status']['table']['join'] = array(
     'users' => array(
       'left_field' => 'uid',
@@ -28,10 +22,24 @@ function facebook_status_views_data() {
 
   //Advertise this table as a possible base table.
   $data['facebook_status']['table']['base'] = array(
-    'field' => 'uid',
+    'field' => 'sid',
     'title' => t('Facebook-style Statuses Updates'),
     'help' => t('Stores status updates.'),
     'weight' => 10,
+  );
+  $data['facebook_status']['users'] = array(
+    'group' => t('Facebook-style Statuses'),
+    'relationship' => array(
+      'title' => t('Users'),
+      'label' => t('Users'),
+      'help' => t('Add a relationship to gain access to information related to the users who submitted the relevant statuses.'),
+      'relationship table' => 'users',
+      'relationship field' => 'uid',
+      'base' => 'facebook_status',
+      'field' => 'uid',
+      'type' => 'INNER',
+      'handler' => 'views_handler_relationship',
+    ),
   );
 
   //Declares the Status ID column.
@@ -238,26 +246,6 @@ function facebook_status_views_data() {
   );
 
   return $data;
-}
-
-/**
- * Implementation of hook_views_data_alter().
- */
-function facebook_status_views_data_alter(&$data) {
-  $data['facebook_status']['users'] = array(
-    'group' => t('Facebook-style Statuses'),
-    'relationship' => array(
-      'title' => t('Users'),
-      'label' => t('Users'),
-      'help' => t('Add a relationship to gain access to information related to the users who submitted the relevant statuses.'),
-      'relationship table' => 'users',
-      'relationship field' => 'uid',
-      'base' => 'facebook_status',
-      'field' => 'uid',
-      'type' => 'INNER',
-      'handler' => 'views_handler_relationship',
-    ),
-  );
 }
 
 /**

@@ -244,12 +244,12 @@ function facebook_status_views_default_views() {
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
       'validate_argument_php' => '  $return = FALSE;
-  $account = user_load(array(\'uid\' => $argument));
+  $account = _facebook_status_user_load($argument);
   if ($account->uid) {
     $handler->argument = $account->name;
     $uid = TRUE;
   }
-  $account2 = user_load(array(\'name\' => $argument));
+  $account2 = _facebook_status_user_load_by_name($argument);
   if ($account2->uid) {
     $handler->argument = $account2->name;
     $name = TRUE;
@@ -308,7 +308,7 @@ function facebook_status_views_default_views() {
   $handler->override_option('title', 'Statuses');
   if (module_exists('php')) {
     $handler->override_option('empty', '<?php
-            $account = user_load(array(\'uid\' => arg(1)));
+            $account = _facebook_status_user_load(arg(1));
             if (!$account->uid) {
               echo t(\'This user has no statuses yet.\');
               return;
@@ -861,10 +861,10 @@ function facebook_status_views_default_views() {
       $uids = array();
       foreach ($names as $name) {
         if (!is_numeric($name)) {
-          $account = user_load(array(\'name\' => $name));
+          $account = _facebook_status_user_load_by_name($name);
         }
         else {
-          $account = user_load(array(\'uid\' => $name));
+          $account = _facebook_status_user_load($name);
         }
         if ($account->uid) {
           $uids[] = $account->uid;
@@ -940,10 +940,10 @@ function facebook_status_views_default_views() {
       $uids = array();
       foreach ($names as $name) {
         if (!is_numeric($name)) {
-          $account = user_load(array(\'name\' => $name));
+          $account = _facebook_status_user_load_by_name($name);
         }
         else {
-          $account = user_load(array(\'uid\' => $name));
+          $account = _facebook_status_user_load($name);
         }
         if ($account->uid) {
           $uids[] = $account->uid;

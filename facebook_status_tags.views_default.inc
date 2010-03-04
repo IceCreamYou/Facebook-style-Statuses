@@ -413,7 +413,7 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_php' => '$names = explode(\',\', $argument);
       $uids = array();
       foreach ($names as $name) {
-        $account = user_load(array(\'name\' => $name));
+        $account = _facebook_status_user_load_by_name($name);
         if ($account->uid) {
           $uids[] = $account->uid;
         }
@@ -568,7 +568,7 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_user_flag_id_type' => 'id',
       'validate_argument_php' => '//If the argument is not present, get it from the UID in the URL instead.
       if (arg(0) == \'user\' && !is_string($argument)) {
-        $account = user_load(array(\'uid\' => arg(1)));
+        $account = _facebook_status_user_load(arg(1));
         if ($account->uid) {
           $handler->argument = $account->name;
           return TRUE;
@@ -585,7 +585,7 @@ function facebook_status_tags_views_default_views() {
     /*
       //Adds a link to view your conversation with the user whose profile you are viewing.
       global $user;
-      $account = user_load(array(\'uid\' => arg(1)));
+      $account = _facebook_status_user_load(arg(1));
       if ($account->uid != $user->uid) {
         echo l(\'View mentions between you and \'. $account->name, \'statuses/conversation/\'. check_plain($account->name) .\',\'. check_plain($user->name));
       }
@@ -595,7 +595,7 @@ function facebook_status_tags_views_default_views() {
     $handler->override_option('footer_empty', 0);
     $handler->override_option('empty', '<?php
     if (arg(0) == \'user\') {
-      $account = user_load(array(\'uid\' => arg(1)));
+      $account = _facebook_status_user_load(arg(1));
       global $user;
       if ($user->uid == $account->uid) {
         echo \'No one has mentioned you yet.\';

@@ -3,7 +3,8 @@
 
 /**
  * @file
- *   Converts @usernames to themed usernames and #hashtags to themed taxonomy terms on Facebook-style Statuses.
+ *   Converts @usernames to themed usernames and #hashtags to themed taxonomy
+ *   terms on Facebook-style Statuses.
  */
 
 /**
@@ -21,7 +22,7 @@
  */
 function facebook_status_tags_help($path, $arg) {
   if ($path == 'admin/help#facebook_status_tags') {
-    return t('Modifies Facebook-style Statuses on display to replace @username references with the themed username and #hashtags with taxonomy terms. ') .
+    return t('Modifies Facebook-style Statuses on display to replace @username references with the themed username and #hashtags with taxonomy terms.') .' '.
       t('Please see the <a href="http://drupal.org/project/facebook_status" rel="nofollow">Facebook-style Statuses project page</a> for more information.');
   }
 }
@@ -147,7 +148,9 @@ function theme_facebook_status_popular_tags($count = NULL, $time = NULL) {
     $term_link = l($term->name, 'statuses/term/'. check_plain($term->name));
     $items[] = t('!term (@count)', array('!term' => $term_link, '@count' => $term->popularity));
   }
-  return theme('item_list', $items);
+  if (!empty($items)) {
+    return theme('item_list', $items);
+  }
 }
 
 //====
@@ -269,7 +272,7 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
       $rids[] = taxonomy_get_term($rid->rid);
     }
     elseif ($type == 'user') {
-      $rids[] = user_load(array('uid' => $rid->rid));
+      $rids[] = _facebook_status_user_load($rid->rid);
     }
   }
   return $rids;
@@ -367,7 +370,7 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
     $match = trim(drupal_substr($word, 1));
     if (($op == '@' || $op == '#') && $match) {
       if ($op == '@') {
-        $account = user_load(array('name' => $match));
+        $account = _facebook_status_user_load_by_name($match);
         if ($account->uid) {
           $link = $op . theme('username', $account);
           $items['@'][] = $account;

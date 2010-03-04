@@ -280,7 +280,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
     //Remove abandoned statuses from the database on user account deletion.
     db_query('DELETE FROM {facebook_status} WHERE uid = %d OR pid = %d', $account->uid, $account->uid);
   }
-  if ($op == 'view' && !_facebook_status_exclude($account) && user_access('view all statuses') && user_access('edit own status', $account)) {
+  elseif ($op == 'view' && !_facebook_status_exclude($account) && user_access('view all statuses') && user_access('edit own status', $account)) {
     if (!isset($account->content['facebook_status'])) {
       $account->content['facebook_status'] = array();
     }
@@ -1097,6 +1097,38 @@ function _facebook_status_twitter_get_default($account) {
     return $data['facebook_status_twitter_default'];
   }
   return $return;
+}
+
+/**
+ * Wraps user_load() so it can be statically cached.
+ *
+ * @param $uid
+ *   A User ID.
+ * @return
+ *   A $user object.
+ */
+function _facebook_status_user_load($uid) {
+  static $accounts = array();
+  if (!isset($accounts[$uid])) {
+    $accounts[$uid] = user_load(array('uid' => $uid));
+  }
+  return $accounts[$uid];
+}
+
+/**
+ * Wraps user_load() so it can be statically cached.
+ *
+ * @param $name
+ *   A username.
+ * @return
+ *   A $user object.
+ */
+function _facebook_status_user_load_by_name($name) {
+  static $accounts = array();
+  if (!isset($accounts[$name])) {
+    $accounts[$name] = user_load(array('name' => $name));
+  }
+  return $accounts[$name];
 }
 
 //======

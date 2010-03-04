@@ -28,17 +28,17 @@ function facebook_status_generate_form($form_state) {
     '#default_value' => FALSE,
   );
   $options = array(1 => t('Now'));
- 	foreach (array(3600, 86400, 604800, 2592000, 31536000) as $interval) {
- 	  $options[$interval] = t('!time ago', array('!time' => format_interval($interval, 1)));
- 	}
- 	$form['time'] = array(
- 	  '#type' => 'select',
-   	'#title' => t('How far back in time should the statuses be dated?'),
- 	  '#description' => t('Status creation dates will be distributed randomly from the current time back to the selected time.'),
- 	  '#options' => $options,
-   	'#default_value' => 604800,
-   	'#required' => TRUE,
- 	);
+  foreach (array(3600, 86400, 604800, 2592000, 31536000) as $interval) {
+    $options[$interval] = t('!time ago', array('!time' => format_interval($interval, 1)));
+  }
+  $form['time'] = array(
+    '#type' => 'select',
+    '#title' => t('How far back in time should the statuses be dated?'),
+    '#description' => t('Status creation dates will be distributed randomly from the current time back to the selected time.'),
+    '#options' => $options,
+    '#default_value' => 604800,
+    '#required' => TRUE,
+  );
   $form['num'] = array(
     '#type' => 'textfield',
     '#title' => t('How many statuses would you like to generate?'),
@@ -58,7 +58,7 @@ function facebook_status_generate_form($form_state) {
  */
 function facebook_status_generate_form_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['num']) || $form_state['values']['num'] < 0) {
-     form_set_error('num', t('You must generate at least 0 statuses.'));
+    form_set_error('num', t('You must generate at least 0 statuses.'));
   }
 }
 

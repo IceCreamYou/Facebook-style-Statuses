@@ -16,6 +16,7 @@ function _facebook_status_conversation() {
   if (!module_exists('views')) {
     watchdog('facebook_status', 'Someone attempted to access the conversation page, which does not exist unless the Views module is installed.');
     drupal_not_found();
+    return;
   }
   global $user;
   $view = 'facebook_status_cross_post';
@@ -27,10 +28,10 @@ function _facebook_status_conversation() {
     }
     elseif (count($args) === 1) {
       if (is_numeric($args[0])) {
-        $account = user_load(array('uid' => $args[0]));
+        $account = _facebook_status_user_load($args[0]);
       }
       else {
-        $account = user_load(array('name' => $args[0]));
+        $account = _facebook_status_user_load_by_name($args[0]);
       }
     }
     else {
@@ -42,7 +43,7 @@ function _facebook_status_conversation() {
         elseif ($key === 0) {
           $key = 1;
         }
-        $account = user_load(array('uid' => $args[$key]));
+        $account = _facebook_status_user_load($args[$key]);
       }
       else {
         $key = array_search($user->name, $args);
@@ -52,7 +53,7 @@ function _facebook_status_conversation() {
         elseif ($key === 0) {
           $key = 1;
         }
-        $account = user_load(array('name' => $args[$key]));
+        $account = _facebook_status_user_load_by_name($args[$key]);
       }
     }
     if (user_access('post on all profiles') && $account->uid) {
@@ -65,12 +66,12 @@ function _facebook_status_conversation() {
     return;
   }
   if (is_numeric($args[0])) {
-    $account1 = user_load(array('uid' => $args[0]));
-    $account2 = user_load(array('uid' => $args[1]));
+    $account1 = _facebook_status_user_load($args[0]);
+    $account2 = _facebook_status_user_load($args[1]);
   }
   else {
-    $account1 = user_load(array('name' => $args[0]));
-    $account2 = user_load(array('name' => $args[1]));
+    $account1 = _facebook_status_user_load_by_name($args[0]);
+    $account2 = _facebook_status_user_load_by_name($args[1]);
   }
   if ($account1->uid && $account2->uid) {
     return views_embed_view($view, 'default', arg(2));
