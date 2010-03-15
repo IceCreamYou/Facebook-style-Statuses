@@ -24,8 +24,8 @@ class facebook_status_views_handler_field_status extends views_handler_field {
     $status->status = $this->field_alias;
     //Obviously, not the right way to do this...
     $status->pid = drupal_substr($this->field_alias, 0, -6) .'pid';
-    $status->sid = drupal_substr($this->field_alias, 0, -6) .'uid';
-    $status->uid = drupal_substr($this->field_alias, 0, -6) .'sid';
+    $status->sid = drupal_substr($this->field_alias, 0, -6) .'sid';
+    $status->uid = drupal_substr($this->field_alias, 0, -6) .'uid';
     $status->status_time = $this->field_alias .'_time';
     $this->status = $status;
   }
