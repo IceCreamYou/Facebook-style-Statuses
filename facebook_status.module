@@ -28,21 +28,21 @@ function facebook_status_menu() {
     'title' => 'Facebook-style Statuses',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('facebook_status_admin'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer Facebook-style Statuses settings'),
     'description' => 'Allows administrators to adjust certain display settings for Facebook-style Statuses.',
     'file' => 'facebook_status.admin.inc',
   );
   $items['admin/settings/facebook_status/general'] = array(
     'title' => 'General',
     'type' => MENU_DEFAULT_LOCAL_TASK,
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer Facebook-style Statuses settings'),
     'weight' => -1,
   );
   $items['admin/settings/facebook_status/advanced'] = array(
     'title' => 'Advanced',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('facebook_status_admin_advanced'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer Facebook-style Statuses settings'),
     'description' => 'Allows administrators to adjust certain display settings for Facebook-style Statuses.',
     'type' => MENU_LOCAL_TASK,
     'file' => 'facebook_status.admin.inc',
@@ -130,7 +130,7 @@ function facebook_status_menu() {
  * Access callback for the Generate statuses page.
  */
 function _facebook_status_generate_access() {
-  return user_access('edit all statuses') && user_access('administer site configuration');
+  return user_access('edit all statuses') && user_access('administer Facebook-style Statuses settings');
 }
 
 /**
@@ -269,7 +269,14 @@ function facebook_status_alter_validate($element, &$form_state) {
  * Implementation of hook_perm().
  */
 function facebook_status_perm() {
-  return array('edit all statuses', 'edit own status', 'post on all profiles', 'use open API', 'view all statuses');
+  return array(
+    'administer Facebook-style Statuses settings',
+    'edit all statuses',
+    'edit own status',
+    'post on all profiles',
+    'use open API',
+    'view all statuses'
+  );
 }
 
 /**
