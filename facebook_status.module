@@ -479,7 +479,7 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   if ($owner->uid == $poster->uid) {
     $args['!user'] = $owner_name;
     if (variable_get('facebook_status_concat', 1)) {
-      if (_facebook_status_possessive($status->status)) {
+      if (_facebook_status_possessive($status->status, $poster)) {
         $output = t('!user!status %time!edit', $args);
       }
       else {
@@ -938,6 +938,8 @@ function facebook_status_choose_owner($legacy = array()) {
   if ($legacy === FALSE) {
     $legacy = variable_get('facebook_status_legacy', array('user' => 'user'));
   }
+  //Merge in defaults.
+  $legacy += array('user' => TRUE, 'node' => FALSE);
   if ($legacy['user'] && arg(0) == 'user' && is_numeric(arg(1))) {
     return user_load(array('uid' => arg(1)));
   }
@@ -1034,11 +1036,13 @@ function _facebook_status_exclude($account) {
  *
  * @param $status
  *   The relevant status text.
+ * @param $account
+ *   The $user object for the author of the status.
  * @return
  *   TRUE if the status should be displayed immediately adjacent to the username
  *   and FALSE if there should be a space between the username and status.
  */
-function _facebook_status_possessive($status) {
+function _facebook_status_possessive($status, $account) {
   //Don't use this function with Facebook Mode because there's nothing to concatenate with.
   if (!variable_get('facebook_status_concat', 1)) {
     return FALSE;
