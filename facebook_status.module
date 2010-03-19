@@ -1575,6 +1575,7 @@ function facebook_status_activity($owner, $poster, $status) {
   $data = array(
     'owner' => theme('username', $owner),
     'poster' => theme('username', $poster),
+    'sid' => $status->sid,
     'status-unformatted' => check_plain($status->status),
     'status-themed' => theme('facebook_status_item', $status),
     'status_time' => $status->status_time,
