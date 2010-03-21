@@ -36,13 +36,10 @@ Drupal.behaviors.facebookStatus = function (context) {
 }
 //Change remaining character count.
 function fbss_print_remaining(fbss_remaining, where) {
-  var fbss_translations = new Array();
-  fbss_translations['%chars'] = fbss_remaining;
   if (fbss_remaining >= 0) {
-    where.html(Drupal.t('%chars characters remaining', fbss_translations));
+    where.html(Drupal.formatPlural(fbss_remaining, '1 character left', '@count characters left', {}));
   }
   else {
-    var fbss_newval = '<span class="facebook_status_negative">'+ Drupal.t('%chars characters remaining', fbss_translations) +'</span>';
-    where.html(fbss_newval);
+    where.html('<span class="facebook_status_negative">'+ Drupal.formatPlural(Math.abs(fbss_remaining), '-1 character left', '-@count characters left', {}) +'</span>');
   }
 }

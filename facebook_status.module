@@ -499,9 +499,38 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
     }
     $output = t('!poster &raquo; !owner: !status %time!edit!conversation', $args);
   }
+  $extras = module_invoke_all('facebook_status_render_extras', $status);
+  uasort($extras, '_facebook_status_element_sort');
+  drupal_alter('facebook_status_render_extras', $extras, $status);
+  foreach ($extras as $name => $extra) {
+    $extra += array(
+      'type' => 'markup',
+      'value' => '',
+      'access callback' => '',
+      'access arguments' => array(),
+    );
+    $access = TRUE;
+    if ($extra['access callback']) {
+      $access = call_user_func_array($extra['access callback'], $extra['access arguments']);
+    }
+    if ($access) {
+      if ($extra['type'] == 'markup') {
+        $output .= '<span class="'. $name .'">'. $extra['value'] .'</span>';
+      }
+    }
+  }
   //@todo: This is not documented. It was added after 6.x-2.0 was released.
   drupal_alter('facebook_status_render_all', $output, $status);
   return $output;
+}
+
+function _facebook_status_element_sort($a, $b) {
+  $a_weight = (is_array($a) && isset($a['weight'])) ? $a['weight'] : 0;
+  $b_weight = (is_array($b) && isset($b['weight'])) ? $b['weight'] : 0;
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+  return ($a_weight < $b_weight) ? -1 : 1;
 }
 
 /**
@@ -783,28 +812,66 @@ function facebook_status_load($sid) {
  *
  * @param $sid
  *   The Status ID or a status object.
+ * @param $alerts
+ *   An array specifying which alerts to call, or TRUE or FALSE to set all
+ *   alerts on or off. These are the defaults:
+ *   array(
+ *     'userpoints' => TRUE,
+ *     'rules' => TRUE,
+ *     'trigger' => TRUE,
+ *     'hook_facebook_status_delete' => TRUE,
+ *     'activity2' => TRUE,
+ *   );
+ *   If $alerts is FALSE, $alerts['hook_facebook_status_delete'] is still set
+ *   to TRUE.
  */
-function facebook_status_delete_status($sid) {
+function facebook_status_delete_status($sid, $alerts = array()) {
   if (is_object($sid)) {
     $sid = $sid->sid;
   }
-  //Delete Userpoints.
-  _facebook_status_userpoints_delete($sid);
+  if ($alerts === TRUE) {
+    $alerts = array();
+  }
+  else if ($alerts === FALSE) {
+    $alerts = array(
+      'userpoints' => FALSE,
+      'rules' => FALSE,
+      'trigger' => FALSE,
+      'hook_facebook_status_delete' => TRUE,
+      'activity2' => FALSE,
+    );
+  }
+  //Merge in defaults.
+  $alerts += array(
+    'userpoints' => TRUE,
+    'rules' => TRUE,
+    'trigger' => TRUE,
+    'hook_facebook_status_delete' => TRUE,
+    'activity2' => TRUE,
+  );
+  //Invokes hook_facebook_status_delete_alerts_alter(&$alerts).
+  drupal_alter('facebook_status_delete_alerts', $alerts);
 
+  //Delete Userpoints.
+  if ($alerts['userpoints']) {
+    _facebook_status_userpoints_delete($sid);
+  }
   //Rules integration.
-  if (module_exists('rules')) {
+  if (module_exists('rules') && $alerts['userpoints']) {
     rules_invoke_event('facebook_status_delete', facebook_status_load($sid));
   }
   //Trigger integration.
-  if (module_exists('trigger')) {
+  if (module_exists('trigger') && $alerts['trigger']) {
     module_invoke_all('facebook_status', 'fbss_deleted', $sid);
   }
   //Invokes hook_facebook_status_delete($sid).
-  module_invoke_all('facebook_status_delete', $sid);
+  if ($alerts['hook_facebook_status_delete']) {
+    module_invoke_all('facebook_status_delete', $sid);
+  }
   db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
   
   //Delete Activity 2 records.
-  if (module_exists('activity') && function_exists('activity_help') && _facebook_status_check_activity_eid_exists()) {
+  if (module_exists('activity') && function_exists('activity_help') && _facebook_status_check_activity_eid_exists() && $alerts['activity2']) {
     $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $sid);
     $records = array();
     while ($record = db_fetch_object($result)) {
@@ -845,29 +912,95 @@ function _facebook_status_check_activity_eid_exists() {
  *   The $user object for the owner of the status.
  * @param $new_status
  *   The status text to be saved.
- * @param $save_alerts
- *   If TRUE, alerts other modules that a status has been saved. This is useful
- *   when other modules want to record their own alerts.
+ * @param $options
+ *   An array of options that affects what behaviors this function uses. These
+ *   are the defaults, used if no option is specified for the relevant keys:
+ *   array(
+ *     'ignore duplicate' => TRUE,
+ *     'ten second override' => TRUE,
+ *     'ignore blank status' => TRUE,
+ *     'alerts' => array(
+ *       'userpoints' => TRUE,
+ *       'hook_facebook_status_save' => TRUE,
+ *       'trigger' => TRUE, //Also calls Activity 2
+ *       'activity1' => TRUE,
+ *       'rules' => TRUE,
+ *       'twitter' => TRUE,
+ *       'appbar' => TRUE,
+ *     ),
+ *   );
+ *   Of course, alerts are only sent if the relevant modules are enabled.
+ *   $options['alerts'] can also be TRUE or FALSE, in which case all alerts
+ *   are enabled or disabled, respectively. There is one exception: if
+ *   $options['alerts'] is a boolean, then
+ *   $options['alerts']['hook_facebook_status_save'] is always TRUE. Also, to
+ *   preserve backwards compatibility, if $options itself is either TRUE or
+ *   FALSE, that is the same as setting $options['alerts'] to the same value.
  * @return
  *   The saved status object.
  */
-function facebook_status_save_status($account = FALSE, $new_status = '', $save_alerts = TRUE) {
+function facebook_status_save_status($account = FALSE, $new_status = '', $options = array()) {
   if (!$account) {
     $account = facebook_status_choose_owner();
   }
+  //Backwards compatibility.
+  if ($options === FALSE) {
+    $options = array(
+      'alerts' => FALSE,
+    );
+  }
+  else if ($options === TRUE) {
+    $options = array(
+      'alerts' => TRUE,
+    );
+  }
+  //Merge in defaults.
+  $options += array(
+    'ignore duplicate' => TRUE,
+    'ten second override' => TRUE,
+    'ignore blank status' => TRUE,
+    'alerts' => TRUE,
+  );
+  if ($options['alerts'] === TRUE) {
+    $options['alerts'] = array();
+  }
+  if (is_array($options['alerts'])) {
+    $options['alerts'] += array(
+      'userpoints' => TRUE,
+      'hook_facebook_status_save' => TRUE,
+      'trigger' => TRUE, //Also calls Activity 2
+      'activity1' => TRUE,
+      'rules' => TRUE,
+      'twitter' => TRUE,
+      'appbar' => TRUE,
+    );
+  }
+  if ($options['alerts'] === FALSE) {
+    $options['alerts'] = array(
+      'userpoints' => FALSE,
+      'hook_facebook_status_save' => TRUE, //Keep hook enabled
+      'trigger' => FALSE, //Also calls Activity 2
+      'activity1' => FALSE,
+      'rules' => FALSE,
+      'twitter' => FALSE,
+      'appbar' => FALSE,
+    );
+  }
+  //Calls hook_facebook_status_save_options_alter(&$options).
+  drupal_alter('facebook_status_save_options', $options);
   global $user;
   //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
   $time = time();
-  if ($new_status === '') {
+  if ($new_status === '' && $options['ignore blank status']) {
     $time = 0;
   }
   //Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = _facebook_status_get_status_fast($account->uid);
   //This will be used to save the status and notify Activity.
   $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid, 'pid' => $user->uid);
-  if ($new_status != $status->status && $account->uid) {
+  if (($new_status != $status->status || !$options['ignore duplicate']) && $account->uid) {
     //If a new status is submitted on one's own profile within 10 seconds of the old one, we assume the user didn't mean to post the first one.
-    if (time() - $status->status_time < 10 && $account->uid == $user->uid) {
+    if (time() - $status->status_time < 10 && $account->uid == $user->uid && $options['ten second override']) {
       $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
       db_query($sql, $new_status, $time, $status->sid);
       $object->sid = $status->sid;
@@ -875,43 +1008,51 @@ function facebook_status_save_status($account = FALSE, $new_status = '', $save_a
     else {
       drupal_write_record('facebook_status', $object);
       //Userpoints integration.
-      _facebook_status_userpoints_add($account, $object->sid);
+      if ($options['alerts']['userpoints']) {
+        _facebook_status_userpoints_add($account, $object->sid);
+      }
     }
-    //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid, $edit).
-    module_invoke_all('facebook_status_save', $account, $new_status, $object->sid, FALSE);
+    //Invokes hook_facebook_status_save($owner, &$status, $sid, $edit).
+    if ($options['alerts']['hook_facebook_status_save']) {
+      module_invoke_all('facebook_status_save', $account, $new_status, $object->sid, FALSE);
+    }
   }
   elseif ($new_status == $status->status) {
     $object->sid = $status->sid;
   }
-  if ($save_alerts) {
-    //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
-    if (module_exists('trigger') && $time) {
-      $op = 'fbss_submitted';
-      if ($account->uid != $user->uid) {
-        $op = 'fbss_submitted_other';
-      }
-      module_invoke_all('facebook_status', $op, $account, $user, $object);
+  //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
+  if (module_exists('trigger') && $time && $options['alerts']['trigger']) {
+    $op = 'fbss_submitted';
+    if ($account->uid != $user->uid) {
+      $op = 'fbss_submitted_other';
     }
-    //Activity 1 integration.
+    module_invoke_all('facebook_status', $op, $account, $user, $object);
+  }
+  //Activity 1 integration.
+  if ($options['alerts']['activity1']) {
     facebook_status_activity($account, $user, $object);
-    //Rules integration.
-    if (module_exists('rules')) {
-      rules_invoke_event('facebook_status_update', $account, $user, $object);
+  }
+  //Rules integration.
+  if (module_exists('rules') && $options['alerts']['rules']) {
+    rules_invoke_event('facebook_status_update', $account, $user, $object);
+  }
+  //Twitter integration.
+  if (module_exists('twitter')
+    && $options['alerts']['twitter']
+    && user_access('use global twitter account')
+    && variable_get('facebook_status_twitter_special', 0)
+    && $account->name == variable_get('facebook_status_special_user', '')) {
+    module_load_include('inc', 'twitter');
+    twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
+  }
+  //Appbar integration.
+  if (module_exists('appbar') && $options['alerts']['appbar']) {
+    if ($account->uid == $user->uid) {
+      appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $user->uid);
     }
-    //Twitter integration.
-    if (module_exists('twitter') && user_access('use global twitter account') && variable_get('facebook_status_twitter_special', 0) && $account->name == variable_get('facebook_status_special_user', '')) {
-      module_load_include('inc', 'twitter');
-      twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
-    }
-    //Appbar integration.
-    if (module_exists('appbar')) {
-      if ($account->uid == $user->uid) {
-        appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $user->uid);
-      }
-      else {
-        appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $user), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $account->uid);
-        appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $account), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $user->uid);
-      }
+    else {
+      appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $user), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $account->uid);
+      appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $account), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $user->uid);
     }
   }
 
@@ -1394,6 +1535,8 @@ function facebook_status_save_js() {
   $new_form['sdefault'] = $form['sdefault'];
   //Clear the status form after it's already been submitted once to prevent confusion.
   unset($new_form['status']['#default_value']);
+  //Calls hook_facebook_status_form_ahah_alter(&$new_form, $form).
+  drupal_alter('facebook_status_form_ahah', $new_form, $form);
   //If the $form['fbss-submit']['#ahah']['wrapper'] div was found in a #prefix or #suffix of a form element that we re-rendered here,
   //then we would have to unset() it to prevent duplicate wrappers. However, we have a somewhat unique implementation in which the wrappers
   //are actually their own elements, so this is not an issue.
