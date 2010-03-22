@@ -294,27 +294,21 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
  *   property "popularity" added.
  */
 function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FALSE) {
+  $now = time();
+  $times = array(
+    'day' => $now - (60 * 60 * 24),
+    'week' => $now - (60 * 60 * 24 * 7),
+    'month' => $now - (60 * 60 * 24 * 30),
+    'year' => $now - (60 * 60 * 24 * 364),
+    'all' => 0,
+  );
+  $time = $times[$time];
   $restrict = '';
-  if ($time == 'all') {
-    if ($own == TRUE) {
-      $restrict = 'uid = pid AND ';
-    }
-    $result = db_query_range("SELECT COUNT(sid) count, rid FROM {facebook_status_tags} WHERE ". $restrict ."type = 'term' GROUP BY rid ORDER BY count DESC, sid DESC", 0, $count);
+  if ($own) {
+    $restrict = 'f.uid = f.pid AND ';
   }
-  elseif (in_array($time, array('day', 'week', 'month', 'year'))) {
-    $times = array(
-      'day' => time() - (60 * 60 * 24),
-      'week' => time() - (60 * 60 * 24 * 7),
-      'month' => time() - (60 * 60 * 24 * 30),
-      'year' => time() - (60 * 60 * 24 * 364),
-    );
-    $time = $times[$time];
-    if ($own == TRUE) {
-      $restrict = 'f.uid = f.pid AND ';
-    }
-    $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
-      WHERE ". $restrict ."t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time, 0, $count);
-  }
+  $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
+    WHERE ". $restrict ."t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time, 0, $count);
   $terms = array();
   while ($obj = db_fetch_object($result)) {
     $term = taxonomy_get_term($obj->rid);
