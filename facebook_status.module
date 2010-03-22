@@ -857,7 +857,7 @@ function facebook_status_delete_status($sid, $alerts = array()) {
     _facebook_status_userpoints_delete($sid);
   }
   //Rules integration.
-  if (module_exists('rules') && $alerts['userpoints']) {
+  if (module_exists('rules') && $alerts['rules']) {
     rules_invoke_event('facebook_status_delete', facebook_status_load($sid));
   }
   //Trigger integration.
