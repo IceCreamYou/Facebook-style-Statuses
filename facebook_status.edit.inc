@@ -48,6 +48,7 @@ function facebook_status_edit(&$form_state, $status) {
   $form = array('#cache' => TRUE);
   $form['slider'] = array(
     '#value' => '<div class="facebook_status_update clear-block"><span class="facebook_status_slider">'. $slider .'</span>',
+    '#weight' => -45,
   );
   $form['fbss-status'] = array(
     '#type' => variable_get('facebook_status_type', 'textarea'),
@@ -59,19 +60,23 @@ function facebook_status_edit(&$form_state, $status) {
     '#default_value' => $default,
     '#attributes' => array('class' => 'facebook_status_text'),
     '#resizable' => FALSE,
+    '#weight' => -40,
   );
   $form['chars'] = array(
     '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
+    '#weight' => -38,
   );
   $form['sid'] = array(
     '#type' => 'value',
     '#value' => $status->sid,
+    '#weight' => -35,
   );
   $form['fbss-submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
     '#attributes' => array('class' => 'facebook_status_submit'),
     '#suffix' => '</div>',
+    '#weight' => -25,
   );
   //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');

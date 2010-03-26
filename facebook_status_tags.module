@@ -341,9 +341,11 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
  */
 function _facebook_status_tags_filter($subject, $new = FALSE) {
   //'%(\A(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|(\[(#|@).+?\])%u'
-  $pattern = '%(\A(#|@)(\w|(\p{L}\p{M}?))+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?))+\b)|(\[(#|@).+?\])%u';
+  //$pattern = '%(\A(#|@)(\w|(\p{L}\p{M}?))+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?))+\b)|(\[(#|@).+?\])%u';
+  $pattern = '%((?:\A|(?<=\s))(?:#|@)(\w|(\p{L}\p{M}?))+\b)|(\[(#|@)[^\]]+\])%u';
   if (variable_get('facebook_status_tags_alt_pattern', FALSE)) {
-    $pattern = '%(\A(#|@)\w+\b)|((?<=\s)(#|@)\w+\b)|(\[(#|@).+?\])%u';
+    //$pattern = '%(\A(#|@)\w+\b)|((?<=\s)(#|@)\w+\b)|(\[(#|@).+?\])%u';
+    $pattern = '%((?:\A|(?<=\s))(?:#|@)\w+\b)|(\[(#|@)[^\]]+\])%u';
   }
 
   preg_match_all($pattern, $subject, $matches);

@@ -150,6 +150,7 @@ function _facebook_status_access_js() {
  * Generates the title for the conversation page.
  */
 function _facebook_status_conversation_title() {
+  global $user;
   $args = explode(',', arg(2));
   if (count($args) === 1 && $args[0] == $user->uid) {
     //The argument fails.
@@ -157,7 +158,7 @@ function _facebook_status_conversation_title() {
   }
   if (is_numeric($args[0])) {
     if (!$args[1]) {
-      $args[1] = $GLOBALS['user']->uid;
+      $args[1] = $user->uid;
     }
     $account1 = user_load(array('uid' => $args[0]));
     $account2 = user_load(array('uid' => $args[1]));
@@ -165,7 +166,7 @@ function _facebook_status_conversation_title() {
     return t('Conversation between @owner and @poster', array('@owner' => $account1->name, '@poster' => $account2->name));
   }
   if (!$args[1]) {
-    $args[1] = $GLOBALS['user']->name;
+    $args[1] = $user->name;
   }
   return t('Conversation between @owner and @poster', array('@owner' => $args[0], '@poster' => $args[1]));
 }
@@ -1381,9 +1382,11 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['opendiv'] = array(
     '#value' => '<div id="facebook_status_replace">',
+    '#weight' => -50,
   );
   $form['slider'] = array(
     '#value' => '<span class="facebook_status_slider">'. $slider .'</span>',
+    '#weight' => -45,
   );
   //Textfield and textarea properties are mixed here, but it doesn't matter because only the relevant ones will get used.
   $form['fbss-status'] = array(
@@ -1396,9 +1399,11 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     '#default_value' => $default,
     '#attributes' => array('class' => 'facebook_status_text'),
     '#resizable' => FALSE,
+    '#weight' => -40,
   );
   $form['chars'] = array(
     '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
+    '#weight' => -38,
   );
   $data = unserialize($account->data);
   if (module_exists('twitter') && $data['facebook_status_twitter'] && $account->uid == $GLOBALS['user']->uid && variable_get('facebook_status_twitter_default', 'off') != 'disallow') {
@@ -1406,6 +1411,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       '#type' => 'checkbox',
       '#title' => t('Post to Twitter'),
       '#default_value' => _facebook_status_twitter_get_default($account),
+      '#weight' => -36,
     );
   }
   $form['fbss-submit'] = array(
@@ -1413,6 +1419,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     '#value' => t('Share'),
     '#submit' => array('facebook_status_box_submit'),
     '#attributes' => array('class' => 'facebook_status_submit'),
+    '#weight' => -25,
   );
   if (variable_get('facebook_status_ahah', 1)) {
     $form['fbss-submit']['#ahah'] = array(
@@ -1433,34 +1440,44 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     }
     $form['fbss-view'] = array(
       '#value' => $rendered_view,
+      '#weight' => -15,
     );
   }
   $form['sdefault'] = array(
     '#type' => 'value',
     '#value' => $default,
+    '#weight' => -10,
   );
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['closediv'] = array(
     '#value' => '</div>',
+    '#weight' => -1,
   );
   $form['account'] = array(
     '#type' => 'value',
     '#value' => $account->uid,
+    '#weight' => 10,
   );
   $form['size'] = array(
     '#type' => 'value',
     '#value' => $size,
+    '#weight' => 10,
   );
   $form['fbss-view-value'] = array(
     '#type' => 'value',
     '#value' => $view,
+    '#weight' => 10,
   );
   $form['fbss-view-arg'] = array(
     '#type' => 'value',
     '#value' => $view_arg,
+    '#weight' => 10,
   );
   if (arg(0) == 'share-status' && $_GET['destination'] && $_GET['destination'] != $_GET['q']) {
-    $form['back']['#value'] = l(t('Back'), $_GET['destination'], array('attributes' => array('class' => 'facebook-status-back')));
+    $form['back'] = array(
+      '#value' => l(t('Back'), $_GET['destination'], array('attributes' => array('class' => 'facebook-status-back'))),
+      '#weight' => 20,
+    );
   }
   //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');
@@ -1518,21 +1535,23 @@ function facebook_status_save_js() {
   $args = $form['#parameters'];
   //This happens if someone goes directly to the JS processing page.
   if (!is_array($args) && !$args) {
-    drupal_goto('user');
     watchdog('facebook_status', 'Someone tried to access the JavaScript processing page for Facebook-style Statuses directly.', array(), WATCHDOG_DEBUG);
+    drupal_goto('user');
     return;
   }
   $form_id = array_shift($args);
   drupal_process_form($form_id, $form, $form_state);
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
   //Get HTML for the replacement form. Only these elements will be AHAH-refreshed.
-  $new_form['slider'] = $form['slider'];
+  $new_form['slider']      = $form['slider'];
   $new_form['fbss-status'] = $form['fbss-status'];
-  $new_form['chars'] = $form['chars'];
-  $new_form['twitter'] = $form['twitter'];
+  $new_form['chars']       = $form['chars'];
+  if ($form['twitter']) {
+    $new_form['twitter']   = $form['twitter'];
+  }
   $new_form['fbss-submit'] = $form['fbss-submit'];
-  $new_form['fbss-view'] = $form['fbss-view'];
-  $new_form['sdefault'] = $form['sdefault'];
+  $new_form['fbss-view']   = $form['fbss-view'];
+  $new_form['sdefault']    = $form['sdefault'];
   //Clear the status form after it's already been submitted once to prevent confusion.
   unset($new_form['status']['#default_value']);
   //Calls hook_facebook_status_form_ahah_alter(&$new_form, $form).
