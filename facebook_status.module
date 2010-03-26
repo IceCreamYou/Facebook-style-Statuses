@@ -1788,7 +1788,8 @@ function facebook_status_token_list($type = 'all') {
       'status-time' => t('The time the status was submittted.'),
       'status-id' => t('The Status ID.'),
       'status-raw' => t('The completely unfiltered status text. WARNING: raw user input.'),
-      'status-edit-delete' => t('Permission-sensitive edit/delete status links.'),
+      'status-edit' => t('Edit status link.'),
+      'status-delete' => t('Delete status link.'),
     );
     return $tokens;
   }
@@ -1810,11 +1811,16 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       $status = $data;
     }
     $edit = '';
+    $delete = '';
+    $editdelete = ''; //Legacy support
     if (_facebook_status_can_edit($status)) {
-      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .'</span>';
+      $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+      $editdelete = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
     }
     elseif (_facebook_status_can_edit($status, TRUE)) {
-      $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+      $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+      $editdelete = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
     }
     return array(
       'owner' => theme('username', user_load(array('uid' => $status->uid))),
@@ -1826,7 +1832,9 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       'status-time' => format_date($status->status_time, 'small'),
       'status-id' => $status->sid,
       'status-raw' => $status->status,
-      'status-edit-delete' => $edit,
+      'status-edit' => $edit,
+      'status-delete' => $delete,
+      'status-edit-delete' => $editdelete,
     );
   }
 }
