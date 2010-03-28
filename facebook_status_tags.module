@@ -318,6 +318,40 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
   return $terms;
 }
 
+/**
+ * Get usernames by reference popularity.
+ *
+ * @param $count
+ *   The number of users to return.
+ * @param $time
+ *   The time period in which to test for term popularity. Values can be "all,"
+ *   "day," "week," "month," or "year."
+ * @return
+ *   An array of user objects, with the most popular first, and with the
+ *   property "popularity" added.
+ */
+function facebook_status_tags_popular_users($count = 1, $time = 'all') {
+  $now = time();
+  $times = array(
+    'day' => $now - (60 * 60 * 24),
+    'week' => $now - (60 * 60 * 24 * 7),
+    'month' => $now - (60 * 60 * 24 * 30),
+    'year' => $now - (60 * 60 * 24 * 364),
+    'all' => 0,
+  );
+  $time = $times[$time];
+  $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
+    WHERE t.type = 'user' AND f.status_time > %d  AND f.pid = %d GROUP BY t.rid ORDER BY count DESC",
+    $time, $GLOBALS['user']->uid, 0, $count);
+  $users = array();
+  while ($obj = db_fetch_object($result)) {
+    $account = user_load(array('uid' => $obj->rid));
+    $account->popularity = $obj->count;
+    $users[] = $account;
+  }
+  return $users;
+}
+
 //=================
 //HELPER FUNCTIONS.
 //=================
