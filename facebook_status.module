@@ -317,6 +317,11 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
  * No need to check permissions since the form is already restricted.
  */
 function facebook_status_form_twitter_account_list_form_alter(&$form, &$form_state) {
+  //Twitter module branch 3.x is not supported yet.
+  if (function_exists('_twitter_use_oauth')) {
+    watchdog('facebook_status', 'The 3.x branch of the Twitter module is not supported by the Facebook-style Statuses module yet.');
+    return;
+  }
   $account = user_load(array('uid' => arg(1)));
   if (!user_access('edit own status', $account) && !user_access('edit all statuses', $account)) {
     return;
