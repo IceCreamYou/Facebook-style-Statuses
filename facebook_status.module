@@ -333,8 +333,8 @@ function facebook_status_form_twitter_account_list_form_alter(&$form, &$form_sta
   }
   $data = unserialize($account->data);
 
-  if (count($options) > 1 && variable_get('facebook_status_twitter_default', 'off') != 'disallow') {
-    $default_setting = variable_get('facebook_status_twitter_default', 'off');
+  $default_setting = variable_get('facebook_status_twitter_default', 'off');
+  if (count($options) > 1 && $default_setting != 'disallow') {
     if ($default_setting == 'on-user' || $default_setting == 'off-user') {
       if (!isset($data['facebook_status_twitter_default'])) {
         $data['facebook_status_twitter_default'] = 0;
@@ -462,8 +462,6 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
     $status_text = nl2br($status_text);
   }
   $status->cacheable = $cacheable;
-  //Invokes hook_facebook_status_render_alter(&$status_text, $owner, $poster, $status).
-  drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
   $edit = '';
   $q = $_GET['q'];
   if ($q == 'facebook_status/js') {
@@ -481,52 +479,86 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
       $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
     }
   }
-  $args = array('!status' => $status_text, '%time' => $time, '!edit' => $edit);
+  $conversation = l(t('Conversation'), 'statuses/conversation/'. check_plain($owner->name) .','. check_plain($poster->name));
+  $components = array(
+    'poster' => array(
+      'value' => $poster_name .' &raquo; ',
+      '#value' => $poster_name,
+      'weight' => -50,
+    ),
+    'owner' => array(
+      'value' => $owner_name .': ',
+      '#value' => $owner_name,
+      'weight' => -45,
+    ),
+    'user' => array(
+      'value' => $owner_name .' ',
+      '#value' => $owner_name,
+      'weight' => -45,
+    ),
+    'status' => array(
+      'value' => $status_text .' ',
+      '#value' => $status_text,
+      'weight' => -40,
+    ),
+    'time' => array(
+      'value' => ' <em>'. $time .'</em>',
+      '#value' => $time,
+      'weight' => -30,
+    ),
+    'edit' => array(
+      'value' => $edit,
+      '#value' => $edit,
+      'weight' => -20,
+    ),
+    'conversation' => array(
+      'value' => ' '. $conversation,
+      '#value' => $conversation,
+      'weight' => -10,
+    ),
+  );
   if ($owner->uid == $poster->uid) {
-    $args['!user'] = $owner_name;
     if (variable_get('facebook_status_concat', 1)) {
-      if (_facebook_status_possessive($status->status, $poster)) {
-        $output = t('!user!status %time!edit', $args);
-      }
-      else {
-        $output = t('!user !status %time!edit', $args);
+      if (!_facebook_status_possessive($status->status, $poster)) {
+        $components['owner']['type'] = 'value';
+        $components['poster']['type'] = 'value';
+        $components['conversation']['type'] = 'value';
       }
     }
     else {
-      $output = t('!status %time!edit', $args);
+      $components['user']['type'] = 'value';
+      $components['owner']['type'] = 'value';
+      $components['poster']['type'] = 'value';
+      $components['conversation']['type'] = 'value';
     }
   }
   else {
-    $args['!owner'] = $owner_name;
-    $args['!poster'] = $poster_name;
-    $args['!conversation'] = '';
-    if (module_exists('views') && $owner->uid != $poster->uid) {
-      $args['!conversation'] = ' '. l(t('Conversation'), 'statuses/conversation/'. check_plain($owner->name) .','. check_plain($poster->name));
-    }
-    $output = t('!poster &raquo; !owner: !status %time!edit!conversation', $args);
+    $components['user']['type'] = 'value';
   }
-  $extras = module_invoke_all('facebook_status_render_extras', $status);
-  uasort($extras, '_facebook_status_element_sort');
-  drupal_alter('facebook_status_render_extras', $extras, $status);
-  foreach ($extras as $name => $extra) {
-    $extra += array(
+  $components += module_invoke_all('facebook_status_render_components', $status);
+  drupal_alter('facebook_status_render_components', $components, $status);
+  uasort($components, '_facebook_status_element_sort');
+  $output = '';
+  foreach ($components as $name => $component) {
+    $component += array(
       'type' => 'markup',
       'value' => '',
+      'prefix' => '',
+      'suffix' => '',
       'access callback' => '',
       'access arguments' => array(),
     );
     $access = TRUE;
-    if ($extra['access callback']) {
-      $access = call_user_func_array($extra['access callback'], $extra['access arguments']);
+    if ($component['access callback']) {
+      $access = call_user_func_array($component['access callback'], $component['access arguments']);
     }
     if ($access) {
-      if ($extra['type'] == 'markup') {
-        $output .= '<span class="'. $name .'">'. $extra['value'] .'</span>';
+      if ($component['type'] == 'markup') {
+        $output .= $component['prefix'] .'<span class="fbss_'. $name .'">'. $component['value'] .'</span>'. $component['suffix'];
       }
     }
   }
-  //@todo: This is not documented. It was added after 6.x-2.0 was released.
-  drupal_alter('facebook_status_render_all', $output, $status);
+  drupal_alter('facebook_status_render', $output, $status, $components);
   return $output;
 }
 

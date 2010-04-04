@@ -491,12 +491,15 @@ function _facebook_status_tags_get_term($name) {
 //=================
 
 /**
- * Implementation of hook_facebook_status_render_alter().
+ * Implementation of hook_facebook_status_render_components_alter().
  */
-function facebook_status_tags_facebook_status_render_alter(&$status_text, $owner, $poster, $status) {
+function facebook_status_tags_facebook_status_render_components_alter(&$components, $status) {
+  $status_text = $components['status']['#value'];
   //$status_text comes in pre-encoded. Temporarily replace the single-quote
   //character encoding so it doesn't get unintentionally linkified.
   $status_text = str_replace("'", '&#039;', _facebook_status_tags_filter(str_replace('&#039;', "'", $status_text)));
+  $components['status']['#value'] = $status_text;
+  $components['status']['value'] = $status_text .' ';
 }
 
 /**
