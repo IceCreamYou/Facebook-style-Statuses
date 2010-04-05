@@ -519,10 +519,11 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   );
   if ($owner->uid == $poster->uid) {
     if (variable_get('facebook_status_concat', 1)) {
-      if (!_facebook_status_possessive($status->status, $poster)) {
-        $components['owner']['type'] = 'value';
-        $components['poster']['type'] = 'value';
-        $components['conversation']['type'] = 'value';
+      $components['owner']['type'] = 'value';
+      $components['poster']['type'] = 'value';
+      $components['conversation']['type'] = 'value';
+      if (_facebook_status_possessive($status->status, $poster)) {
+        $components['user']['value'] = $owner_name;
       }
     }
     else {
@@ -1853,7 +1854,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     if (_facebook_status_can_edit($status)) {
       $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .'</span>';
       $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
-      $editdelete = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+      $editdelete = $edit .' '. $delete;
     }
     elseif (_facebook_status_can_edit($status, TRUE)) {
       $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
