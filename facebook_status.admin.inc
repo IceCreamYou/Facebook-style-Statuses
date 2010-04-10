@@ -15,6 +15,7 @@ function facebook_status_admin($form_state) {
     '#title' => t('Facebook Mode'),
     '#description' => t("Facebook Mode makes this module work like Facebook, where the user's username is appended to the front of the status."),
     '#default_value' => variable_get('facebook_status_concat', 1),
+    '#weight' => -45,
   );
   $form['facebook_status_legacy'] = array(
     '#type' => 'checkboxes',
@@ -22,6 +23,7 @@ function facebook_status_admin($form_state) {
     '#description' => t('On nodes and/or user profiles, use the status of the author of the node or owner of the profile, respectively, in the status block.'),
     '#default_value' => variable_get('facebook_status_legacy', array('user' => 'user')),
     '#options' => array('node' => t('Nodes'), 'user' => t('User profiles')),
+    '#weight' => -40,
   );
   if (module_exists('twitter')) {
     $form['facebook_status_twitter_default'] = array(
@@ -36,6 +38,7 @@ function facebook_status_admin($form_state) {
         'off-user' => t('Let the user choose (disabled is default)'),
         'disallow' => t('Do not allow posting to Twitter at all'),
       ),
+      '#weight' => -30,
     );
   }
   $form['facebook_status_type'] = array(
@@ -43,7 +46,8 @@ function facebook_status_admin($form_state) {
     '#title' => t('Form type'),
     '#description' => t('Textfields are simpler; textareas are larger and somewhat more confusing for users with JavaScript turned off.'),
     '#default_value' => variable_get('facebook_status_type', 'textarea'),
-    '#options' => drupal_map_assoc(array('textfield', 'textarea')),
+    '#options' => drupal_map_assoc(array('textarea', 'textfield')),
+    '#weight' => -20,
   );
   $formats = filter_formats();
   $options = array('none' => t('None (HTML escaped)'));
@@ -56,6 +60,7 @@ function facebook_status_admin($form_state) {
     '#description' => t('This input filter will run on all your statuses, so make sure it is secure.'),
     '#default_value' => variable_get('facebook_status_filter', 'none'),
     '#options' => $options,
+    '#weight' => -20,
   );
   $form['facebook_status_exclude'] = array(
     '#type' => 'textfield',
@@ -64,6 +69,7 @@ function facebook_status_admin($form_state) {
     '#default_value' => variable_get('facebook_status_exclude', ''),
     '#maxlength' => 1000,
     '#autocomplete_path' => 'facebook_status/autocomplete',
+    '#weight' => -10,
   );
   $form['facebook_status_size'] = array(
     '#type' => 'textfield',
@@ -73,6 +79,7 @@ function facebook_status_admin($form_state) {
     '#size' => 3,
     '#maxlength' => 3,
     '#required' => TRUE,
+    '#weight' => -10,
   );
   $form['facebook_status_length'] = array(
     '#type' => 'textfield',
@@ -82,12 +89,14 @@ function facebook_status_admin($form_state) {
     '#size' => 3,
     '#maxlength' => 5,
     '#required' => TRUE,
+    '#weight' => -10,
   );
   $form['facebook_status_repost'] = array(
     '#type' => 'textfield',
     '#title' => t('Re-post format'),
     '#description' => t("The format of the default message when users click a link to re-post a status. @name will be replaced with the poster's name and @status will be replaced with the status text."),
     '#default_value' => variable_get('facebook_status_repost', 'Re: @name @status '),
+    '#weight' => -10,
   );
   return system_settings_form($form);
 }
@@ -132,23 +141,27 @@ function facebook_status_admin_advanced($form_state) {
     '#type' => 'checkbox',
     '#title' => t('Hide status above textfield'),
     '#default_value' => variable_get('facebook_status_hide_status', 0),
+    '#weight' => -30,
   );
   $form['facebook_status_hide_blank'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide blank and empty statuses above textfield'),
     '#default_value' => variable_get('facebook_status_hide_blank', 0),
+    '#weight' => -30,
   );
   $form['facebook_status_nl2br'] = array(
     '#type' => 'checkbox',
     '#title' => t('Convert line breaks'),
     '#description' => t('By default, line breaks in the status update form are ignored. If you use an input filter to fix that, the status text will appear on a different line than the username and other information. Enabling this setting allows line breaks to appear without the side-effect of the input filter.'),
     '#default_value' => variable_get('facebook_status_nl2br', 0),
+    '#weight' => -30,
   );
   $form['facebook_status_ahah'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use AHAH to refresh the status update form without refreshing the page'),
     '#description' => t("You should leave this checked unless you know what you're doing."),
     '#default_value' => variable_get('facebook_status_ahah', 1),
+    '#weight' => -30,
   );
   if (module_exists('views')) {
     $views = views_get_all_views();
@@ -164,6 +177,7 @@ function facebook_status_admin_advanced($form_state) {
       '#description' => t('This is only relevant for the core profile, meaning it will not work if you override the default profile. <strong>The default facebook_status view is recommended. Other views may not work correctly.</strong>'),
       '#default_value' => variable_get('facebook_status_profile_view', $list['facebook_status']),
       '#options' => $list,
+      '#weight' => -20,
     );
     $form['facebook_status_share_view'] = array(
       '#type' => 'select',
@@ -171,6 +185,7 @@ function facebook_status_admin_advanced($form_state) {
       '#description' => t('The default facebook_status view is recommended.'),
       '#default_value' => variable_get('facebook_status_share_view', $list['facebook_status']),
       '#options' => $list,
+      '#weight' => -20,
     );
     $form['facebook_status_reply_type'] = array(
       '#type' => 'select',
@@ -180,6 +195,7 @@ function facebook_status_admin_advanced($form_state) {
         'at' => t('Reply by @username reference'),
         'convo' => t('Reply in conversation view'),
       ),
+      '#weight' => -20,
     );
   }
   $form['facebook_status_size_long'] = array(
@@ -190,6 +206,7 @@ function facebook_status_admin_advanced($form_state) {
     '#size' => 3,
     '#maxlength' => 3,
     '#required' => TRUE,
+    '#weight' => -10,
   );
   $form['facebook_status_flood_user'] = array(
     '#type' => 'textfield',
@@ -199,6 +216,7 @@ function facebook_status_admin_advanced($form_state) {
     '#size' => 10,
     '#maxlength' => 10,
     '#required' => TRUE,
+    '#weight' => -10,
   );
   $form['facebook_status_default_text'] = array(
     '#type' => 'textfield',
@@ -209,6 +227,7 @@ function facebook_status_admin_advanced($form_state) {
       'will appear in the status update form and will not be translatable. In both cases, the default text will be '.
       'automatically cleared when a user clicks in the status update box.'),
     '#default_value' => variable_get('facebook_status_default_text', '@laststatus'),
+    '#weight' => -10,
   );
   return system_settings_form($form);
 }

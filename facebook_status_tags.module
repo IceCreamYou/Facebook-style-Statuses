@@ -97,14 +97,14 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
       '#title' => t('Vocabulary for #hashtags'),
       '#default_value' => variable_get('facebook_status_tags_vid', -1),
       '#options' => $options,
-      '#weight' => -1,
+      '#weight' => -21,
     );
     $form['facebook_status_tags_url'] = array(
       '#type' => 'textfield',
       '#title' => t('Location of status-term pages'),
       '#description' => t('Can be an absolute or relative URL. Use the tokens [term-id] and [term-name]. Use Views to build the listing (a default one is provided).'),
       '#default_value' => variable_get('facebook_status_tags_url', 'statuses/term/[term-name]'),
-      '#weight' => -1,
+      '#weight' => -11,
     );
     return $form;
   }
