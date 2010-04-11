@@ -326,7 +326,14 @@ function facebook_status_form_twitter_account_list_form_alter(&$form, &$form_sta
   if (!user_access('edit own status', $account) && !user_access('edit all statuses', $account)) {
     return;
   }
-  $result = db_query("SELECT screen_name FROM {twitter_user} WHERE uid = %d", arg(1));
+  //Twitter 3.x.
+  if (function_exists('_twitter_use_oauth')) {
+    $result = db_query("SELECT screen_name FROM {twitter_account} WHERE uid = %d", arg(1));
+  }
+  //Twitter 2.x.
+  else {
+    $result = db_query("SELECT screen_name FROM {twitter_user} WHERE uid = %d", arg(1));
+  }
   $options = array(0 => t('None'));
   while ($option = db_fetch_array($result)) {
     $options[$option['screen_name']] = $option['screen_name'];
@@ -1415,6 +1422,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
 
   $path = drupal_get_path('module', 'facebook_status');
   drupal_add_js($path .'/facebook_status.js');
+  drupal_add_js($path .'/facebook_status_ahah.js');
   drupal_add_css($path .'/facebook_status.css');
   $form = array('#cache' => TRUE);
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
@@ -1598,8 +1606,21 @@ function facebook_status_save_js() {
   //then we would have to unset() it to prevent duplicate wrappers. However, we have a somewhat unique implementation in which the wrappers
   //are actually their own elements, so this is not an issue.
   $output = theme('status_messages') . drupal_render($new_form);
+
   //Return the results.
-  drupal_json(array('status' => TRUE, 'data' => $output));
+  //The standard way is drupal_json(array('status' => TRUE, 'data' => $output));
+  //However, this doesn't work with file uploading and re-attaching AHAH behaviors to form elements.
+  //This version does work for these things.
+  //From the AHAH Helper module, see http://drupal.org/node/331941
+  //And from the Filefield module.
+  $javascript = drupal_add_js(NULL, NULL, 'header');
+  $GLOBALS['devel_shutdown'] = FALSE; //Still not really sure what the point of this is.
+  echo drupal_to_js(array(
+    'status' => TRUE,
+    'data' => $output,
+    'settings' => call_user_func_array('array_merge_recursive', $javascript['setting']),
+  ));
+  exit;
 }
 
 //====================
