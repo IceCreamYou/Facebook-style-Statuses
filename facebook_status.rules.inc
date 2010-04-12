@@ -31,7 +31,7 @@ function facebook_status_rules_event_info() {
       'arguments' => array(
         'owner' => array('type' => 'user', 'label' => t('The user to whose profile the status was posted.')),
         'poster' => array('type' => 'user', 'label' => t('The user who posted the status.')),
-        'status' => array('type' => 'facebook_status', 'label' => t('The status.')),
+        'status' => array('type' => 'facebook_status', 'label' => t('The status object.')),
       ),
     ),
   );
@@ -125,7 +125,7 @@ function facebook_status_rules_action_info() {
       'label' => t('Add a status'),
       'help' => t('Enter the status text and the User ID or Username of the user to whose profile the status will be posted.'),
       'module' => 'Facebook-style Statuses',
-      'eval input' => array('uid', 'name', 'status'),
+      'eval input' => array('poster', 'uid', 'name', 'status'),
     ),
   );
 }
@@ -223,15 +223,22 @@ function facebook_status_delete_action($settings) {
  * Builds the form for adding a status.
  */
 function facebook_status_add_action_form($settings, &$form) {
-  $settings += array('uid' => '', 'name' => '', 'status' => '');
+  $settings += array('poster' => '', 'uid' => '', 'name' => '', 'status' => '');
+  $form['settings']['poster'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Poster username'),
+    '#autocomplete_path' => 'user/autocomplete',
+    '#description' => t('If you leave this blank, the current user will be assumed.'),
+    '#default_value' => $settings['poster'],
+  );
   $form['settings']['uid'] = array(
     '#type' => 'textfield',
-    '#title' => t('User ID'),
+    '#title' => t('Owner user ID'),
     '#default_value' => $settings['uid'],
   );
   $form['settings']['name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Username'),
+    '#title' => t('Owner username'),
     '#default_value' => $settings['name'],
   );
   $form['settings']['status'] = array(
@@ -256,9 +263,23 @@ function facebook_status_add_action_validate($form, $form_state) {
  */
 function facebook_status_add_action($settings) {
   $status = $settings['status'];
-  unset($settings['status']);
-  $to = user_load(array_filter($settings));
-  facebook_status_save_status($to, $status);
+  $from = user_load(array('name' => $settings['poster']));
+  if (!$from->uid) {
+    $from = FALSE;
+  }
+  if ($settings['uid'] && $settings['name']) {
+    $to = user_load(array('uid' => $settings['uid'], 'name' => $settings['name']));
+  }
+  elseif ($settings['uid']) {
+    $to = user_load(array('uid' => $settings['uid']));
+  }
+  elseif ($settings['name']) {
+    $to = user_load(array('name' => $settings['name']));
+  }
+  else {
+    $to = FALSE;
+  }
+  _facebook_status_save_status($to, $from, $status);
 }
 
 /**
@@ -283,7 +304,7 @@ function facebook_status_rules_data_type_info() {
 class rules_data_type_facebook_status extends rules_data_type {
   function save() {
     $status = &$this->get();
-    facebook_status_save_status(user_load(array('uid' => $status->uid)), $status->status);
+    _facebook_status_save_status(user_load(array('uid' => $status->uid)), user_load(array('uid' => $status->pid)), $status->status);
     return TRUE;
   }
   function load($sid) {
