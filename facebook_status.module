@@ -986,123 +986,7 @@ function _facebook_status_check_activity_eid_exists() {
  *   The saved status object.
  */
 function facebook_status_save_status($account = FALSE, $new_status = '', $options = array()) {
-  if (!$account) {
-    $account = facebook_status_choose_owner();
-  }
-  //Backwards compatibility.
-  if ($options === FALSE) {
-    $options = array(
-      'alerts' => FALSE,
-    );
-  }
-  else if ($options === TRUE) {
-    $options = array(
-      'alerts' => TRUE,
-    );
-  }
-  //Merge in defaults.
-  $options += array(
-    'ignore duplicate' => TRUE,
-    'ten second override' => TRUE,
-    'ignore blank status' => TRUE,
-    'alerts' => TRUE,
-  );
-  if ($options['alerts'] === TRUE) {
-    $options['alerts'] = array();
-  }
-  if (is_array($options['alerts'])) {
-    $options['alerts'] += array(
-      'userpoints' => TRUE,
-      'hook_facebook_status_save' => TRUE,
-      'trigger' => TRUE, //Also calls Activity 2
-      'activity1' => TRUE,
-      'rules' => TRUE,
-      'twitter' => TRUE,
-      'appbar' => TRUE,
-    );
-  }
-  if ($options['alerts'] === FALSE) {
-    $options['alerts'] = array(
-      'userpoints' => FALSE,
-      'hook_facebook_status_save' => TRUE, //Keep hook enabled
-      'trigger' => FALSE, //Also calls Activity 2
-      'activity1' => FALSE,
-      'rules' => FALSE,
-      'twitter' => FALSE,
-      'appbar' => FALSE,
-    );
-  }
-  //Calls hook_facebook_status_save_options_alter(&$options).
-  drupal_alter('facebook_status_save_options', $options);
-  global $user;
-  //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
-  $time = time();
-  if ($new_status === '' && $options['ignore blank status']) {
-    $time = 0;
-  }
-  //Pretend to have set a new status if the submitted status is exactly the same as the old one.
-  $status = _facebook_status_get_status_fast($account->uid);
-  //This will be used to save the status and notify Activity.
-  $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $account->uid, 'pid' => $user->uid);
-  if (($new_status != $status->status || !$options['ignore duplicate']) && $account->uid) {
-    //If a new status is submitted on one's own profile within 10 seconds of the old one, we assume the user didn't mean to post the first one.
-    if (time() - $status->status_time < 10 && $account->uid == $user->uid && $options['ten second override']) {
-      $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
-      db_query($sql, $new_status, $time, $status->sid);
-      $object->sid = $status->sid;
-    }
-    else {
-      drupal_write_record('facebook_status', $object);
-      //Userpoints integration.
-      if ($options['alerts']['userpoints']) {
-        _facebook_status_userpoints_add($account, $object->sid);
-      }
-    }
-    //Invokes hook_facebook_status_save($owner, &$status, $sid, $edit).
-    if ($options['alerts']['hook_facebook_status_save']) {
-      module_invoke_all('facebook_status_save', $account, $new_status, $object->sid, FALSE);
-    }
-  }
-  elseif ($new_status == $status->status) {
-    $object->sid = $status->sid;
-  }
-  //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
-  if (module_exists('trigger') && $time && $options['alerts']['trigger']) {
-    $op = 'fbss_submitted';
-    if ($account->uid != $user->uid) {
-      $op = 'fbss_submitted_other';
-    }
-    module_invoke_all('facebook_status', $op, $account, $user, $object);
-  }
-  //Activity 1 integration.
-  if ($options['alerts']['activity1']) {
-    facebook_status_activity($account, $user, $object);
-  }
-  //Rules integration.
-  if (module_exists('rules') && $options['alerts']['rules']) {
-    rules_invoke_event('facebook_status_update', $account, $user, $object);
-  }
-  //Twitter integration.
-  if (module_exists('twitter')
-    && $options['alerts']['twitter']
-    && user_access('use global twitter account')
-    && variable_get('facebook_status_twitter_special', 0)
-    && $account->name == variable_get('facebook_status_special_user', '')) {
-    module_load_include('inc', 'twitter');
-    twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
-  }
-  //Appbar integration.
-  if (module_exists('appbar') && $options['alerts']['appbar']) {
-    if ($account->uid == $user->uid) {
-      appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $user->uid);
-    }
-    else {
-      appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $user), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $account->uid);
-      appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $account), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $user->uid);
-    }
-  }
-
-  return $object;
+  return _facebook_status_save_status($account, FALSE, $new_status, $options);
 }
 
 /**
@@ -1327,6 +1211,132 @@ function _facebook_status_user_load_by_name($name) {
     $accounts[$name] = user_load(array('name' => $name));
   }
   return $accounts[$name];
+}
+
+/**
+ * Saves a status. Mostly used in facebook_status_save_status().
+ */
+function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_status = '', $options = array()) {
+  if (!$owner) {
+    $owner = facebook_status_choose_owner();
+  }
+  if (!$poster) {
+    $poster = $GLOBALS['user'];
+  }
+  //Backwards compatibility.
+  if ($options === FALSE) {
+    $options = array(
+      'alerts' => FALSE,
+    );
+  }
+  else if ($options === TRUE) {
+    $options = array(
+      'alerts' => TRUE,
+    );
+  }
+  //Merge in defaults.
+  $options += array(
+    'ignore duplicate' => TRUE,
+    'ten second override' => TRUE,
+    'ignore blank status' => TRUE,
+    'alerts' => TRUE,
+  );
+  if ($options['alerts'] === TRUE) {
+    $options['alerts'] = array();
+  }
+  if (is_array($options['alerts'])) {
+    $options['alerts'] += array(
+      'userpoints' => TRUE,
+      'hook_facebook_status_save' => TRUE,
+      'trigger' => TRUE, //Also calls Activity 2
+      'activity1' => TRUE,
+      'rules' => TRUE,
+      'twitter' => TRUE,
+      'appbar' => TRUE,
+    );
+  }
+  if ($options['alerts'] === FALSE) {
+    $options['alerts'] = array(
+      'userpoints' => FALSE,
+      'hook_facebook_status_save' => TRUE, //Keep hook enabled
+      'trigger' => FALSE, //Also calls Activity 2
+      'activity1' => FALSE,
+      'rules' => FALSE,
+      'twitter' => FALSE,
+      'appbar' => FALSE,
+    );
+  }
+  //Calls hook_facebook_status_save_options_alter(&$options).
+  drupal_alter('facebook_status_save_options', $options);
+  //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
+  $time = time();
+  if ($new_status === '' && $options['ignore blank status']) {
+    $time = 0;
+  }
+  //Pretend to have set a new status if the submitted status is exactly the same as the old one.
+  $status = _facebook_status_get_status_fast($owner->uid);
+  //This will be used to save the status and notify Activity.
+  $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $owner->uid, 'pid' => $poster->uid);
+  if (($new_status != $status->status || !$options['ignore duplicate']) && $owner->uid) {
+    //If a new status is submitted on one's own profile within 10 seconds of the old one, we assume the user didn't mean to post the first one.
+    if (time() - $status->status_time < 10 && $owner->uid == $poster->uid && $options['ten second override']) {
+      $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
+      db_query($sql, $new_status, $time, $status->sid);
+      $object->sid = $status->sid;
+    }
+    else {
+      drupal_write_record('facebook_status', $object);
+      //Userpoints integration.
+      if ($options['alerts']['userpoints']) {
+        _facebook_status_userpoints_add($owner, $poster, $object->sid);
+      }
+    }
+    //Invokes hook_facebook_status_save($status, $edit).
+    if ($options['alerts']['hook_facebook_status_save']) {
+      $object->owner = $owner;
+      module_invoke_all('facebook_status_save', $object, FALSE);
+    }
+  }
+  elseif ($new_status == $status->status) {
+    $object->sid = $status->sid;
+  }
+  //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
+  if (module_exists('trigger') && $time && $options['alerts']['trigger']) {
+    $op = 'fbss_submitted';
+    if ($owner->uid != $poster->uid) {
+      $op = 'fbss_submitted_other';
+    }
+    module_invoke_all('facebook_status', $op, $owner, $poster, $object);
+  }
+  //Activity 1 integration.
+  if ($options['alerts']['activity1']) {
+    facebook_status_activity($owner, $poster, $object);
+  }
+  //Rules integration.
+  if (module_exists('rules') && $options['alerts']['rules']) {
+    rules_invoke_event('facebook_status_update', $owner, $poster, $object);
+  }
+  //Twitter integration.
+  if (module_exists('twitter')
+    && $options['alerts']['twitter']
+    && user_access('use global twitter account', $poster)
+    && variable_get('facebook_status_twitter_special', 0)
+    && $owner->name == variable_get('facebook_status_special_user', '')
+    && $owner->uid == $poster->uid) {
+    module_load_include('inc', 'twitter');
+    twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
+  }
+  //Appbar integration.
+  if (module_exists('appbar') && $options['alerts']['appbar']) {
+    if ($owner->uid == $poster->uid) {
+      appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $poster->uid);
+    }
+    else {
+      appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $poster), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $owner->uid);
+      appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $owner), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $poster->uid);
+    }
+  }
+  return $object;
 }
 
 //======
@@ -2076,12 +2086,14 @@ function _facebook_status_userpoints_validate($form, &$form_state) {
  * Adds userpoints to the status poster's account.
  * The current user is assumed to be the poster.
  *
- * @param $account
+ * @param $owner
  *   The $user account of the status owner.
+ * @param $poster
+ *   The $user account of the status poster.
  * @param $sid
  *   The Status ID of the status for which points will be recorded.
  */
-function _facebook_status_userpoints_add($account, $sid) {
+function _facebook_status_userpoints_add($owner, $poster, $sid) {
   if (!module_exists('userpoints')) {
     return;
   }
@@ -2089,18 +2101,17 @@ function _facebook_status_userpoints_add($account, $sid) {
     return;
   }
   flood_register_event('facebook_status_add_userpoints');
-  global $user;
   $params = array(
-    'uid' => $user->uid,
+    'uid' => $poster->uid,
     'reference' => $sid,
   );
-  if ($user->uid == $account->uid) {
-    $params['description'] = t('!user posted a new status.', array('!user' => theme('username', $user)));
+  if ($poster->uid == $owner->uid) {
+    $params['description'] = t('!user posted a new status.', array('!user' => theme('username', $poster)));
     $params['points'] = variable_get('facebook_status_userpoints_own', 0);
     $params['operation'] = 'facebook_status add own';
   }
-  elseif ($user->uid != $account->uid) {
-    $params['description'] = t('!poster wrote a message to !owner', array('!poster' => theme('username', $user), '!owner' => theme('username', $account)));
+  elseif ($poster->uid != $owner->uid) {
+    $params['description'] = t('!poster wrote a message to !owner', array('!poster' => theme('username', $poster), '!owner' => theme('username', $owner)));
     $params['points'] = variable_get('facebook_status_userpoints_other', 0);
     $params['operation'] = 'facebook_status add other';
   }

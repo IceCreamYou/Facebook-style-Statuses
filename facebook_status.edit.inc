@@ -111,8 +111,11 @@ function facebook_status_edit_submit($form, &$form_state) {
   if ($new_status != $status_old->status && $account->uid) {
     $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
     db_query($sql, $new_status, $time, $status_old->sid);
-    //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid, $edit).
-    module_invoke_all('facebook_status_save', $account, $new_status, $status_old->sid, TRUE);
+    //Invokes hook_facebook_status_save($status, $edit).
+    $status_old->status = $new_status;
+    $status_old->status_time = $time;
+    $status_old->owner = $account;
+    module_invoke_all('facebook_status_save', $status_old, TRUE);
   }
 
   if ($_GET['destination']) {

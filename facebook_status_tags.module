@@ -505,18 +505,18 @@ function facebook_status_tags_facebook_status_render_components_alter(&$componen
 /**
  * Implementation of hook_facebook_status_save().
  */
-function facebook_status_tags_facebook_status_save($account, $status, $sid, $edit = FALSE) {
+function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
   //If the status was just edited, the tags could have changed, so we flush them.
   if ($edit) {
-    db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
+    db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $status->sid);
   }
-  $matches = _facebook_status_tags_filter($status, TRUE);
+  $matches = _facebook_status_tags_filter($status->status, TRUE);
   //Users.
   $old_matches = array();
   foreach ($matches['@'] as $account) {
     if (!in_array($account->uid, $old_matches)) {
       $array = array(
-        'sid' => $sid,
+        'sid' => $status->sid,
         'rid' => $account->uid,
         'type' => 'user',
         'name' => $account->name,
@@ -535,7 +535,7 @@ function facebook_status_tags_facebook_status_save($account, $status, $sid, $edi
     $term = (object) $term;
     if (!in_array($term->tid, $old_matches)) {
       $array = array(
-        'sid' => $sid,
+        'sid' => $status->sid,
         'rid' => $term->tid,
         'type' => 'term',
         'name' => $term->name,
