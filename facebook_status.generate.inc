@@ -147,7 +147,8 @@ function facebook_status_generate_status($time, $respond, $tags, &$context) {
   $status = (object) array('status' => $text, 'status_time' => $stime, 'uid' => $uid, 'pid' => $pid);
   drupal_write_record('facebook_status', $status);
   $account = user_load(array('uid' => $uid));
-  module_invoke_all('facebook_status_save', $account, $text, $status->sid, FALSE);
+  $status->owner = $account;
+  module_invoke_all('facebook_status_save', $status, FALSE);
   $context['results']['num']++;
 }
 
