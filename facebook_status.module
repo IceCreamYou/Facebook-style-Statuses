@@ -47,6 +47,16 @@ function facebook_status_menu() {
     'type' => MENU_LOCAL_TASK,
     'file' => 'facebook_status.admin.inc',
   );
+  $items['admin/settings/facebook_status/announce'] = array(
+    'title' => 'Send to all',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('facebook_status_announce_admin'),
+    'access arguments' => array('send messages to all users at once'),
+    'description' => 'Allows administrators to send status updates to all users at once.',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'facebook_status.announce.inc',
+  );
+  //Annoyingly, this probably requires the menu cache to be rebuilt after changing these settings.
   $size = variable_get('facebook_status_size_long', 40);
   //The $view will be ignored if Views does not exist.
   $view = variable_get('facebook_status_share_view', 'facebook_status');
@@ -275,6 +285,7 @@ function facebook_status_perm() {
     'edit all statuses',
     'edit own status',
     'post on all profiles',
+    'send messages to all users at once',
     'use open API',
     'view all statuses'
   );
