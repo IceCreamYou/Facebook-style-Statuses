@@ -1307,45 +1307,45 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
       $object->owner = $owner;
       module_invoke_all('facebook_status_save', $object, FALSE);
     }
+    //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
+    if (module_exists('trigger') && $time && $options['alerts']['trigger']) {
+      $op = 'fbss_submitted';
+      if ($owner->uid != $poster->uid) {
+        $op = 'fbss_submitted_other';
+      }
+      module_invoke_all('facebook_status', $op, $owner, $poster, $object);
+    }
+    //Activity 1 integration.
+    if ($options['alerts']['activity1']) {
+      facebook_status_activity($owner, $poster, $object);
+    }
+    //Twitter integration.
+    if (module_exists('twitter')
+      && $options['alerts']['twitter']
+      && user_access('use global twitter account', $poster)
+      && variable_get('facebook_status_twitter_special', 0)
+      && $owner->name == variable_get('facebook_status_special_user', '')
+      && $owner->uid == $poster->uid) {
+      module_load_include('inc', 'twitter');
+      twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
+    }
+    //Appbar integration.
+    if (module_exists('appbar') && $options['alerts']['appbar']) {
+      if ($owner->uid == $poster->uid) {
+        appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $poster->uid);
+      }
+      else {
+        appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $poster), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $owner->uid);
+        appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $owner), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $poster->uid);
+      }
+    }
   }
   elseif ($new_status == $status->status) {
     $object->sid = $status->sid;
   }
-  //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
-  if (module_exists('trigger') && $time && $options['alerts']['trigger']) {
-    $op = 'fbss_submitted';
-    if ($owner->uid != $poster->uid) {
-      $op = 'fbss_submitted_other';
-    }
-    module_invoke_all('facebook_status', $op, $owner, $poster, $object);
-  }
-  //Activity 1 integration.
-  if ($options['alerts']['activity1']) {
-    facebook_status_activity($owner, $poster, $object);
-  }
   //Rules integration.
   if (module_exists('rules') && $options['alerts']['rules']) {
     rules_invoke_event('facebook_status_update', $owner, $poster, $object);
-  }
-  //Twitter integration.
-  if (module_exists('twitter')
-    && $options['alerts']['twitter']
-    && user_access('use global twitter account', $poster)
-    && variable_get('facebook_status_twitter_special', 0)
-    && $owner->name == variable_get('facebook_status_special_user', '')
-    && $owner->uid == $poster->uid) {
-    module_load_include('inc', 'twitter');
-    twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
-  }
-  //Appbar integration.
-  if (module_exists('appbar') && $options['alerts']['appbar']) {
-    if ($owner->uid == $poster->uid) {
-      appbar_set_message(t('You posted a new status.', array('!status' => theme('facebook_status_item', $object))), 'facebook_status-update-own', $poster->uid);
-    }
-    else {
-      appbar_set_message(t('!user posted a message on your profile.', array('!user' => theme('username', $poster), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-owner', $owner->uid);
-      appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $owner), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $poster->uid);
-    }
   }
   return $object;
 }

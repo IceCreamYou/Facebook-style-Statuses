@@ -308,6 +308,18 @@ function facebook_status_views_default_views() {
   $handler->override_option('title', 'Statuses');
   if (module_exists('php')) {
     $handler->override_option('empty', '<?php
+      // Hello. If you are reading this text and you are not editing this View,
+      // you probably didn\'t expect to see this text here. Luckily, it\'s very
+      // easy to fix that. You\'re seeing this text because it is in the
+      // "Empty text" of this View, and the user whose stream you are viewing
+      // has no statuses. To stop seeing this text, you must edit your View
+      // (which you can do through the user interface at admin/build/views or
+      // by clicking on the "Edit" link that appears when hovering your mouse
+      // over the View). On the Edit screen for the view, click to change the
+      // "Empty text" option in the "Basic settings" section. Then, either
+      // change the input format of the Empty text to "PHP code" (you must
+      // have the "PHP filter" module enabled) or remove the text.
+      // For more information, please read http://drupal.org/node/551698#php
             $account = _facebook_status_user_load(arg(1));
             if (!$account->uid) {
               echo t(\'This user has no statuses yet.\');
