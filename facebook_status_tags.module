@@ -296,10 +296,10 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
 function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FALSE) {
   $now = time();
   $times = array(
-    'day' => $now - (60 * 60 * 24),
-    'week' => $now - (60 * 60 * 24 * 7),
-    'month' => $now - (60 * 60 * 24 * 30),
-    'year' => $now - (60 * 60 * 24 * 364),
+    'day'   => $now -    86400,
+    'week'  => $now -   604800,
+    'month' => $now -  2592000,
+    'year'  => $now - 31449600,
     'all' => 0,
   );
   $time = $times[$time];
@@ -307,7 +307,7 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
   if ($own) {
     $restrict = 'f.uid = f.pid AND ';
   }
-  $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
+  $result = db_query_range("SELECT COUNT(t.sid) AS count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
     WHERE ". $restrict ."t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time, 0, $count);
   $terms = array();
   while ($obj = db_fetch_object($result)) {
@@ -333,14 +333,14 @@ function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FA
 function facebook_status_tags_popular_users($count = 1, $time = 'all') {
   $now = time();
   $times = array(
-    'day' => $now - (60 * 60 * 24),
-    'week' => $now - (60 * 60 * 24 * 7),
-    'month' => $now - (60 * 60 * 24 * 30),
-    'year' => $now - (60 * 60 * 24 * 364),
-    'all' => 0,
+    'day'   => $now -    86400,
+    'week'  => $now -   604800,
+    'month' => $now -  2592000,
+    'year'  => $now - 31449600,
+    'all'   => 0,
   );
   $time = $times[$time];
-  $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
+  $result = db_query_range("SELECT COUNT(t.sid) AS count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
     WHERE t.type = 'user' AND f.status_time > %d  AND f.pid = %d GROUP BY t.rid ORDER BY count DESC",
     $time, $GLOBALS['user']->uid, 0, $count);
   $users = array();
