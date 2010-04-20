@@ -462,20 +462,21 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   $owner_name = theme('username', $owner);
   $poster_name = theme('username', $poster);
   $status_exists = TRUE;
-  if (!$status->status) {
+  $status_text = $status->status;
+  if (!$status_text) {
     if (variable_get('facebook_status_hide_blank', 0) == 1) {
       return '';
     }
     $status_exists = FALSE;
     if (variable_get('facebook_status_concat', 1) == 0) {
-      $status->status = t('!user does not have a status.', array('!user' => $owner_name));
+      $status_text = t('!user does not have a status.', array('!user' => $owner_name));
     }
     else {
-      $status->status = t('does not have a status.');
+      $status_text = t('does not have a status.');
     }
   }
   drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
-  $status_text = _facebook_status_run_filter($status->status);
+  $status_text = _facebook_status_run_filter($status_text);
   if (variable_get('facebook_status_nl2br', 0)) {
     $status_text = nl2br($status_text);
   }
@@ -502,31 +503,37 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
     'poster' => array(
       'value' => $poster_name .' &raquo; ',
       '#value' => $poster_name,
+      '#unformatted' => $status->pid,
       'weight' => -50,
     ),
     'owner' => array(
       'value' => $owner_name .': ',
       '#value' => $owner_name,
+      '#unformatted' => $status->uid,
       'weight' => -45,
     ),
     'user' => array(
       'value' => $owner_name .' ',
       '#value' => $owner_name,
+      '#unformatted' => $status->pid,
       'weight' => -45,
     ),
     'status' => array(
       'value' => $status_text .' ',
       '#value' => $status_text,
+      '#unformatted' => $status->status,
       'weight' => -40,
     ),
     'time' => array(
       'value' => ' <em>'. $time .'</em>',
       '#value' => $time,
+      '#unformatted' => $status->status_time,
       'weight' => -30,
     ),
     'edit' => array(
       'value' => $edit,
       '#value' => $edit,
+      '#unformatted' => $status->sid,
       'weight' => -20,
     ),
     'conversation' => array(
@@ -1894,13 +1901,13 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     $delete = '';
     $editdelete = ''; //Legacy support
     if (_facebook_status_can_edit($status)) {
-      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .'</span>';
-      $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .'</span>';
+      $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
       $editdelete = $edit .' '. $delete;
     }
     elseif (_facebook_status_can_edit($status, TRUE)) {
-      $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
-      $editdelete = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+      $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+      $editdelete = $delete;
     }
     return array(
       'owner' => theme('username', user_load(array('uid' => $status->uid))),

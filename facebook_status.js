@@ -18,6 +18,33 @@ Drupal.behaviors.facebookStatus = function (context) {
       }
     });
   }
+  //Fix bad redirect destinations.
+  $('.facebook_status_edit_delete a').each(function() {
+    $(this).attr('href', $(this).attr('href').split('?')[0] +'?destination='+ escape(window.location.href));
+  });
+  $('a.facebook_status_conversation_link').each(function() {
+    var loc = $(this).attr('href').split('?'), base = loc[0], query = '';
+    if (loc[1]) {
+      var q = loc[1].split('&');
+      for (var i = 0; i < q.length; i++) {
+        var item = q[i].split('='), param = item[0];
+        if (i == 0) {
+          query += '?';
+        }
+        else /*if (i != q.length-1)*/ {
+          query += '&';
+        }
+        query += param +'=';
+        if (param == 'destination') {
+          query += escape(window.location.href);
+        }
+        else if (item[1]) {
+          query += item[1];
+        }
+      }
+    }
+    $(this).attr('href', base + query);
+  });
   //Restore original status text if the field is blank and the slider is clicked.
   $('.facebook_status_slider').click(function() {
     if ($(this).next().find('.facebook_status_text').val() == '') {
