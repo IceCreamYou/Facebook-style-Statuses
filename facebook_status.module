@@ -461,13 +461,11 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   }
   $owner_name = theme('username', $owner);
   $poster_name = theme('username', $poster);
-  $status_exists = TRUE;
   $status_text = $status->status;
   if (!$status_text) {
     if (variable_get('facebook_status_hide_blank', 0) == 1) {
       return '';
     }
-    $status_exists = FALSE;
     if (variable_get('facebook_status_concat', 1) == 0) {
       $status_text = t('!user does not have a status.', array('!user' => $owner_name));
     }
@@ -490,7 +488,7 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   if ($cacheable) {
     $time = format_date($status->status_time, 'small');
   }
-  elseif ($status_exists) {
+  elseif ($status->status_time == 0) {
     if (_facebook_status_can_edit($status)) {
       $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
     }
