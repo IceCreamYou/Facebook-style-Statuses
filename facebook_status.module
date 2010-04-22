@@ -488,7 +488,7 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   if ($cacheable) {
     $time = format_date($status->status_time, 'small');
   }
-  elseif ($status->status_time == 0) {
+  elseif ($status->status_time != 0) {
     if (_facebook_status_can_edit($status)) {
       $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
     }
