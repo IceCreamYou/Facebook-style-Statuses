@@ -3,6 +3,7 @@ Drupal.behaviors.facebookStatus = function (context) {
   var $facebook_status_field = $('.facebook_status_update:first .facebook_status_text');
   var facebook_status_original_value = $facebook_status_field.val();
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
+  var refreshIDs = Drupal.settings.facebook_status.refreshIDs;
   if (Drupal.settings.facebook_status.autofocus) {
      $facebook_status_field.focus();
      if ($facebook_status_field.val().length != 0) {
@@ -31,7 +32,7 @@ Drupal.behaviors.facebookStatus = function (context) {
         if (i == 0) {
           query += '?';
         }
-        else /*if (i != q.length-1)*/ {
+        else {
           query += '&';
         }
         query += param +'=';
@@ -42,8 +43,38 @@ Drupal.behaviors.facebookStatus = function (context) {
           query += item[1];
         }
       }
+      $(this).attr('href', base + query);
     }
-    $(this).attr('href', base + query);
+  });
+  //React when a status is submitted.
+  $('#facebook_status_replace').bind('facebook_status_ahah_success', function() {
+    var loaded = {};
+    //Refresh elements by re-loading the current page and replacing the old version with the updated version.
+    if (refreshIDs && refreshIDs != undefined) {
+      //IE will cache the result unless we add an identifier (in this case, the time).
+      $.get(window.location.pathname +"?ts="+ (new Date()).getTime(), function(data, textStatus) {
+        //From load() in jQuery source. We already have the scripts we need.
+        var new_data = data.replace(/<script(.|\s)*?\/script>/g, "");
+        //From ahah.js. Apparently Safari crashes with just $().
+        var new_content = $('<div></div>').html(new_data);
+        if (textStatus != 'error' && new_content) {
+          //Replace relevant content in the viewport with the updated version.
+          $.each(refreshIDs, function(i, val) {
+            if (val && val != undefined) {
+              if ($.trim(val) != '' && loaded[val] !== true) {
+                var element = $(val);
+                var insert = new_content.find(val);
+                if (insert.get() != element.get()) {
+                  element.replaceWith(insert);
+                  Drupal.attachBehaviors(insert);
+                }
+                loaded[val] = true;
+              }
+            }
+          });
+        }
+      });
+    }
   });
   //Restore original status text if the field is blank and the slider is clicked.
   $('.facebook_status_slider').click(function() {

@@ -618,11 +618,13 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
   if ($account === FALSE) {
     $account = facebook_status_choose_owner(FALSE);
   }
-  if (facebook_status_can_post($account, $user)) {
-    return '<div class="facebook_status_update facebook_status_update_main clear-block">'. drupal_get_form('facebook_status_box', $account, $size, $view, $view_arg) .'</div>';
+  $selectors = module_invoke_all('facebook_status_refresh_selectors', $account);
+  $output = '';
+  $can_post = facebook_status_can_post($account, $user);
+  if ($can_post) {
+    $output .= '<div class="facebook_status_update facebook_status_update_main clear-block">'. drupal_get_form('facebook_status_box', $account, $size) .'</div>';
   }
   if ($view && module_exists('views')) {
-    $rendered_view = views_embed_view($view, 'default', $account->uid);
     //A very specific hack for the default conversation view.
     if ($view_arg && $view == 'facebook_status_cross_post') {
       $arg = $view_arg;
@@ -630,10 +632,22 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
       $arg2 = $temp[1] .','. $temp[0];
       $rendered_view = views_embed_view($view, 'default', $arg, $arg2);
     }
-    return $rendered_view;
+    else {
+      $rendered_view = views_embed_view($view, 'default', $account->uid);
+    }
+    $output .= $rendered_view;
+    $selectors[] = '.view-id-'. $view;
   }
-  $status = _facebook_status_get_status_fast($account->uid);
-  return theme('facebook_status_item', $status);
+  elseif (!$can_post) {
+    $status = _facebook_status_get_status_fast($account->uid);
+    return theme('facebook_status_item', $status);
+  }
+  if (!empty($selectors)) {
+    drupal_add_js(array('facebook_status' => array(
+      'refreshIDs' => $selectors
+    )), 'setting');
+  }
+  return $output;
 }
 
 /**
@@ -1360,39 +1374,21 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
 //======
 
 /**
- * Preserved for some minor level of backwards-compatibility.
- */
-function _facebook_status_status($form_state, $account = NULL, $size = FALSE, $view = FALSE) {
-  $backtrace = debug_backtrace();
-  $fn = $backtrace[1]['function'];
-  watchdog('facebook_status', 'function _facebook_status_status() is deprecated in favor of facebook_status_box(). Called from %function', array('%function' => $fn));
-  return facebook_status_box($form_state, $account, $size, $view);
-}
-
-/**
  * The status form.
  *
  * @param $account
  *   The $user object for the user whose profile will be posted to.
  * @param $size
  *   The size of the status update textfield, or FALSE to use the setting.
- * @param $view
- *   The machine name of a view of statuses to append to the status update form.
- *   This view should expect to receive one argument - typically the User ID of
- *   the user whose profile is being viewed.
- * @param $view_arg
- *   This is a very specific hack for the default conversation view.
  * @return
  *   A $form array.
  */
-function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view = FALSE, $view_arg = FALSE) {
+function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
   global $user;
   if (isset($form_state['facebook_status'])) {
     $aid = $form_state['facebook_status']['account'];
     $account = user_load(array('uid' => $aid));
     $size = $form_state['facebook_status']['size'];
-    $view = $form_state['facebook_status']['fbss-view-value'];
-    $view_arg = $form_state['facebook_status']['fbss-view-arg'];
   }
 
   if (!$size) {
@@ -1501,20 +1497,6 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
       'method' => 'replace',
     );
   }
-  if ($view && module_exists('views')) {
-    $rendered_view = views_embed_view($view, 'default', $account->uid);
-    //A very specific hack for the default conversation view.
-    if ($view_arg && $view = 'facebook_status_cross_post') {
-      $arg = $view_arg;
-      $temp = explode(',', $arg);
-      $arg2 = $temp[1] .','. $temp[0];
-      $rendered_view = views_embed_view($view, 'default', $arg, $arg2);
-    }
-    $form['fbss-view'] = array(
-      '#value' => $rendered_view,
-      '#weight' => -15,
-    );
-  }
   $form['sdefault'] = array(
     '#type' => 'value',
     '#value' => $default,
@@ -1535,16 +1517,6 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
     '#value' => $size,
     '#weight' => 10,
   );
-  $form['fbss-view-value'] = array(
-    '#type' => 'value',
-    '#value' => $view,
-    '#weight' => 10,
-  );
-  $form['fbss-view-arg'] = array(
-    '#type' => 'value',
-    '#value' => $view_arg,
-    '#weight' => 10,
-  );
   if (arg(0) == 'share-status' && $_GET['destination'] && $_GET['destination'] != $_GET['q']) {
     $form['back'] = array(
       '#value' => l(t('Back'), $_GET['destination'], array('attributes' => array('class' => 'facebook-status-back'))),
@@ -1561,8 +1533,11 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE, $view 
  */
 function facebook_status_box_validate($form, &$form_state) {
   $maxlen = variable_get('facebook_status_length', 140);
-  if (drupal_strlen($form_state['values']['fbss-status']) > $maxlen) {
-    form_set_error('status', t('The status must be no longer than %chars characters.', array('%chars' => $maxlen)));
+  $len = drupal_strlen($form_state['values']['fbss-status']);
+  if ($len > $maxlen) {
+    form_set_error('status',
+      t('You may use a maximum of %maxchars characters, but you are using %chars characters.',
+      array('%maxchars' => $maxlen, '%chars' => $len)));
   }
 }
 
@@ -1585,8 +1560,6 @@ function facebook_status_box_submit($form, &$form_state) {
   $form_state['facebook_status'] = array(
     'account' => $aid,
     'size' => $size,
-    'fbss-view-value' => $form_state['values']['fbss-view-value'],
-    'fbss-view-arg' => $form_state['values']['fbss-view-arg'],
   );
   $form_state['rebuild'] = TRUE;
   if (!variable_get('facebook_status_ahah', 1)) {
@@ -1622,7 +1595,6 @@ function facebook_status_save_js() {
     $new_form['twitter']   = $form['twitter'];
   }
   $new_form['fbss-submit'] = $form['fbss-submit'];
-  $new_form['fbss-view']   = $form['fbss-view'];
   $new_form['sdefault']    = $form['sdefault'];
   //Clear the status form after it's already been submitted once to prevent confusion.
   unset($new_form['status']['#default_value']);
