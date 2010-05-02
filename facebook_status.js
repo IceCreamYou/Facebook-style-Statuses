@@ -47,7 +47,10 @@ Drupal.behaviors.facebookStatus = function (context) {
     }
   });
   //React when a status is submitted.
-  $('#facebook_status_replace').bind('facebook_status_ahah_success', function() {
+  $('#facebook_status_replace').bind('ahah_success', function(context) {
+    if ($(context.target).html() != $(this).html()) {
+      return;
+    }
     var loaded = {};
     //Refresh elements by re-loading the current page and replacing the old version with the updated version.
     if (refreshIDs && refreshIDs != undefined) {

@@ -64,7 +64,7 @@ Drupal.ahah.prototype.success = function (response, status) {
   }
 
   //Let other processes react to the update.
-  wrapper.trigger('facebook_status_ahah_success');
+  wrapper.trigger('ahah_success', this.wrapper);
 
   // Attach all javascript behaviors to the new content. If the behaviors were
   // successfully added to the page, this if() statement allows #ahah[wrapper]
