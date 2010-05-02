@@ -1444,7 +1444,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
 
   $path = drupal_get_path('module', 'facebook_status');
   drupal_add_js($path .'/facebook_status.js');
-  drupal_add_js($path .'/facebook_status_ahah.js');
+  drupal_add_js($path .'/facebook_status_ahah.js', 'module', 'footer');
   drupal_add_css($path .'/facebook_status.css');
   $form = array('#cache' => TRUE);
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
