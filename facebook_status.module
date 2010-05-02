@@ -643,6 +643,7 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
     return theme('facebook_status_item', $status);
   }
   if (!empty($selectors)) {
+    drupal_alter('facebook_status_refresh_selectors', $selectors, $account);
     drupal_add_js(array('facebook_status' => array(
       'refreshIDs' => $selectors
     )), 'setting');
