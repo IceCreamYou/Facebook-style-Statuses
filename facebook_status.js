@@ -1,6 +1,8 @@
 // $Id$
 Drupal.behaviors.facebookStatus = function (context) {
+  var initialLoad = false;
   if (context == document) {
+    initialLoad = true;
     context = $(document);
   }
   var $facebook_status_field = context.find('.facebook_status_text:first');
@@ -82,6 +84,19 @@ Drupal.behaviors.facebookStatus = function (context) {
       });
     }
   });
+  //On document load, add a refresh link where applicable.
+  if (initialLoad && refreshIDs && refreshIDs != undefined) {
+    $.each(refreshIDs, function(i, val) {
+      if (val && val != undefined) {
+        if ($.trim(val)) {
+          var element = $(val);
+          element.wrap('<div></div>');
+          var rlink = '<a href="'+ window.location.href +'">'+ Drupal.t('Refresh') +'</a>';
+          element.parent().after('<div class="facebook_status_refresh_link">'+ rlink +'</div>');
+        }
+      }
+    });
+  }
   //Refresh views appropriately.
   context.find('.facebook_status_refresh_link a').click(function() {
     $('#facebook_status_replace').trigger('ahah_success', {target: '#facebook_status_replace'});

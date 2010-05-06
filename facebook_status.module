@@ -645,10 +645,8 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
     else {
       $rendered_view = views_embed_view($view, 'default', $account->uid);
     }
-    //Context for Views AJAX is view.parent(), but we don't want to re-attach behaviors to siblings.
-    $output .= '<div>'. $rendered_view .'</div>';
+    $output .= $rendered_view;
     $selectors[] = '.view-id-'. $view;
-    $output .= '<div class="facebook_status_refresh_link">'. l(t('Refresh'), $_GET['q']) .'</div>';
   }
   elseif (!$can_post) {
     $status = _facebook_status_get_status_fast($account->uid);
