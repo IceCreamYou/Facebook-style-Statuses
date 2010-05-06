@@ -1,6 +1,9 @@
 // $Id$
 Drupal.behaviors.facebookStatus = function (context) {
-  var $facebook_status_field = $('.facebook_status_update:first .facebook_status_text');
+  if (context == document) {
+    context = $(document);
+  }
+  var $facebook_status_field = context.find('.facebook_status_text:first');
   var facebook_status_original_value = $facebook_status_field.val();
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
   var refreshIDs = Drupal.settings.facebook_status.refreshIDs;
@@ -12,7 +15,7 @@ Drupal.behaviors.facebookStatus = function (context) {
   }
   else {
     //Clear the status field the first time it's in focus if it hasn't been changed.
-    $('.facebook_status_update_main .facebook_status_text').one('focus', function() {
+    context.find('.facebook_status_text_main').one('focus', function() {
       if ($(this).val() == facebook_status_original_value) {
         $(this).val('');
         fbss_print_remaining(fbss_maxlen, $(this).parent().next());
@@ -20,10 +23,10 @@ Drupal.behaviors.facebookStatus = function (context) {
     });
   }
   //Fix bad redirect destinations.
-  $('.facebook_status_edit_delete a').each(function() {
+  context.find('.facebook_status_edit_delete a').each(function() {
     $(this).attr('href', $(this).attr('href').split('?')[0] +'?destination='+ escape(window.location.href));
   });
-  $('a.facebook_status_conversation_link').each(function() {
+  context.find('a.facebook_status_conversation_link').each(function() {
     var loc = $(this).attr('href').split('?'), base = loc[0], query = '';
     if (loc[1]) {
       var q = loc[1].split('&');
@@ -47,7 +50,7 @@ Drupal.behaviors.facebookStatus = function (context) {
     }
   });
   //React when a status is submitted.
-  $('#facebook_status_replace').bind('ahah_success', function(context) {
+  context.find('#facebook_status_replace').bind('ahah_success', function(context) {
     if ($(context.target).html() != $(this).html()) {
       return;
     }
@@ -79,15 +82,20 @@ Drupal.behaviors.facebookStatus = function (context) {
       });
     }
   });
+  //Refresh views appropriately.
+  context.find('.facebook_status_refresh_link a').click(function() {
+    $('#facebook_status_replace').trigger('ahah_success', {target: '#facebook_status_replace'});
+    return false;
+  });
   //Restore original status text if the field is blank and the slider is clicked.
-  $('.facebook_status_slider').click(function() {
+  context.find('.facebook_status_slider').click(function() {
     if ($(this).next().find('.facebook_status_text').val() == '') {
       $(this).next().find('.facebook_status_text').val(facebook_status_original_value);
       fbss_print_remaining(fbss_maxlen - facebook_status_original_value.length, $(this).next().next());
     }
   });
   //Count remaining characters.
-  $('.facebook_status_update .facebook_status_text').keyup(function(fbss_key) {
+  context.find('.facebook_status_text').keyup(function(fbss_key) {
     var fbss_remaining = fbss_maxlen - $(this).val().length;
     if (Drupal.settings.facebook_status.ttype == 'textfield' && fbss_remaining < 0) {
       fbss_remaining = 0;

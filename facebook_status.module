@@ -398,7 +398,11 @@ function facebook_status_twitter_submit($form, &$form_state) {
  */
 function facebook_status_init() {
   drupal_add_js(array('facebook_status' => array(
-    'autofocus' => (arg(0) == 'share-status' || (arg(0) == 'statuses' && is_numeric(arg(1)) && arg(2) == 'edit')),
+    'autofocus' => (
+      arg(0) == 'share-status' ||
+      (arg(0) == 'statuses' && is_numeric(arg(1)) && arg(2) == 'edit') ||
+      (arg(0) == 'statuses' && arg(1) == 'conversation')
+    ),
     'maxlength' => variable_get('facebook_status_length', 140),
     'ttype' => variable_get('facebook_status_type', 'textarea'))
   ), 'setting');
@@ -559,6 +563,12 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   else {
     $components['user']['type'] = 'value';
   }
+  //@todo: This is a miserable hack to keep unwanted elements from appearing.
+  if (func_num_args() > 2) {
+    if (func_get_arg(2) === TRUE) {
+      $components['conversation']['type'] = 'value';
+    }
+  }
   $components += module_invoke_all('facebook_status_render_components', $status);
   drupal_alter('facebook_status_render_components', $components, $status);
   uasort($components, '_facebook_status_element_sort');
@@ -635,8 +645,10 @@ function theme_facebook_status_form_display($account = FALSE, $size = FALSE, $vi
     else {
       $rendered_view = views_embed_view($view, 'default', $account->uid);
     }
-    $output .= $rendered_view;
+    //Context for Views AJAX is view.parent(), but we don't want to re-attach behaviors to siblings.
+    $output .= '<div>'. $rendered_view .'</div>';
     $selectors[] = '.view-id-'. $view;
+    $output .= '<div class="facebook_status_refresh_link">'. l(t('Refresh'), $_GET['q']) .'</div>';
   }
   elseif (!$can_post) {
     $status = _facebook_status_get_status_fast($account->uid);
@@ -1438,7 +1450,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
     elseif (is_numeric($_GET['rsid'])) {
       $status = facebook_status_load($_GET['rsid']);
       if ($status->sid) {
-        $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status)));
+        $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status, TRUE, TRUE)));
       }
     }
   }
@@ -1466,7 +1478,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
     '#rows' => 2,
     '#maxlength' => $maxlength,
     '#default_value' => $default,
-    '#attributes' => array('class' => 'facebook_status_text'),
+    '#attributes' => array('class' => 'facebook_status_text facebook_status_text_main'),
     '#resizable' => FALSE,
     '#weight' => -40,
   );
