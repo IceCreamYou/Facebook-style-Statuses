@@ -81,7 +81,11 @@ Drupal.behaviors.facebookStatus = function (context) {
             }
           });
         }
+        $('.fbss-remove-me').remove();
       });
+    }
+    else {
+      $('.fbss-remove-me').remove();
     }
   });
   //On document load, add a refresh link where applicable.
@@ -99,6 +103,7 @@ Drupal.behaviors.facebookStatus = function (context) {
   }
   //Refresh views appropriately.
   context.find('.facebook_status_refresh_link a').click(function() {
+    $(this).after('<div class="fbss-remove-me ahah-progress ahah-progress-throbber"><div class="throbber">&nbsp;</div></div>');
     $('#facebook_status_replace').trigger('ahah_success', {target: '#facebook_status_replace'});
     return false;
   });
