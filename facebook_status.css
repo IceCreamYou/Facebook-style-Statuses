@@ -52,6 +52,10 @@
   width: 100%;
 }
 
+.facebook_status_faded {
+  color: #999999;
+}
+
 /* Fix magic from Garland and others. */
 .view .picture {
   clear: none;

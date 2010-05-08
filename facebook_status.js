@@ -16,12 +16,16 @@ Drupal.behaviors.facebookStatus = function (context) {
      }
   }
   else {
+    $.each(context.find('.facebook_status_text_main'), function(i, val) {
+      $(this).addClass('facebook_status_faded');
+    });
     //Clear the status field the first time it's in focus if it hasn't been changed.
     context.find('.facebook_status_text_main').one('focus', function() {
       if ($(this).val() == facebook_status_original_value) {
         $(this).val('');
         fbss_print_remaining(fbss_maxlen, $(this).parent().next());
       }
+      $(this).removeClass('facebook_status_faded');
     });
   }
   //Fix bad redirect destinations.
