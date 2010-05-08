@@ -41,9 +41,17 @@ class facebook_status_views_handler_field_status extends views_handler_field {
     if (variable_get('facebook_status_nl2br', 0)) {
       $status_text = nl2br($status_text);
     }
-    $owner = _facebook_status_user_load($status->uid);
-    $poster = _facebook_status_user_load($status->pid);
-    drupal_alter('facebook_status_render', $status_text, $owner, $poster, $status);
-    return $status_text;
+    $components = array(
+      'status' => array(
+        'value' => $status_text,
+        '#value' => $status_text,
+        '#unformatted' => $status->status,
+        'prefix' => '',
+        'suffix' => '',
+      ),
+    );
+    drupal_alter('facebook_status_render_components', $components, $status);
+    $c = $components['status'];
+    return $c['prefix'] .'<span class="fbss_status">'. $c['value'] .'</span>'. $c['suffix'];
   }
 }
