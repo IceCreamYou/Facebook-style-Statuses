@@ -5,6 +5,7 @@ Drupal.behaviors.facebookStatus = function (context) {
     initialLoad = true;
     context = $(document);
   }
+  facebook_status_submit_disabled = false;
   var $facebook_status_field = context.find('.facebook_status_text:first');
   var facebook_status_original_value = $facebook_status_field.val();
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
@@ -131,8 +132,16 @@ Drupal.behaviors.facebookStatus = function (context) {
 function fbss_print_remaining(fbss_remaining, where) {
   if (fbss_remaining >= 0) {
     where.html(Drupal.formatPlural(fbss_remaining, '1 character left', '@count characters left', {}));
+    if (facebook_status_submit_disabled) {
+      $('.facebook_status_submit').attr('disabled', false);
+      facebook_status_submit_disabled = false;
+    }
   }
   else {
     where.html('<span class="facebook_status_negative">'+ Drupal.formatPlural(Math.abs(fbss_remaining), '-1 character left', '-@count characters left', {}) +'</span>');
+    if (!facebook_status_submit_disabled) {
+      $('.facebook_status_submit').attr('disabled', true);
+      facebook_status_submit_disabled = true;
+    }
   }
 }
