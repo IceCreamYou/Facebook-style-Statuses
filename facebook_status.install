@@ -208,6 +208,7 @@ function facebook_status_uninstall() {
   variable_del('facebook_status_reply_type');
   variable_del('facebook_status_share_view');
   variable_del('facebook_status_size_long');
+  variable_del('facebook_status_box_rows');
   variable_del('facebook_status_default');
   variable_del('facebook_status_exclude');
   variable_del('facebook_status_concat');

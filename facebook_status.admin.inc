@@ -208,6 +208,16 @@ function facebook_status_admin_advanced($form_state) {
     '#required' => TRUE,
     '#weight' => -10,
   );
+  $form['facebook_status_box_rows'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of rows of the status update box'),
+    '#description' => t('This only applies if the status update box type is set to "textarea" (not "textfield").'),
+    '#default_value' => variable_get('facebook_status_box_rows', 2),
+    '#size' => 3,
+    '#maxlength' => 3,
+    '#required' => TRUE,
+    '#weight' => -10,
+  );
   $form['facebook_status_flood_user'] = array(
     '#type' => 'textfield',
     '#title' => t('Number of OpenAPI accesses allowed per IP address per hour'),
@@ -240,9 +250,13 @@ function facebook_status_admin_advanced_validate($form, &$form_state) {
   if (!is_numeric($size) || $size < 1 || $size != round($size)) {
     form_set_error('facebook_status_size_long', t('The size of the long status update field must be a positive integer.'));
   }
+  $size = $form_state['values']['facebook_status_box_rows'];
+  if (!is_numeric($size) || $size < 1 || $size != round($size)) {
+    form_set_error('facebook_status_box_rows', t('The number of rows of the status update box must be a positive integer.'));
+  }
   $amount = $form_state['values']['facebook_status_flood_user'];
   if (!is_numeric($amount) || $amount < 1 || $amount != round($amount)) {
-    form_set_error('facebook_status_flood_user', t('The size of the OpenAPI Access per IP field must be a positive integer.'));
+    form_set_error('facebook_status_flood_user', t('The number of OpenAPI Accesses per IP must be a positive integer.'));
   }
 }
 
