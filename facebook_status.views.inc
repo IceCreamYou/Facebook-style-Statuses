@@ -296,3 +296,25 @@ function facebook_status_views_handlers() {
     ),
   );
 }
+
+/**
+ * Implementation of hook_views_plugins().
+ */
+function facebook_status_views_plugins() {
+  return array(
+    'row' => array(
+      'facebook_status_rss' => array(
+        'title' => t('RSS items'),
+        'help' => t('Displays statuses as RSS items.'),
+        'handler' => 'facebook_status_views_plugin_row_rss',
+        'parent' => 'fields',
+        'path' => drupal_get_path('module', 'facebook_status'),
+        'theme' => 'views_view_row_rss',
+        'base' => array('facebook_status'),
+        'uses fields' => FALSE,
+        'uses options' => FALSE,
+        'type' => 'feed',
+      ),
+    )
+  );
+}
