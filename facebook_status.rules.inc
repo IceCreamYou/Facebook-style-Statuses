@@ -71,14 +71,6 @@ function facebook_status_rules_condition_info() {
       ),
       'module' => 'Facebook-style Statuses',
     ),
-    'facebook_status_rules_condition_contains' => array(
-      'label' => t('Status contains certain text'),
-      'arguments' => array(
-        'status' => array('type' => 'facebook_status', 'label' => t('The status')),
-        'string' => array('type' => 'string', 'label' => t('Contained string')),
-      ),
-      'module' => 'Facebook-style Statuses',
-    ),
   );
 }
 
@@ -101,13 +93,6 @@ function facebook_status_rules_condition_can_edit($status) {
  */
 function facebook_status_rules_condition_can_delete($status) {
   _facebook_status_can_edit($status, TRUE);
-}
-
-/**
- * Checks whether a status contains a given string.
- */
-function facebook_status_rules_condition_contains($status, $string) {
-  return strpos($status->status, $string) !== FALSE;
 }
 
 /**
