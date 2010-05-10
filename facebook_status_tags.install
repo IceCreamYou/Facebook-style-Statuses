@@ -48,7 +48,9 @@ function facebook_status_tags_schema() {
       'sid' => array('sid'),
       'rid' => array('rid'),
     ),
-    'primary key' => array('sid', 'rid'),
+    'unique keys' => array(
+      'rid' => array('rid', 'type'),
+    ),
   );
   return $schema;
 }
@@ -61,6 +63,18 @@ function facebook_status_tags_update_6201() {
   //In the last few cycles, some bugs were fixed that could cause blank tags to
   //be saved. Clean up that mess.
   $result[] = update_sql("DELETE FROM {facebook_status_tags} WHERE name = ''");
+  return $result;
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_tags_update_6202() {
+  $result = array();
+  //The current primary key causes errors when a user @mention and term #tag
+  //with the same ID exist in the same status.
+  db_drop_primary_key($result, 'facebook_status_tags');
+  db_add_unique_key($result, 'facebook_status_tags', 'rid', array('rid', 'type'));
   return $result;
 }
 
