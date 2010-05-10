@@ -145,7 +145,7 @@ function theme_facebook_status_popular_tags($count = NULL, $time = NULL) {
   $terms = facebook_status_tags_popular_terms($count, $time);
   $items = array();
   foreach ($terms as $term) {
-    $term_link = l($term->name, 'statuses/term/'. check_plain($term->name));
+    $term_link = l($term->name, _facebook_status_tags_resolve($term));
     $items[] = t('!term (@count)', array('!term' => $term_link, '@count' => $term->popularity));
   }
   if (!empty($items)) {
