@@ -1846,7 +1846,7 @@ function facebook_status_form_activity_form_alter(&$form, &$form_state) {
  * Implementation of hook_token_list().
  */
 function facebook_status_token_list($type = 'all') {
-  if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster' || $type == 'fbss-user') {
+  if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster') {
     $tokens['facebook_status'] = array(
       'owner' => t('The themed name of the user on whose profile the status was posted.'),
       'owner-id' => t('The User ID of the user on whose profile the status was posted.'),
@@ -1874,7 +1874,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     return $data;
   }
   //Activity 2.
-  elseif (($type == 'owner' || $type == 'poster' || $type == 'fbss-user' || $type == 'facebook_status') && !empty($data)) {
+  elseif (($type == 'owner' || $type == 'poster' || $type == 'facebook_status') && !empty($data)) {
     $status = $data->facebook_status;
     if (empty($status)) {
       $status = $data;
