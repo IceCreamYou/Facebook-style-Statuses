@@ -15,7 +15,7 @@ class facebook_status_views_handler_field_poster_pic extends views_handler_field
     if (module_exists('imagecache_profiles')) {
       $options['imagecache_preset'] = array(
         'default' => variable_get('user_picture_imagecache_profiles_default', ''),
-        'translatable' => FALSE
+        'translatable' => FALSE,
       );
     }
     return $options;
