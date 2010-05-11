@@ -137,24 +137,34 @@ function facebook_status_admin_validate($form, &$form_state) {
  * Advanced settings form.
  */
 function facebook_status_admin_advanced($form_state) {
+  $form['facebook_status_refresh'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show AJAX "Refresh" link after status update views'),
+    '#description' => t('Display a "Refresh" link under content that will be automatically refreshed when the status update form is submitted.') .
+      t('Clicking the link will similarly update the related content via JavaScript, without refreshing the page.') .
+      t('Obviously, the "Refresh" link will only appear when there is something that can be refreshed.') .
+      t('If you disable AHAH refreshing below or if you have no views attached to your status update forms, this setting is useless.'),
+    '#default_value' => variable_get('facebook_status_refresh', 0),
+    '#weight' => -34,
+  );
   $form['facebook_status_hide_status'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide status above textfield'),
     '#default_value' => variable_get('facebook_status_hide_status', 0),
-    '#weight' => -30,
+    '#weight' => -33,
   );
   $form['facebook_status_hide_blank'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide blank and empty statuses above textfield'),
     '#default_value' => variable_get('facebook_status_hide_blank', 0),
-    '#weight' => -30,
+    '#weight' => -32,
   );
   $form['facebook_status_nl2br'] = array(
     '#type' => 'checkbox',
     '#title' => t('Convert line breaks'),
     '#description' => t('By default, line breaks in the status update form are ignored. If you use an input filter to fix that, the status text will appear on a different line than the username and other information. Enabling this setting allows line breaks to appear without the side-effect of the input filter.'),
     '#default_value' => variable_get('facebook_status_nl2br', 0),
-    '#weight' => -30,
+    '#weight' => -31,
   );
   $form['facebook_status_ahah'] = array(
     '#type' => 'checkbox',
@@ -177,7 +187,7 @@ function facebook_status_admin_advanced($form_state) {
       '#description' => t('This is only relevant for the core profile, meaning it will not work if you override the default profile. <strong>The default facebook_status view is recommended. Other views may not work correctly.</strong>'),
       '#default_value' => variable_get('facebook_status_profile_view', $list['facebook_status']),
       '#options' => $list,
-      '#weight' => -20,
+      '#weight' => -22,
     );
     $form['facebook_status_share_view'] = array(
       '#type' => 'select',
@@ -185,7 +195,7 @@ function facebook_status_admin_advanced($form_state) {
       '#description' => t('The default facebook_status view is recommended.'),
       '#default_value' => variable_get('facebook_status_share_view', $list['facebook_status']),
       '#options' => $list,
-      '#weight' => -20,
+      '#weight' => -21,
     );
     $form['facebook_status_reply_type'] = array(
       '#type' => 'select',
@@ -206,7 +216,7 @@ function facebook_status_admin_advanced($form_state) {
     '#size' => 3,
     '#maxlength' => 3,
     '#required' => TRUE,
-    '#weight' => -10,
+    '#weight' => -14,
   );
   $form['facebook_status_box_rows'] = array(
     '#type' => 'textfield',
@@ -216,7 +226,7 @@ function facebook_status_admin_advanced($form_state) {
     '#size' => 3,
     '#maxlength' => 3,
     '#required' => TRUE,
-    '#weight' => -10,
+    '#weight' => -13,
   );
   $form['facebook_status_flood_user'] = array(
     '#type' => 'textfield',
@@ -226,7 +236,7 @@ function facebook_status_admin_advanced($form_state) {
     '#size' => 10,
     '#maxlength' => 10,
     '#required' => TRUE,
-    '#weight' => -10,
+    '#weight' => -12,
   );
   $form['facebook_status_default_text'] = array(
     '#type' => 'textfield',

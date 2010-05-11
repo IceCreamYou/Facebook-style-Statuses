@@ -94,10 +94,12 @@ Drupal.behaviors.facebookStatus = function (context) {
     }
   });
   //On document load, add a refresh link where applicable.
-  if (initialLoad && refreshIDs && refreshIDs != undefined) {
+  if (initialLoad && refreshIDs && Drupal.settings.facebook_status.refreshLink) {
+    var loaded = {};
     $.each(refreshIDs, function(i, val) {
       if (val && val != undefined) {
-        if ($.trim(val)) {
+        if ($.trim(val) && loaded[val] !== true) {
+          loaded[val] = true;
           var element = $(val);
           element.wrap('<div></div>');
           var rlink = '<a href="'+ window.location.href +'">'+ Drupal.t('Refresh') +'</a>';

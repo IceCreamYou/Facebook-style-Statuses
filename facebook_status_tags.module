@@ -97,7 +97,7 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
       '#title' => t('Vocabulary for #hashtags'),
       '#default_value' => variable_get('facebook_status_tags_vid', -1),
       '#options' => $options,
-      '#weight' => -21,
+      '#weight' => -29,
     );
     $form['facebook_status_tags_url'] = array(
       '#type' => 'textfield',

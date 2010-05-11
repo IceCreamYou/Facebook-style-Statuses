@@ -404,6 +404,7 @@ function facebook_status_init() {
       (arg(0) == 'statuses' && arg(1) == 'conversation')
     ),
     'maxlength' => variable_get('facebook_status_length', 140),
+    'refreshLink' => (bool) variable_get('facebook_status_refresh', 0),
     'ttype' => variable_get('facebook_status_type', 'textarea'))
   ), 'setting');
 }
