@@ -1726,7 +1726,7 @@ function facebook_status_activity_info() {
     $info->name = 'facebook_status';
     $info->object_type = 'facebook_status';
     $info->eid_field = 'sid';
-    $info->objects = array('Owner' => 'account', 'Poster' => 'poster');
+    $info->objects = array('Owner' => 'account', 'Poster' => 'account');
     $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other'));
     $info->realms = array('facebook_status_poster' => 'Facebook-style Statuses Poster', 'facebook_status_owner' => 'Facebook-style Statuses Owner');
     return $info;
@@ -1857,7 +1857,7 @@ function facebook_status_form_activity_form_alter(&$form, &$form_state) {
  * Implementation of hook_token_list().
  */
 function facebook_status_token_list($type = 'all') {
-  if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster') {
+  if ($type == 'facebook_status') {
     $tokens['facebook_status'] = array(
       'owner' => t('The themed name of the user on whose profile the status was posted.'),
       'owner-name' => t('The safe but unthemed name of the user on whose profile the status was posted.'),
@@ -1897,7 +1897,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     return $data;
   }
   //Activity 2.
-  elseif (($type == 'owner' || $type == 'poster' || $type == 'facebook_status') && !empty($data)) {
+  elseif ($type == 'facebook_status' && !empty($data)) {
     $status = $data->facebook_status;
     if (empty($status)) {
       $status = $data;
