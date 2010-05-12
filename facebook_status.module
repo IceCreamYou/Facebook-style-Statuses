@@ -1697,7 +1697,7 @@ function facebook_status_facebook_status($op, $a1, $poster = NULL, $status = NUL
   $context = array(
     'hook' => 'facebook_status',
     'op' => $op,
-    'account' => $owner,
+    'owner' => $owner,
     'poster' => $poster,
     'facebook_status' => $status,
   );
@@ -1726,7 +1726,7 @@ function facebook_status_activity_info() {
     $info->name = 'facebook_status';
     $info->object_type = 'facebook_status';
     $info->eid_field = 'sid';
-    $info->objects = array('Owner' => 'facebook_status', 'Poster' => 'facebook_status');
+    $info->objects = array('Owner' => 'facebook_status', 'Poster' => 'poster');
     $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other'));
     $info->realms = array('facebook_status_poster' => 'Facebook-style Statuses Poster', 'facebook_status_owner' => 'Facebook-style Statuses Owner');
     return $info;
