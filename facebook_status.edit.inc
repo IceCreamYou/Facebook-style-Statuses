@@ -135,6 +135,13 @@ function facebook_status_edit_submit($form, &$form_state) {
     $status_old->status_time = $time;
     rules_invoke_event('facebook_status_edit', $status_old);
   }
+  //Pathauto integration.
+  $op = 'update';
+  module_load_include('inc', 'pathauto');
+  $placeholders = pathauto_get_placeholders('facebook_status', $status_old);
+  $src = 'statuses/'. $status_old->sid;
+  $type = ($status_old->uid == $status_old->pid) ? 'self' : 'other';
+  pathauto_create_alias('facebook_status', $op, $placeholders, $src, $type);
 }
 
 /**

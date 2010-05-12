@@ -1015,14 +1015,16 @@ function _facebook_status_check_activity_eid_exists() {
  *       'rules' => TRUE,
  *       'twitter' => TRUE,
  *       'appbar' => TRUE,
+ *       'pathauto' => TRUE,
  *     ),
  *   );
  *   Of course, alerts are only sent if the relevant modules are enabled.
  *   $options['alerts'] can also be TRUE or FALSE, in which case all alerts
- *   are enabled or disabled, respectively. There is one exception: if
+ *   are enabled or disabled, respectively. There are two exceptions: if
  *   $options['alerts'] is a boolean, then
- *   $options['alerts']['hook_facebook_status_save'] is always TRUE. Also, to
- *   preserve backwards compatibility, if $options itself is either TRUE or
+ *   $options['alerts']['hook_facebook_status_save'] and
+ *   $options['alerts']['pathauto'] are always TRUE. Also, to preserve
+ *   backwards compatibility, if $options itself is either TRUE or
  *   FALSE, that is the same as setting $options['alerts'] to the same value.
  * @return
  *   The saved status object.
@@ -1295,6 +1297,7 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
       'rules' => TRUE,
       'twitter' => TRUE,
       'appbar' => TRUE,
+      'pathauto' => TRUE,
     );
   }
   if ($options['alerts'] === FALSE) {
@@ -1306,6 +1309,7 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
       'rules' => FALSE,
       'twitter' => FALSE,
       'appbar' => FALSE,
+      'pathauto' => TRUE, //Set alias
     );
   }
   //Calls hook_facebook_status_save_options_alter(&$options).
@@ -1370,6 +1374,13 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
         appbar_set_message(t("You posted a message on !user's profile.", array('!user' => theme('username', $owner), '!status' => theme('facebook_status_item', $object))), 'facebook_status-update-poster', $poster->uid);
       }
     }
+    //Pathauto integration.
+    $op = 'insert';
+    module_load_include('inc', 'pathauto');
+    $placeholders = pathauto_get_placeholders('facebook_status', $object);
+    $src = 'statuses/'. $object->sid;
+    $type = ($owner->uid == $poster->uid) ? 'self' : 'other';
+    pathauto_create_alias('facebook_status', $op, $placeholders, $src, $type);
   }
   elseif ($new_status == $status->status) {
     $object->sid = $status->sid;
@@ -1849,17 +1860,29 @@ function facebook_status_token_list($type = 'all') {
   if ($type == 'facebook_status' || $type == 'owner' || $type == 'poster') {
     $tokens['facebook_status'] = array(
       'owner' => t('The themed name of the user on whose profile the status was posted.'),
+      'owner-name' => t('The safe but unthemed name of the user on whose profile the status was posted.'),
+      'owner-name-raw' => t('The name of the user on whose profile the status was posted. WARNING: raw user input.'),
       'owner-id' => t('The User ID of the user on whose profile the status was posted.'),
       'poster' => t('The themed name of the user who posted the status.'),
+      'poster-name' => t('The safe but unthemed name of the user who posted the status.'),
+      'poster-name-raw' => t('The name of the user who posted the status. WARNING: raw user input.'),
       'poster-id' => t('The User ID of the user who posted the status.'),
-      'status-unformatted' => t('The new status, emphasized and with HTML escaped but no filters or anything run over it.'),
-      'status-themed' => t('The new status completely themed, including usernames and times.'),
-      'status-time' => t('The time the status was submittted.'),
-      'status-id' => t('The Status ID.'),
+      'status-unformatted' => t('The new status, with HTML escaped but no filters or anything run over it.'),
       'status-raw' => t('The completely unfiltered status text. WARNING: raw user input.'),
+      'status-themed' => t('The new status completely themed, including usernames and times.'),
+      'status-id' => t('The Status ID.'),
       'status-edit' => t('Edit status link.'),
       'status-delete' => t('Delete status link.'),
+      'status-relationship' => t('Either "self" or "other" depending on whether the status was a user\'s own status update or a message to another user, respectively.'),
+      'status-time' => t('The themed time the status was submitted.'),
     );
+    if (module_exists('fbssc')) {
+      $tokens['facebook_status']['status-comment-count'] = t('The number of comments on the status.');
+    }
+    //This function was added after 6.1.12.
+    if (function_exists('token_get_date_token_info')) {
+      $tokens += token_get_date_token_info(t('The status created'), 'status-time-');
+    }
     return $tokens;
   }
 }
@@ -1891,20 +1914,33 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
       $editdelete = $delete;
     }
-    return array(
-      'owner' => theme('username', user_load(array('uid' => $status->uid))),
+    $owner = user_load(array('uid' => $status->uid));
+    $poster = user_load(array('uid' => $status->pid));
+    $values = array(
+      'owner' => theme('username', $owner),
+      'owner-name' => check_plain($owner->name),
+      'owner-name-raw' => $owner->name,
       'owner-id' => $status->uid,
-      'poster' => theme('username', user_load(array('uid' => $status->pid))),
+      'poster' => theme('username', $poster),
+      'poster-name' => check_plain($poster->name),
+      'poster-name-raw' => $poster->name,
       'poster-id' => $status->pid,
-      'status-unformatted' => theme('placeholder', $status->status),
-      'status-themed' => theme('facebook_status_item', $status, TRUE),
-      'status-time' => format_date($status->status_time, 'small'),
-      'status-id' => $status->sid,
+      'status-unformatted' => check_plain($status->status),
       'status-raw' => $status->status,
+      'status-themed' => theme('facebook_status_item', $status, TRUE),
+      'status-id' => $status->sid,
       'status-edit' => $edit,
       'status-delete' => $delete,
       'status-edit-delete' => $editdelete,
+      'status-relationship' => ($owner->uid == $poster->uid) ? t('self') : t('other'),
+      'status-comment-count' => (module_exists('fbssc')) ? fbssc_count_comments($status->sid) : 0,
+      'status-time' => format_date($status->status_time, 'small'),
     );
+    //This function was added after 6.1.12.
+    if (function_exists('token_get_date_token_values')) {
+      $values += token_get_date_token_values($status->status_time, 'status-time-');
+    }
+    return $values;
   }
 }
 
@@ -2145,6 +2181,153 @@ function _facebook_status_userpoints_delete($sid) {
       array('!user' => theme('username', $user), '!poster' => theme('username', $poster)));
   }
   userpoints_userpointsapi($params);
+}
+
+//=====================
+//PATHAUTO INTEGRATION.
+//=====================
+
+/**
+ * Implementation of hook_pathauto().
+ */
+function facebook_status_pathauto($op) {
+  if ($op != 'settings') {
+    return;
+  }
+  $tokens = token_get_list('facebook_status');
+  $placeholders = array();
+  foreach ($tokens as $type => $set) {
+    if ($type != 'global') {
+      foreach ($set as $pattern => $description) {
+        $placeholders["[$pattern]"] = $description;
+      }
+    }
+  }
+  return (object) array(
+    'module' => 'facebook_status',
+    'token_type' => 'facebook_status',
+    'groupheader' => t('Facebook-style Statuses settings'),
+    'patterndefault' => '', //No aliases should be generated
+    'patterndescr' => t('Default path pattern (applies to all status types with blank patterns below)'),
+    'placeholders' => $placeholders,
+    'patternitems' => array(
+      'self' => t('Own status updates'),
+      'other' => t('Status messages to other users'),
+    ),
+    'bulkname' => t('Bulk update status paths'),
+    'bulkdescr' => t('Generate aliases for all existing statuses which do not already have aliases.'),
+  );
+}
+
+/**
+ * Implementation of hook_pathauto_bulkupdate().
+ * Inspired by the node implementation in pathauto_node.inc.
+ */
+function facebook_status_pathauto_bulkupdate() {
+  //Only generate aliases for types with patterns defined.
+  $pattern_types = array();
+  //Check for generic pattern.
+  if (trim(variable_get('pathauto_facebook_status_pattern', ''))) {
+    $pattern_types = array('self', 'other');
+  }
+  else {
+    foreach (array('self', 'other') as $type) {
+      if (trim(variable_get('pathauto_facebook_status_'. $type .'_pattern', ''))) {
+        $pattern_types[$type] = $type;
+      }
+    }
+  }
+  $count = 0;
+  if (count($pattern_types)) {
+    $query = "SELECT fbss.*, alias.src, alias.dst
+      FROM {facebook_status} fbss
+      LEFT JOIN {url_alias} alias
+        ON CONCAT('statuses/', CAST(fbss.sid AS CHAR)) = alias.src
+      WHERE alias.src IS NULL";
+    if (in_array('self', $pattern_types) && !in_array('other', $pattern_types)) {
+      $query .= " AND fbss.uid = fbss.pid";
+    }
+    else if (in_array('other', $pattern_types) && !in_array('self', $pattern_types)) {
+      $query .= " AND fbss.uid <> fbss.pid";
+    }
+    $result = db_query_range($query, 0, variable_get('pathauto_max_bulk_update', 50));
+    $placeholders = array();
+    while ($status = db_fetch_object($result)) {
+      //pathauto.inc should already be included.
+      $placeholders = pathauto_get_placeholders('facebook_status', $status);
+      $source = 'statuses/'. $status->sid;
+      $type = ($status->uid == $status->pid) ? 'self' : 'other';
+      if (pathauto_create_alias('facebook_status', 'bulkupdate', $placeholders, $source, $type)) {
+        $count++;
+      }
+    }
+  }
+  drupal_set_message(format_plural($count,
+    'Bulk generation of aliases for status updates completed: one alias generated.',
+    'Bulk generation of aliases for status updates completed: @count aliases generated.'));
+}
+
+/**
+ * Implementation of hook_path_alias_types().
+ */
+function facebook_status_path_alias_types() {
+  return array(
+    'statuses/' => t('Status updates'),
+  );
+}
+
+//===================
+//MOLLOM INTEGRATION. (EXPERIMENTAL)
+//===================
+
+/**
+ * Implementation of hook_mollom_form_list().
+ */
+function facebook_status_mollom_form_list() {
+  return array(
+    'facebook_status_box' => array(
+      'title' => t('Facebook-style Statuses update status form'),
+      'entity' => 'facebook_status',
+      'report access' => array('edit all statuses'),
+      'report delete callback' => 'facebook_status_delete_status',
+    ),
+    'facebook_status_edit' => array(
+      'title' => t('Facebook-style Statuses edit status form'),
+      'entity' => 'facebook_status',
+      'report access' => array('edit all statuses'),
+      'report delete callback' => 'facebook_status_delete_status',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_mollom_form_info().
+ */
+function facebook_status_mollom_form_info($form_id) {
+  if ($form_id == 'facebook_status_box') {
+    return array(
+      'title' => t('Facebook-style Statuses update status form'),
+      'mode' => MOLLOM_MODE_ANALYSIS,
+      'bypass access' => array('edit all statuses'),
+      'elements' => array('fbss-status' => t('Status box')),
+      'mapping' => array(
+        'post_title' => 'fbss-status',
+      ),
+    );
+  }
+  else if ($form_id == 'facebook_status_edit') {
+    return array(
+      'title' => t('Facebook-style Statuses edit status form'),
+      'mode' => MOLLOM_MODE_ANALYSIS,
+      'bypass access' => array('edit all statuses'),
+      'entity' => 'facebook_status',
+      'elements' => array('fbss-status' => t('Status box')),
+      'mapping' => array(
+        'post_id' => 'sid',
+        'post_title' => 'fbss-status',
+      ),
+    );
+  }
 }
 
 //=================
