@@ -30,6 +30,18 @@ function facebook_status_tags_views_data() {
     'help' => t('The ID of the status update.'),
   );
 
+  if (module_exists('taxonomy')) {
+    $data['facebook_status']['tags-terms'] = array(
+      'title' => t('All Tags'),
+      'help' => t('Show all #hashtags and/or @mentions associated with the status'),
+      'field' => array(
+        'field' => 'sid',
+        'handler' => 'facebook_status_tags_views_handler_field_all_terms',
+        'click sortable' => FALSE,
+      ),
+    );
+  }
+
   $data['facebook_status_tags']['rid'] = array(
     'title' => t('Tag ID'),
     'help' => t('The Tag ID of the status - either a UID or Term ID depending on the reference type.'),
@@ -92,6 +104,9 @@ function facebook_status_tags_views_handlers() {
     'handlers' => array(
       'facebook_status_views_handler_filter_string_type' => array(
         'parent' => 'views_handler_filter_string',
+      ),
+      'facebook_status_tags_views_handler_field_all_terms' => array(
+        'parent' => 'views_handler_field',
       ),
     ),
   );
