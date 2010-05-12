@@ -1,4 +1,5 @@
 ; $Id$
 name = Facebook-style Statuses
 description = "Allows users to have an arbitrary status, Facebook-style."
+package = Facebook-style Statuses
 core = 6.x
