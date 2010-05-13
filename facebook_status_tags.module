@@ -279,77 +279,125 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
 }
 
 /**
- * Get tags by popularity.
+ * Get terms by popularity.
  *
- * @param $count
- *   The number of tags to return.
- * @param $time
- *   The time period in which to test for term popularity. Values can be "all,"
- *   "day," "week," "month," or "year."
- * @param $own
- *   If TRUE, only statuses posted on users' own profiles are counted. If FALSE,
- *   all statuses are counted.
- * @return
- *   An array of term objects, with the most popular first, and with the
- *   property "popularity" added.
+ * @see facebook_status_tags_popular()
  */
-function facebook_status_tags_popular_terms($count = 1, $time = 'all', $own = FALSE) {
-  $now = time();
-  $times = array(
-    'day'   => $now -    86400,
-    'week'  => $now -   604800,
-    'month' => $now -  2592000,
-    'year'  => $now - 31449600,
-    'all' => 0,
-  );
-  $time = $times[$time];
-  $restrict = '';
-  if ($own) {
-    $restrict = 'f.uid = f.pid AND ';
+function facebook_status_tags_popular_terms($count = 5, $time = 'all', $options = array()) {
+  //Backwards compatibility.
+  if ($options === FALSE) {
+    $options = array(
+      'include self updates' => TRUE,
+      'include messages to others' => TRUE,
+      'current user only' => FALSE,
+    );
   }
-  $result = db_query_range("SELECT COUNT(t.sid) AS count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
-    WHERE ". $restrict ."t.type = 'term' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC", $time, 0, $count);
-  $terms = array();
-  while ($obj = db_fetch_object($result)) {
-    $term = taxonomy_get_term($obj->rid);
-    $term->popularity = $obj->count;
-    $terms[] = $term;
+  else if ($options === TRUE) {
+    $options = array(
+      'include self updates' => TRUE,
+      'include messages to others' => TRUE,
+      'current user only' => TRUE,
+    );
   }
-  return $terms;
+  return facebook_status_tags_popular('term', $count, $time, $options);
 }
 
 /**
- * Get usernames by reference popularity.
+ * Get usernames by popularity.
  *
- * @param $count
- *   The number of users to return.
- * @param $time
- *   The time period in which to test for term popularity. Values can be "all,"
- *   "day," "week," "month," or "year."
- * @return
- *   An array of user objects, with the most popular first, and with the
- *   property "popularity" added.
+ * @see facebook_status_tags_popular()
  */
-function facebook_status_tags_popular_users($count = 1, $time = 'all') {
+function facebook_status_tags_popular_users($count = 5, $time = 'all', $options = array()) {
+  return facebook_status_tags_popular('user', $count, $time, $options);
+}
+
+
+/**
+ * Get tags by reference popularity.
+ *
+ * @param $type
+ *   The type of tag to return ('term' or 'user').
+ * @param $count
+ *   The number of tags to return.
+ * @param $time
+ *   The time period in which to test for term popularity. The value can be
+ *   "day," "week," "month," "year," or "all," in which case statuses from the
+ *   past day, week, month, year, or epoch (respectively) will be considered;
+ *   or it can be a UNIX timestamp, in which case statuses posted after that
+ *   date will be considered; or it can be a negative integer N, in which case
+ *   statuses within the last N seconds will be considered.
+ * @param $options
+ *   An associative array. Keys are the options, values are booleans:
+ *   - include self updates: Results should include status updates posted to
+ *     the relevant user's own profile. Default is TRUE.
+ *   - include messages to others: Results should include status messages
+ *     from one user to another. Default is TRUE.
+ *   - current user only: Results should only include statuses posted by the
+ *     current user. Default is FALSE for terms and TRUE for users.
+ * @return
+ *   An array of user or taxonomy term objects, ordered by popularity (most
+ *   popular first) and with the property "popularity" added.
+ */
+function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all', $options = array()) {
   $now = time();
-  $times = array(
-    'day'   => $now -    86400,
-    'week'  => $now -   604800,
-    'month' => $now -  2592000,
-    'year'  => $now - 31449600,
-    'all'   => 0,
-  );
-  $time = $times[$time];
-  $result = db_query_range("SELECT COUNT(t.sid) AS count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
-    WHERE t.type = 'user' AND f.status_time > %d  AND f.pid = %d GROUP BY t.rid ORDER BY count DESC",
-    $time, $GLOBALS['user']->uid, 0, $count);
-  $users = array();
-  while ($obj = db_fetch_object($result)) {
-    $account = user_load(array('uid' => $obj->rid));
-    $account->popularity = $obj->count;
-    $users[] = $account;
+  if (is_numeric($time)) {
+    if ($time < 0) {
+      $time = $now + $time;
+    }
   }
-  return $users;
+  else {
+    $times = array(
+      'day'   => $now -    86400,
+      'week'  => $now -   604800,
+      'month' => $now -  2592000,
+      'year'  => $now - 31449600,
+      'all'   => 0,
+    );
+    $time = $times[$time];
+  }
+  $restrict = '';
+  $args = array();
+  $options += array(
+    'include self updates' => TRUE,
+    'include messages to others' => TRUE,
+  );
+  if ($type == 'user') {
+    $options += array(
+      'current user only' => TRUE,
+    );
+  }
+  else {
+    $options += array(
+      'current user only' => FALSE,
+    );
+  }
+  if (!$options['include messages to others']) {
+    $restrict .= 'f.uid = f.pid AND ';
+  }
+  if (!$options['include self updates']) {
+    $restrict .= 'f.uid <> f.pid AND ';
+  }
+  if ($options['current user only']) {
+    $restrict .= 'f.pid = %d AND ';
+    $args[] = $GLOBALS['user']->uid;
+  }
+  $args[] = $type;
+  $args[] = $time;
+  $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
+    WHERE ". $restrict ."t.type = '%s' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC, t.sid DESC", $args, 0, $count);
+  $tags = array();
+  while ($tag = db_fetch_object($result)) {
+    $c = $tag->count;
+    if ($type == 'term') {
+      $tag = taxonomy_get_term($tag->rid);
+    }
+    else if ($type == 'user') {
+      $tag = user_load(array('uid' => $tag->rid));
+    }
+    $tag->popularity = $c;
+    $tags[] = $tag;
+  }
+  return $tags;
 }
 
 //=================
