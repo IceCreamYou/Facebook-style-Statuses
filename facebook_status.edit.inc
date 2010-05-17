@@ -55,7 +55,7 @@ function facebook_status_edit(&$form_state, $status) {
     '#field_prefix' => $prefix,
     '#size' => $size,
     '#cols' => $size,
-    '#rows' => 2,
+    '#rows' => variable_get('facebook_status_box_rows', 2),
     '#maxlength' => $maxlength,
     '#default_value' => $default,
     '#attributes' => array('class' => 'facebook_status_text'),
