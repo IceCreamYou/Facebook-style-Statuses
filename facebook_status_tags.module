@@ -287,15 +287,11 @@ function facebook_status_tags_popular_terms($count = 5, $time = 'all', $options 
   //Backwards compatibility.
   if ($options === FALSE) {
     $options = array(
-      'include self updates' => TRUE,
-      'include messages to others' => TRUE,
       'current user only' => FALSE,
     );
   }
   else if ($options === TRUE) {
     $options = array(
-      'include self updates' => TRUE,
-      'include messages to others' => TRUE,
       'current user only' => TRUE,
     );
   }
@@ -325,7 +321,7 @@ function facebook_status_tags_popular_users($count = 5, $time = 'all', $options 
  *   past day, week, month, year, or epoch (respectively) will be considered;
  *   or it can be a UNIX timestamp, in which case statuses posted after that
  *   date will be considered; or it can be a negative integer N, in which case
- *   statuses within the last N seconds will be considered.
+ *   statuses posted within the last N seconds will be considered.
  * @param $options
  *   An associative array. Keys are the options, values are booleans:
  *   - include self updates: Results should include status updates posted to
@@ -336,7 +332,7 @@ function facebook_status_tags_popular_users($count = 5, $time = 'all', $options 
  *     current user. Default is FALSE for terms and TRUE for users.
  * @return
  *   An array of user or taxonomy term objects, ordered by popularity (most
- *   popular first) and with the property "popularity" added.
+ *   popular first) and with the property "popularity" added to each object.
  */
 function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all', $options = array()) {
   $now = time();

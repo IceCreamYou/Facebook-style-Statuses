@@ -1375,12 +1375,14 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
       }
     }
     //Pathauto integration.
-    $op = 'insert';
-    module_load_include('inc', 'pathauto');
-    $placeholders = pathauto_get_placeholders('facebook_status', $object);
-    $src = 'statuses/'. $object->sid;
-    $type = ($owner->uid == $poster->uid) ? 'self' : 'other';
-    pathauto_create_alias('facebook_status', $op, $placeholders, $src, $type);
+    if (module_exists('pathauto') && $options['alerts']['pathauto']) {
+      $op = 'insert';
+      module_load_include('inc', 'pathauto');
+      $placeholders = pathauto_get_placeholders('facebook_status', $object);
+      $src = 'statuses/'. $object->sid;
+      $type = ($owner->uid == $poster->uid) ? 'self' : 'other';
+      pathauto_create_alias('facebook_status', $op, $placeholders, $src, $type);
+    }
   }
   elseif ($new_status == $status->status) {
     $object->sid = $status->sid;
@@ -2095,6 +2097,8 @@ function facebook_status_userpoints($op, $params = array()) {
     $form['facebook_status']['facebook_status_userpoints_max'] = array(
       '#type' => 'textfield',
       '#title' => t('Maximum number of Userpoints from posting statuses per day'),
+      '#description' => t('Set to zero for no limit.') .' '.
+        t('Note that the actual number of points awarded per day could be higher than this if this value is not a multiple of the points given above.'),
       '#default_value' => variable_get('facebook_status_userpoints_max', 5),
     );
     $form['#validate'][] = '_facebook_status_userpoints_validate';
@@ -2133,13 +2137,20 @@ function _facebook_status_userpoints_add($owner, $poster, $sid) {
   if (!module_exists('userpoints')) {
     return;
   }
-  if (!flood_is_allowed('facebook_status_add_userpoints', variable_get('facebook_status_userpoints_max', 5))) {
+  $points_today = db_result(db_query("SELECT SUM(points) FROM {userpoints_txn}
+    WHERE uid = %d AND time_stamp > %d
+      AND (operation = 'facebook_status add own' OR operation = 'facebook_status add other')
+      AND expired = 0 AND status = 0",
+    $poster->uid, time() - 86400));
+  if (variable_get('facebook_status_userpoints_max', 5) && $points_today > variable_get('facebook_status_userpoints_max', 5)) {
     return;
   }
-  flood_register_event('facebook_status_add_userpoints');
   $params = array(
     'uid' => $poster->uid,
     'reference' => $sid,
+    //Unknown purpose.
+    //'entity_id' => $sid,
+    //'entity_type' => 'facebook_status',
   );
   if ($poster->uid == $owner->uid) {
     $params['description'] = t('!user posted a new status.', array('!user' => theme('username', $poster)));
