@@ -245,6 +245,15 @@ function facebook_status_views_data() {
     ),
   );
 
+  $data['activity']['activity-fbss-poster-pic'] = array(
+    'title' => t('FBSS Poster picture'),
+    'help' => t('The picture of the user who posted the status.'),
+    'field' => array(
+      'handler' => 'facebook_status_views_handler_field_poster_pic_activity',
+      'click sortable' => FALSE,
+    ),
+  );
+
   return $data;
 }
 
@@ -273,6 +282,9 @@ function facebook_status_views_handlers() {
         'parent' => 'views_handler_field_user',
       ),
       'facebook_status_views_handler_field_poster_pic' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_poster_pic_activity' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_repost' => array(
