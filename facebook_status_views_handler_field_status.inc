@@ -37,21 +37,7 @@ class facebook_status_views_handler_field_status extends views_handler_field {
     $status->sid = $values->{$status_fields->sid};
     $status->status = $values->{$status_fields->status};
     $status->status_time = $values->{$status_fields->status_time};
-    $status_text = _facebook_status_run_filter($status->status);
-    if (variable_get('facebook_status_nl2br', 0)) {
-      $status_text = nl2br($status_text);
-    }
-    $components = array(
-      'status' => array(
-        'value' => $status_text,
-        '#value' => $status_text,
-        '#unformatted' => $status->status,
-        'prefix' => '',
-        'suffix' => '',
-      ),
-    );
-    drupal_alter('facebook_status_render_components', $components, $status);
-    $c = $components['status'];
-    return $c['prefix'] .'<span class="fbss_status">'. $c['value'] .'</span>'. $c['suffix'];
+    $components = facebook_status_item_components($status);
+    return $components['status']['#value'];
   }
 }

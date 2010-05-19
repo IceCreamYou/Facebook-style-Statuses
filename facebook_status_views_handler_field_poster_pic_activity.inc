@@ -13,6 +13,7 @@ class facebook_status_views_handler_field_poster_pic_activity extends views_hand
   function init(&$view, $options) {
     parent::init($view, $options);
     $this->additional_fields['eid'] = array('table' => 'activity', 'field' => 'eid');
+    $this->additional_fields['type'] = array('table' => 'activity', 'field' => 'type');
   }
   function option_definition() {
     $options = parent::option_definition();
@@ -46,9 +47,14 @@ class facebook_status_views_handler_field_poster_pic_activity extends views_hand
     $this->add_additional_fields();
   }
   function render($values) {
-    $sid = $values->{$this->aliases['eid']};
-    $status = facebook_status_load($sid);
-    $account = _facebook_status_user_load($status->pid);
+    if ($values->{$this->aliases['type']} == 'facebook_status') {
+      $sid = $values->{$this->aliases['eid']};
+      $status = facebook_status_load($sid);
+      $account = _facebook_status_user_load($status->pid);
+    }
+    else {
+      $account = _facebook_status_user_load($values->{$this->field_alias});
+    }
     $options = $this->options;
     if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
       $account->imagecache_preset = $options['imagecache_preset'];

@@ -246,9 +246,10 @@ function facebook_status_views_data() {
   );
 
   $data['activity']['activity-fbss-poster-pic'] = array(
-    'title' => t('FBSS Poster picture'),
-    'help' => t('The picture of the user who posted the status.'),
+    'title' => t('Poster picture'),
+    'help' => t('The picture of the user who posted the activity.'),
     'field' => array(
+      'field' => 'uid',
       'handler' => 'facebook_status_views_handler_field_poster_pic_activity',
       'click sortable' => FALSE,
     ),
