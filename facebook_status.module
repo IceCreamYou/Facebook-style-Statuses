@@ -833,7 +833,7 @@ function facebook_status_delete_status($sid, $alerts = array()) {
     'path' => TRUE,
   );
   //Invokes hook_facebook_status_delete_alerts_alter(&$alerts).
-  drupal_alter('facebook_status_delete_alerts', $alerts);
+  drupal_alter('facebook_status_delete_alerts', $alerts, $sid);
 
   //Delete Userpoints.
   if ($alerts['userpoints']) {
