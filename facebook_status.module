@@ -418,6 +418,7 @@ function facebook_status_theme($existing, $type, $theme, $path) {
       'arguments' => array(
         'status' => FALSE,
         'cacheable' => FALSE,
+        'options' => array(),
       ),
     ),
     'facebook_status_form_display' => array(
@@ -450,131 +451,27 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  *   Indicates that the complete text of the rendered status will be stored
  *   for future use, so dynamic timestamps and administrative elements (like
  *   edit/delete links) should be avoided.
+ * @param $options
+ *   An associative array with the following optional keys:
+ *   - exclude: An array where the values match the names of components from
+ *     the $components array. These components will not be rendered.
  * @return
  *   HTML to display the themed status or FALSE if the current user does not
  *   have permission to view the status.
  */
-function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
-  global $user;
-  if ($status === FALSE) {
-    $status = _facebook_status_get_status_fast($user->uid);
-  }
-  $owner = user_load(array('uid' => $status->uid));
-  $poster = user_load(array('uid' => $status->pid));
-  if (!user_access('view all statuses') && $user->uid != $owner->uid && $user->uid != $poster->uid) {
+function theme_facebook_status_item($status = FALSE, $cacheable = FALSE, $options = array()) {
+  $options += array(
+    'exclude' => array(),
+  );
+  $components = facebook_status_item_components($status, $cacheable);
+  if (!is_array($components)) {
     return FALSE;
   }
-  $owner_name = theme('username', $owner);
-  $poster_name = theme('username', $poster);
-  $status_text = $status->status;
-  if (!$status_text) {
-    if (variable_get('facebook_status_hide_blank', 0) == 1) {
-      return '';
-    }
-    if (variable_get('facebook_status_concat', 1) == 0) {
-      $status_text = t('!user does not have a status.', array('!user' => $owner_name));
-    }
-    else {
-      $status_text = t('does not have a status.');
-    }
-  }
-  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
-  $status_text = _facebook_status_run_filter($status_text);
-  if (variable_get('facebook_status_nl2br', 0)) {
-    $status_text = nl2br($status_text);
-  }
-  $status->cacheable = $cacheable;
-  $edit = '';
-  $q = $_GET['q'];
-  if ($q == 'facebook_status/js') {
-    $q = 'share-status';
-  }
-  $time = theme('facebook_status_time', $status->status_time);
-  if ($cacheable) {
-    $time = format_date($status->status_time, 'small');
-  }
-  elseif ($status->status_time != 0) {
-    if (_facebook_status_can_edit($status)) {
-      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
-    }
-    elseif (_facebook_status_can_edit($status, TRUE)) {
-      $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
-    }
-  }
-  $conversation = l(t('Conversation'), 'statuses/conversation/'. check_plain($owner->name) .','. check_plain($poster->name));
-  $components = array(
-    'poster' => array(
-      'value' => $poster_name .' &raquo; ',
-      '#value' => $poster_name,
-      '#unformatted' => $status->pid,
-      'weight' => -50,
-    ),
-    'owner' => array(
-      'value' => $owner_name .': ',
-      '#value' => $owner_name,
-      '#unformatted' => $status->uid,
-      'weight' => -45,
-    ),
-    'user' => array(
-      'value' => $owner_name .' ',
-      '#value' => $owner_name,
-      '#unformatted' => $status->pid,
-      'weight' => -45,
-    ),
-    'status' => array(
-      'value' => $status_text .' ',
-      '#value' => $status_text,
-      '#unformatted' => $status->status,
-      'weight' => -40,
-    ),
-    'time' => array(
-      'value' => ' <em>'. $time .'</em>',
-      '#value' => $time,
-      '#unformatted' => $status->status_time,
-      'weight' => -30,
-    ),
-    'edit' => array(
-      'value' => $edit,
-      '#value' => $edit,
-      '#unformatted' => $status->sid,
-      'weight' => -20,
-    ),
-    'conversation' => array(
-      'value' => ' '. $conversation,
-      '#value' => $conversation,
-      'weight' => -10,
-    ),
-  );
-  if ($owner->uid == $poster->uid) {
-    if (variable_get('facebook_status_concat', 1)) {
-      $components['owner']['type'] = 'value';
-      $components['poster']['type'] = 'value';
-      $components['conversation']['type'] = 'value';
-      if (_facebook_status_possessive($status->status, $poster)) {
-        $components['user']['value'] = $owner_name;
-      }
-    }
-    else {
-      $components['user']['type'] = 'value';
-      $components['owner']['type'] = 'value';
-      $components['poster']['type'] = 'value';
-      $components['conversation']['type'] = 'value';
-    }
-  }
-  else {
-    $components['user']['type'] = 'value';
-  }
-  //@todo: This is a miserable hack to keep unwanted elements from appearing.
-  if (func_num_args() > 2) {
-    if (func_get_arg(2) === TRUE) {
-      $components['conversation']['type'] = 'value';
-    }
-  }
-  $components += module_invoke_all('facebook_status_render_components', $status);
-  drupal_alter('facebook_status_render_components', $components, $status);
-  uasort($components, '_facebook_status_element_sort');
   $output = '';
   foreach ($components as $name => $component) {
+    if (in_array($name, $options['exclude'])) {
+      continue;
+    }
     $component += array(
       'type' => 'markup',
       'value' => '',
@@ -584,10 +481,12 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
       'access arguments' => array(),
     );
     $access = TRUE;
-    if ($component['access callback']) {
+    if ($component['access callback'] && function_exists($component['access callback'])) {
       $access = call_user_func_array($component['access callback'], $component['access arguments']);
     }
     if ($access) {
+      //Ideally, other modules should be able to define theme functions for this.
+      //In practice, that's overkill.
       if ($component['type'] == 'markup') {
         $output .= $component['prefix'] .'<span class="fbss_'. $name .'">'. $component['value'] .'</span>'. $component['suffix'];
       }
@@ -595,15 +494,6 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE) {
   }
   drupal_alter('facebook_status_render', $output, $status, $components);
   return $output;
-}
-
-function _facebook_status_element_sort($a, $b) {
-  $a_weight = (is_array($a) && isset($a['weight'])) ? $a['weight'] : 0;
-  $b_weight = (is_array($b) && isset($b['weight'])) ? $b['weight'] : 0;
-  if ($a_weight == $b_weight) {
-    return 0;
-  }
-  return ($a_weight < $b_weight) ? -1 : 1;
 }
 
 /**
@@ -972,28 +862,6 @@ function facebook_status_delete_status($sid, $alerts = array()) {
 }
 
 /**
- * A helper function to determine whether we can implement the delete-activity-
- * records-with-statuses feature (which is dependent on the "eid" column
- * existing in the {activity} table in the database) for Activity 2.
- *
- * @todo
- *   Remove this function once Activity implements hook_update_N functions.
- * @return
- *   TRUE if we can use this feature; FALSE otherwise.
- */
-function _facebook_status_check_activity_eid_exists() {
-  $result = db_fetch_array(db_query_range("SELECT * FROM {activity}", 0, 1));
-  //There should be 7 columns in the database in the latest version of Activity
-  //(with the eid column in the {activity} table). If there are no columns
-  //returned, we don't have data yet, so we assume this is a new install of the
-  //latest version.
-  if (count($result) == 6) {
-    return FALSE;
-  }
-  return TRUE;
-}
-
-/**
  * Saves a status into the database.
  *
  * @param $account
@@ -1096,9 +964,177 @@ function facebook_status_can_post($owner = NULL, $poster = NULL) {
     && !_facebook_status_exclude($owner) && $allow;
 }
 
+/**
+ * Formats status components.
+ *
+ * @param $status
+ *   A full status object. If not passed, gets the last status for the relevant
+ *   user automatically. If there is none, uses a default message.
+ * @param $cacheable
+ *   Indicates that the complete text of the rendered status will be stored
+ *   for future use, so dynamic timestamps and administrative elements (like
+ *   edit/delete links) should be avoided.
+ * @return
+ *   An array of themed status components or FALSE if the current user does not
+ *   have permission to view the status.
+ */
+function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
+  global $user;
+  if ($status === FALSE) {
+    $status = _facebook_status_get_status_fast($user->uid);
+  }
+  $owner = _facebook_status_user_load($status->uid);
+  $poster = _facebook_status_user_load($status->pid);
+  if (!user_access('view all statuses') && $user->uid != $owner->uid && $user->uid != $poster->uid) {
+    return FALSE;
+  }
+  $owner_name = theme('username', $owner);
+  $poster_name = theme('username', $poster);
+  $status_text = $status->status;
+  if (!$status_text) {
+    if (variable_get('facebook_status_hide_blank', 0) == 1) {
+      return FALSE;
+    }
+    if (variable_get('facebook_status_concat', 1) == 0) {
+      $status_text = t('!user does not have a status.', array('!user' => $owner_name));
+    }
+    else {
+      $status_text = t('does not have a status.');
+    }
+  }
+  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
+  $status_text = _facebook_status_run_filter($status_text);
+  if (variable_get('facebook_status_nl2br', 0)) {
+    $status_text = nl2br($status_text);
+  }
+  $status->cacheable = $cacheable;
+  $edit = '';
+  $q = $_GET['q'];
+  if ($q == 'facebook_status/js') {
+    $q = 'share-status';
+  }
+  $time = theme('facebook_status_time', $status->status_time);
+  if ($cacheable) {
+    $time = format_date($status->status_time, 'small');
+  }
+  elseif ($status->status_time != 0) {
+    if (_facebook_status_can_edit($status)) {
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit', array('query' => array('destination' => $q))) .' '. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+    }
+    elseif (_facebook_status_can_edit($status, TRUE)) {
+      $edit = '<span class="facebook_status_edit_delete">'. l(t('Delete'), 'statuses/'. $status->sid .'/delete', array('query' => array('destination' => $q))) .'</span>';
+    }
+  }
+  $conversation = l(t('Conversation'), 'statuses/conversation/'. check_plain($owner->name) .','. check_plain($poster->name));
+  $components = array(
+    'poster' => array(
+      'value' => $poster_name .' &raquo; ',
+      '#value' => $poster_name,
+      '#unformatted' => $status->pid,
+      'weight' => -50,
+    ),
+    'owner' => array(
+      'value' => $owner_name .': ',
+      '#value' => $owner_name,
+      '#unformatted' => $status->uid,
+      'weight' => -45,
+    ),
+    'user' => array(
+      'value' => $owner_name .' ',
+      '#value' => $owner_name,
+      '#unformatted' => $status->pid,
+      'weight' => -45,
+    ),
+    'status' => array(
+      'value' => $status_text .' ',
+      '#value' => $status_text,
+      '#unformatted' => $status->status,
+      'weight' => -40,
+    ),
+    'time' => array(
+      'value' => ' <em>'. $time .'</em>',
+      '#value' => $time,
+      '#unformatted' => $status->status_time,
+      'weight' => -30,
+    ),
+    'edit' => array(
+      'value' => $edit,
+      '#value' => $edit,
+      '#unformatted' => $status->sid,
+      'weight' => -20,
+    ),
+    'conversation' => array(
+      'value' => ' '. $conversation,
+      '#value' => $conversation,
+      'weight' => -10,
+    ),
+  );
+  if ($owner->uid == $poster->uid) {
+    if (variable_get('facebook_status_concat', 1)) {
+      $components['owner']['type'] = 'value';
+      $components['poster']['type'] = 'value';
+      $components['conversation']['type'] = 'value';
+      if (_facebook_status_possessive($status->status, $poster)) {
+        $components['user']['value'] = $owner_name;
+      }
+    }
+    else {
+      $components['user']['type'] = 'value';
+      $components['owner']['type'] = 'value';
+      $components['poster']['type'] = 'value';
+      $components['conversation']['type'] = 'value';
+    }
+  }
+  else {
+    $components['user']['type'] = 'value';
+  }
+  $components += module_invoke_all('facebook_status_render_components', $status);
+  drupal_alter('facebook_status_render_components', $components, $status);
+  uasort($components, '_facebook_status_element_sort');
+  return $components;
+}
+
 //=================
 //HELPER FUNCTIONS.
 //=================
+
+/**
+ * The sort callback for the components from
+ * hook_facebook_status_render_components() for use in uasort().
+ *
+ * @see facebook_status_item_components()
+ */
+function _facebook_status_element_sort($a, $b) {
+  $a_weight = (is_array($a) && isset($a['weight'])) ? $a['weight'] : 0;
+  $b_weight = (is_array($b) && isset($b['weight'])) ? $b['weight'] : 0;
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+  return ($a_weight < $b_weight) ? -1 : 1;
+}
+
+/**
+ * A helper function to determine whether we can implement the delete-activity-
+ * records-with-statuses feature (which is dependent on the "eid" column
+ * existing in the {activity} table in the database) for Activity 2.
+ *
+ * @todo
+ *   Remove this function once Activity implements hook_update_N functions.
+ * @return
+ *   TRUE if we can use this feature; FALSE otherwise.
+ * @see facebook_status_delete_status()
+ */
+function _facebook_status_check_activity_eid_exists() {
+  $result = db_fetch_array(db_query_range("SELECT * FROM {activity}", 0, 1));
+  //There should be 7 columns in the database in the latest version of Activity
+  //(with the eid column in the {activity} table). If there are no columns
+  //returned, we don't have data yet, so we assume this is a new install of the
+  //latest version.
+  if (count($result) == 6) {
+    return FALSE;
+  }
+  return TRUE;
+}
 
 /**
  * Determines if the current user can edit or delete the relevant status.
@@ -1462,7 +1498,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
     elseif (is_numeric($_GET['rsid'])) {
       $status = facebook_status_load($_GET['rsid']);
       if ($status->sid) {
-        $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status, TRUE, TRUE)));
+        $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status, TRUE, array('exclude' => array('conversation')))));
       }
     }
   }
@@ -1870,6 +1906,7 @@ function facebook_status_token_list($type = 'all') {
       'poster-name-raw' => t('The name of the user who posted the status. WARNING: raw user input.'),
       'poster-id' => t('The User ID of the user who posted the status.'),
       'status-unformatted' => t('The new status, with HTML escaped but no filters or anything run over it.'),
+      'status-formatted' => t('The new status completely themed.'),
       'status-raw' => t('The completely unfiltered status text. WARNING: raw user input.'),
       'status-themed' => t('The new status completely themed, including usernames and times.'),
       'status-id' => t('The Status ID.'),
@@ -1916,8 +1953,9 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       $delete = '<span class="facebook_status_edit_delete">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
       $editdelete = $delete;
     }
-    $owner = user_load(array('uid' => $status->uid));
-    $poster = user_load(array('uid' => $status->pid));
+    $owner = _facebook_status_user_load($status->uid);
+    $poster = _facebook_status_user_load($status->pid);
+    $components = facebook_status_item_components($status, TRUE);
     $values = array(
       'owner' => theme('username', $owner),
       'owner-name' => check_plain($owner->name),
@@ -1928,6 +1966,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       'poster-name-raw' => $poster->name,
       'poster-id' => $status->pid,
       'status-unformatted' => check_plain($status->status),
+      'status-formatted' => $components['status']['#value'],
       'status-raw' => $status->status,
       'status-themed' => theme('facebook_status_item', $status, TRUE),
       'status-id' => $status->sid,
@@ -1938,7 +1977,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
       'status-comment-count' => (module_exists('fbssc')) ? fbssc_count_comments($status->sid) : 0,
       'status-time' => format_date($status->status_time, 'small'),
     );
-    //This function was added after 6.1.12.
+    //This function was added after Token 6.1.12.
     if (function_exists('token_get_date_token_values')) {
       $values += token_get_date_token_values($status->status_time, 'status-time-');
     }
