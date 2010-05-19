@@ -454,7 +454,9 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  * @param $options
  *   An associative array with the following optional keys:
  *   - exclude: An array where the values match the names of components from
- *     the $components array. These components will not be rendered.
+ *     the $components array (see facebook_status_item_components() for what
+ *     the $components array contains). The specified components will be
+ *     excluded from rendering.
  * @return
  *   HTML to display the themed status or FALSE if the current user does not
  *   have permission to view the status.
@@ -799,9 +801,10 @@ function facebook_status_load($sid) {
  *     'trigger' => TRUE,
  *     'hook_facebook_status_delete' => TRUE,
  *     'activity2' => TRUE,
+ *     'path' => TRUE,
  *   );
- *   If $alerts is FALSE, $alerts['hook_facebook_status_delete'] is still set
- *   to TRUE.
+ *   If $alerts is FALSE, $alerts['hook_facebook_status_delete'] and
+ *   $alerts['path'] are still set to TRUE.
  */
 function facebook_status_delete_status($sid, $alerts = array()) {
   if (is_object($sid)) {
@@ -817,6 +820,7 @@ function facebook_status_delete_status($sid, $alerts = array()) {
       'trigger' => FALSE,
       'hook_facebook_status_delete' => TRUE,
       'activity2' => FALSE,
+      'path' => TRUE,
     );
   }
   //Merge in defaults.
@@ -826,6 +830,7 @@ function facebook_status_delete_status($sid, $alerts = array()) {
     'trigger' => TRUE,
     'hook_facebook_status_delete' => TRUE,
     'activity2' => TRUE,
+    'path' => TRUE,
   );
   //Invokes hook_facebook_status_delete_alerts_alter(&$alerts).
   drupal_alter('facebook_status_delete_alerts', $alerts);
@@ -842,12 +847,16 @@ function facebook_status_delete_status($sid, $alerts = array()) {
   if (module_exists('trigger') && $alerts['trigger']) {
     module_invoke_all('facebook_status', 'fbss_deleted', $sid);
   }
+  //Path integration.
+  if (module_exists('path') && $alerts['path']) {
+    db_query("DELETE FROM {url_alias} WHERE src = 'statuses/%d'", $sid);
+  }
   //Invokes hook_facebook_status_delete($sid).
   if ($alerts['hook_facebook_status_delete']) {
     module_invoke_all('facebook_status_delete', $sid);
   }
   db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
-  
+
   //Delete Activity 2 records.
   if (module_exists('activity') && function_exists('activity_help') && _facebook_status_check_activity_eid_exists() && $alerts['activity2']) {
     $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $sid);
