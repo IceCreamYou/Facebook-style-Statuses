@@ -10,37 +10,45 @@
  * Implementation of hook_views_data().
  */
 function facebook_status_tags_views_data() {
-  $data['facebook_status_tags']['table']['group']  = t('Facebook-style Statuses');
+  $data['facebook_status_tags']['table']['group']  = t('Facebook-style Statuses Tags');
 
-  $data['facebook_status']['table']['join'] = array(
-    'facebook_status_tags' => array(
-      'left_field' => 'sid',
-      'field' => 'sid',
-    ),
-  );
   $data['facebook_status_tags']['table']['join'] = array(
     'facebook_status' => array(
       'left_field' => 'sid',
       'field' => 'sid',
     ),
+    'users' => array(
+      'left_table' => 'facebook_status',
+      'left_field' => 'sid',
+      'field' => 'sid',
+    ),
+  );
+
+  //Advertise this table as a possible base table.
+  $data['facebook_status_tags']['table']['base'] = array(
+    'field' => 'sid',
+    'title' => t('Facebook-style Statuses Tags'),
+    'help' => t('#hashtags and @mentions.'),
+    'weight' => 10,
   );
 
   $data['facebook_status_tags']['sid'] = array(
     'title' => t('Status ID'),
     'help' => t('The ID of the status update.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
   );
-
-  if (module_exists('taxonomy')) {
-    $data['facebook_status']['tags-terms'] = array(
-      'title' => t('All Tags'),
-      'help' => t('Show all #hashtags and/or @mentions associated with the status'),
-      'field' => array(
-        'field' => 'sid',
-        'handler' => 'facebook_status_tags_views_handler_field_all_terms',
-        'click sortable' => FALSE,
-      ),
-    );
-  }
 
   $data['facebook_status_tags']['rid'] = array(
     'title' => t('Tag ID'),
@@ -76,7 +84,7 @@ function facebook_status_tags_views_data() {
     'title' => t('Tag Name'),
     'help' => t('The name of the tag - a username or taxonomy term name.'),
     'field' => array(
-      'handler' => 'views_handler_field',
+      'handler' => 'facebook_status_tags_views_handler_field_name',
       'click sortable' => TRUE,
     ),
     'filter' => array(
@@ -90,7 +98,54 @@ function facebook_status_tags_views_data() {
     ),
   );
 
+  $data['facebook_status']['has-tags'] = array(
+    'title' => t('Status has tags'),
+    'help' => t('Only show statuses with tags.'),
+    'filter' => array(
+      'handler' => 'facebook_status_tags_views_handler_filter_has_tag',
+    ),
+  );
+
+  $data['facebook_status']['tags-terms'] = array(
+    'title' => t('All Tags'),
+    'help' => t('Show all #hashtags and/or @mentions associated with the status'),
+    'field' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_tags_views_handler_field_all_terms',
+      'click sortable' => FALSE,
+    ),
+  );
+
   return $data;
+}
+
+/**
+ * Implementation of hook_views_data_alter().
+ */
+function facebook_status_tags_views_data_alter(&$data) {
+/*
+  $data['facebook_status']['table']['join'] = array(
+    'facebook_status_tags' => array(
+      'left_field' => 'sid',
+      'field' => 'sid',
+    ),
+  );
+ */
+
+  $data['facebook_status']['facebook_status_tags'] = array(
+    'group' => t('Facebook-style Statuses'),
+    'relationship' => array(
+      'title' => t('Tags'),
+      'label' => t('Tags'),
+      'help' => t('Add a relationship to gain access to information related to the #hashtags and @mentions in statuses.'),
+      'relationship table' => 'facebook_status_tags',
+      'relationship field' => 'sid',
+      'base' => 'facebook_status',
+      'field' => 'sid',
+      'type' => 'LEFT',
+      'handler' => 'views_handler_relationship',
+    ),
+  );
 }
 
 /**
@@ -102,11 +157,17 @@ function facebook_status_tags_views_handlers() {
       'path' => drupal_get_path('module', 'facebook_status'),
     ),
     'handlers' => array(
-      'facebook_status_views_handler_filter_string_type' => array(
-        'parent' => 'views_handler_filter_string',
-      ),
       'facebook_status_tags_views_handler_field_all_terms' => array(
         'parent' => 'views_handler_field',
+      ),
+      'facebook_status_tags_views_handler_field_name' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_tags_views_handler_filter_has_tag' => array(
+        'parent' => 'views_handler_filter',
+      ),
+      'facebook_status_views_handler_filter_string_type' => array(
+        'parent' => 'views_handler_filter_string',
       ),
     ),
   );

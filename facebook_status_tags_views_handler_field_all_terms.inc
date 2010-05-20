@@ -13,7 +13,7 @@ class facebook_status_tags_views_handler_field_all_terms extends views_handler_f
   function option_definition() {
     $options = parent::option_definition();
     $options['facebook_status_tags_type'] = array(
-      'default' => array('term' => 'term'),
+      'default' => array(),
       'translatable' => FALSE,
     );
     $options['facebook_status_tags_link'] = array(
@@ -21,14 +21,17 @@ class facebook_status_tags_views_handler_field_all_terms extends views_handler_f
       'translatable' => FALSE,
     );
     $options['facebook_status_tags_show_symbol'] = array(
-      'default' => 0,
+      'default' => 1,
       'translatable' => FALSE,
     );
     return $options;
   }
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
-    $opt = array('term' => t('Terms'), 'user' => t('Users'));
+    $opt = array('user' => t('Users'));
+    if (module_exists('taxonomy')) {
+      $opt['term'] = t('Terms');
+    }
     $options = $this->options;
     $form['facebook_status_tags_type'] = array(
       '#title' => t('Tag types'),
