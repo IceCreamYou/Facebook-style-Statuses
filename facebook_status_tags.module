@@ -85,12 +85,53 @@ function facebook_status_tags_block_validate($form, &$form_state) {
 /**
  * Implementation of hook_form_FORM_ID_alter().
  */
+function facebook_status_tags_form_facebook_status_admin_alter(&$form, &$form_state) {
+  if (module_exists('taxonomy') && variable_get('facebook_status_tags_vid', -1) == -1) {
+    drupal_set_message(
+      t('You have the Taxonomy and Facebook-style Statuses Tags modules enabled.') .' '.
+      t('However, you have not <a href="!setup">set them up</a> to process #hashtags.',
+        array('!setup' => url('admin/settings/facebook_status/advanced'))),
+      'error');
+  }
+  else if (!module_exists('taxonomy')) {
+    drupal_set_message(
+      t('You have the Facebook-style Statuses Tags module enabled.') .' '.
+      t('However, you will not be able to use #hashtags unless you <a href="!enable">enable</a> the core Taxonomy module.',
+        array('!enable' => url('admin/build/modules'))) .' '.
+      t('Return here after enabling the Taxonomy module to configure it to accept #hashtags.')
+    );
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
 function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, &$form_state) {
+  if (module_exists('taxonomy') || variable_get('facebook_status_tags_vid', -1) == -1) {
+    drupal_set_message(
+      t('You have the Taxonomy and Facebook-style Statuses Tags modules enabled, but you have not set them up to work together!') .' '.
+      t('You must set a vocabulary for #hashtags below in order for the #hashtags feature to work.'),
+      'error');
+  }
+  else if (!module_exists('taxonomy')) {
+    drupal_set_message(
+      t('You have the Facebook-style Statuses Tags module enabled.') .' '.
+      t('However, you will not be able to use #hashtags unless you <a href="!enable">enable</a> the core Taxonomy module.',
+        array('!enable' => url('admin/build/modules'))) .' '.
+      t('Return here after enabling the Taxonomy module to configure it to accept #hashtags.')
+    );
+  }
   if (module_exists('taxonomy')) {
     $options = array('-1' => t('None'));
     $vocabularies = taxonomy_get_vocabularies();
     foreach ($vocabularies as $vocabulary) {
       $options[$vocabulary->vid] = check_plain($vocabulary->name);
+    }
+    if (count($options) < 2) {
+      drupal_set_message(
+        t('You must <a href="!vocab">create a vocabulary</a> for use with #hashtags in order to take advantage of that feature.',
+          array('!vocab' => url('admin/content/taxonomy/add/vocabulary'))),
+        'error');
     }
     $form['facebook_status_tags_vid'] = array(
       '#type' => 'select',
@@ -102,6 +143,7 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
     $form['facebook_status_tags_url'] = array(
       '#type' => 'textfield',
       '#title' => t('Location of status-term pages'),
+      '#required' => TRUE,
       '#description' => t('Can be an absolute or relative URL. Use the tokens [term-id] and [term-name]. Use Views to build the listing (a default one is provided).'),
       '#default_value' => variable_get('facebook_status_tags_url', 'statuses/term/[term-name]'),
       '#weight' => -11,

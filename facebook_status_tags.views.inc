@@ -12,6 +12,7 @@
 function facebook_status_tags_views_data() {
   $data['facebook_status_tags']['table']['group']  = t('Facebook-style Statuses Tags');
 
+/*
   $data['facebook_status_tags']['table']['join'] = array(
     'facebook_status' => array(
       'left_field' => 'sid',
@@ -23,6 +24,24 @@ function facebook_status_tags_views_data() {
       'field' => 'sid',
     ),
   );
+ */
+
+/*
+  $data['facebook_status_tags']['facebook_status'] = array(
+    'group' => t('Facebook-style Statuses'),
+    'relationship' => array(
+      'title' => t('Statuses'),
+      'label' => t('Statuses'),
+      'help' => t('Add a relationship to gain access to information related to the statuses containing terms.'),
+      'relationship table' => 'facebook_status',
+      'relationship field' => 'sid',
+      'base' => 'facebook_status_tags',
+      'field' => 'sid',
+      'type' => 'INNER',
+      'handler' => 'views_handler_relationship',
+    ),
+  );
+ */
 
   //Advertise this table as a possible base table.
   $data['facebook_status_tags']['table']['base'] = array(
@@ -132,6 +151,7 @@ function facebook_status_tags_views_data_alter(&$data) {
   );
  */
 
+/*
   $data['facebook_status']['facebook_status_tags'] = array(
     'group' => t('Facebook-style Statuses'),
     'relationship' => array(
@@ -146,6 +166,7 @@ function facebook_status_tags_views_data_alter(&$data) {
       'handler' => 'views_handler_relationship',
     ),
   );
+ */
 }
 
 /**
@@ -167,7 +188,7 @@ function facebook_status_tags_views_handlers() {
         'parent' => 'views_handler_filter',
       ),
       'facebook_status_views_handler_filter_string_type' => array(
-        'parent' => 'views_handler_filter_string',
+        'parent' => 'views_handler_filter_in_operator',
       ),
     ),
   );
