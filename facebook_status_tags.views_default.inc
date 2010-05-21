@@ -197,7 +197,7 @@ function facebook_status_tags_views_default_views() {
       'field' => 'type',
       'relationship' => 'none',
     ),
-    'pid_extra' => array(
+    'pid_extra_3' => array(
       'operator' => '=',
       'value' => '0',
       'group' => '0',
@@ -206,9 +206,9 @@ function facebook_status_tags_views_default_views() {
         'operator' => FALSE,
         'label' => '',
       ),
-      'id' => 'pid_extra',
+      'id' => 'pid_extra_3',
       'table' => 'facebook_status',
-      'field' => 'pid_extra',
+      'field' => 'pid_extra_3',
       'relationship' => 'none',
     ),
   ));
@@ -474,7 +474,7 @@ function facebook_status_tags_views_default_views() {
         'button' => 'Override',
       ),
     ),
-    'pid_extra' => array(
+    'pid_extra_3' => array(
       'operator' => '=',
       'value' => '0',
       'group' => '0',
@@ -483,9 +483,9 @@ function facebook_status_tags_views_default_views() {
         'operator' => FALSE,
         'label' => '',
       ),
-      'id' => 'pid_extra',
+      'id' => 'pid_extra_3',
       'table' => 'facebook_status',
-      'field' => 'pid_extra',
+      'field' => 'pid_extra_3',
       'relationship' => 'none',
     ),
   ));

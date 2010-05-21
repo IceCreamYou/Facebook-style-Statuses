@@ -12,37 +12,6 @@
 function facebook_status_tags_views_data() {
   $data['facebook_status_tags']['table']['group']  = t('Facebook-style Statuses Tags');
 
-/*
-  $data['facebook_status_tags']['table']['join'] = array(
-    'facebook_status' => array(
-      'left_field' => 'sid',
-      'field' => 'sid',
-    ),
-    'users' => array(
-      'left_table' => 'facebook_status',
-      'left_field' => 'sid',
-      'field' => 'sid',
-    ),
-  );
- */
-
-/*
-  $data['facebook_status_tags']['facebook_status'] = array(
-    'group' => t('Facebook-style Statuses'),
-    'relationship' => array(
-      'title' => t('Statuses'),
-      'label' => t('Statuses'),
-      'help' => t('Add a relationship to gain access to information related to the statuses containing terms.'),
-      'relationship table' => 'facebook_status',
-      'relationship field' => 'sid',
-      'base' => 'facebook_status_tags',
-      'field' => 'sid',
-      'type' => 'INNER',
-      'handler' => 'views_handler_relationship',
-    ),
-  );
- */
-
   //Advertise this table as a possible base table.
   $data['facebook_status_tags']['table']['base'] = array(
     'field' => 'sid',
@@ -136,37 +105,6 @@ function facebook_status_tags_views_data() {
   );
 
   return $data;
-}
-
-/**
- * Implementation of hook_views_data_alter().
- */
-function facebook_status_tags_views_data_alter(&$data) {
-/*
-  $data['facebook_status']['table']['join'] = array(
-    'facebook_status_tags' => array(
-      'left_field' => 'sid',
-      'field' => 'sid',
-    ),
-  );
- */
-
-/*
-  $data['facebook_status']['facebook_status_tags'] = array(
-    'group' => t('Facebook-style Statuses'),
-    'relationship' => array(
-      'title' => t('Tags'),
-      'label' => t('Tags'),
-      'help' => t('Add a relationship to gain access to information related to the #hashtags and @mentions in statuses.'),
-      'relationship table' => 'facebook_status_tags',
-      'relationship field' => 'sid',
-      'base' => 'facebook_status',
-      'field' => 'sid',
-      'type' => 'LEFT',
-      'handler' => 'views_handler_relationship',
-    ),
-  );
- */
 }
 
 /**

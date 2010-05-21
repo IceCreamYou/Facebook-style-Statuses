@@ -19,6 +19,13 @@ function facebook_status_views_data() {
       'type' => 'INNER',
     ),
   );
+  $data['users']['table']['join'] = array(
+    'facebook_status' => array(
+      'left_field' => 'uid',
+      'field' => 'uid',
+      'type' => 'INNER',
+    ),
+  );
 
   //Advertise this table as a possible base table.
   $data['facebook_status']['table']['base'] = array(
@@ -27,6 +34,7 @@ function facebook_status_views_data() {
     'help' => t('Stores status updates.'),
     'weight' => 10,
   );
+  /*
   $data['facebook_status']['users'] = array(
     'group' => t('Facebook-style Statuses'),
     'relationship' => array(
@@ -41,6 +49,7 @@ function facebook_status_views_data() {
       'handler' => 'views_handler_relationship',
     ),
   );
+   */
 
   //Declares the Status ID column.
   $data['facebook_status']['sid'] = array(
@@ -64,7 +73,7 @@ function facebook_status_views_data() {
   //Alias for Status ID to extend its use.
   $data['facebook_status']['sid_extra'] = array(
     'title' => t('Last Status per User'),
-    'help' => t('Shows only the last status update for each user'),
+    'help' => t('Show only the last status update for each user.'),
     'filter' => array(
       'field' => 'sid',
       'handler' => 'facebook_status_views_handler_filter',
@@ -102,7 +111,7 @@ function facebook_status_views_data() {
   //Declares the Owner UID column.
   $data['facebook_status']['uid'] = array(
     'title' => t('User ID'),
-    'help' => t('The User ID of the owner of the status.'),
+    'help' => t('The User ID of the owner of the status (if the status is from one user to another, this is the recipient).'),
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -172,32 +181,37 @@ function facebook_status_views_data() {
 
   //Alias for extras for the poster.
   $data['facebook_status']['pid_extra'] = array(
-    'title' => t('Cross-Posting'),
-    'help' => t('Handling that recognizes the difference between a user posting on its own profile and a user posting on another profile.'),
+    'title' => t('Usernames (context-aware)'),
+    'help' => t('The themed username(s) of either the owner or the sender and recipient of the status, depending on the context.'),
     'field' => array(
       'field' => 'pid',
       'handler' => 'facebook_status_views_handler_field_cross',
       'click sortable' => FALSE,
       'label' => t('Users'),
     ),
-    'filter' => array(
-      'field' => 'pid',
-      'handler' => 'facebook_status_views_handler_filter_own',
-      'label' => t('Restrict to own statuses'),
-    ),
   );
   $data['facebook_status']['pid_extra_2'] = array(
     'title' => t('Not own statuses'),
-    'help' => t("Does not show statuses posted to one's own profile."),
+    'help' => t("Do not show statuses posted to one's own profile."),
     'filter' => array(
       'field' => 'pid',
       'handler' => 'facebook_status_views_handler_filter_not_own',
       'label' => t("Restrict to others' statuses"),
     ),
   );
+  //This is slightly different than, but could probably be combined with, pid_extra_2.
+  $data['facebook_status']['pid_extra_3'] = array(
+    'title' => t('Only own statuses'),
+    'help' => t("Only show statuses posted to one's own profile."),
+    'filter' => array(
+      'field' => 'pid',
+      'handler' => 'facebook_status_views_handler_filter_own',
+      'label' => t('Restrict to own statuses'),
+    ),
+  );
   $data['facebook_status']['crosspost_users_pics'] = array(
     'title' => t('Users with Pictures'),
-    'help' => t("Either a themed username or the username of the poster and owner of the status, depending on the context, and including pictures."),
+    'help' => t('The themed username(s) and pictures of either the owner or the sender and recipient of the status, depending on the context.'),
     'field' => array(
       'field' => 'pid',
       'handler' => 'facebook_status_views_handler_field_cross_pic',
@@ -207,7 +221,7 @@ function facebook_status_views_data() {
   );
   $data['facebook_status']['respond'] = array(
     'title' => t('Respond link'),
-    'help' => t('Links view the conversation or respond to it when appropriate.'),
+    'help' => t('Links to view the conversation or respond to it when appropriate.'),
     'field' => array(
       'field' => 'pid',
       'handler' => 'facebook_status_views_handler_field_respond',
@@ -247,7 +261,7 @@ function facebook_status_views_data() {
 
   $data['activity']['activity-fbss-poster-pic'] = array(
     'title' => t('Poster picture'),
-    'help' => t('The picture of the user who posted the activity.'),
+    'help' => t("The picture of the user who took action (normally the same as Users: Picture, but shows the poster's picture for status messages)."),
     'field' => array(
       'field' => 'uid',
       'handler' => 'facebook_status_views_handler_field_poster_pic_activity',
