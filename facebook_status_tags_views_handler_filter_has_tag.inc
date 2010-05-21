@@ -46,8 +46,10 @@ class facebook_status_tags_views_handler_filter_has_tag extends views_handler_fi
     );
   }
   function query() {
+    dsm($this);
+    dsm($this->query);
     $op = ($this->options['facebook_status_tags_has_tags']) ? 'IN' : 'NOT IN';
-    $query = "sid $op (SELECT sid FROM {facebook_status_tags}"; //@todo: fails when sid is ambiguous
+    $query = "{$this->table}.sid $op (SELECT sid FROM {facebook_status_tags}"; //@todo: fails when sid is ambiguous
     $options = $this->options['facebook_status_tags_type'];
     if (count($options) > 0) {
       $query .= " WHERE type = '";
