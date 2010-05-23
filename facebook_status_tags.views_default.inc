@@ -437,7 +437,13 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '$names = explode(\',\', $argument);
+      'validate_argument_php' => '      //If this view is overridden and then FBSS is disabled, it can
+      //cause a WSOD if these lines are not included here.
+      if (!function_exists(\'_facebook_status_user_load_by_name\')) {
+        return;
+      }
+
+      $names = explode(\',\', $argument);
       $uids = array();
       foreach ($names as $name) {
         $account = _facebook_status_user_load_by_name($name);
@@ -593,7 +599,13 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '//If the argument is not present, get it from the UID in the URL instead.
+      'validate_argument_php' => '      //If this view is overridden and then FBSS is disabled, it can
+      //cause a WSOD if these lines are not included here.
+      if (!function_exists(\'_facebook_status_user_load\')) {
+        return;
+      }
+
+      //If the argument is not present, get it from the UID in the URL instead.
       if (arg(0) == \'user\' && !is_string($argument)) {
         $account = _facebook_status_user_load(arg(1));
         if ($account->uid) {
@@ -610,10 +622,17 @@ function facebook_status_tags_views_default_views() {
   if (module_exists('php')) {
     $handler->override_option('footer', '<?php
     /*
+      //If this view is overridden and then FBSS is disabled, it can
+      //cause a WSOD if these lines are not included here.
+      if (!function_exists(\'_facebook_status_user_load\')) {
+        echo t(\'Facebook-style Statuses has been disabled.\');
+        return;
+      }
+
       //Adds a link to view your conversation with the user whose profile you are viewing.
       global $user;
       $account = _facebook_status_user_load(arg(1));
-      if ($account->uid != $user->uid) {
+      if ($account->uid && $account->uid != $user->uid) {
         echo l(\'View mentions between you and \'. $account->name, \'statuses/conversation/\'. check_plain($account->name) .\',\'. check_plain($user->name));
       }
      */
@@ -621,14 +640,21 @@ function facebook_status_tags_views_default_views() {
     $handler->override_option('footer_format', '3');
     $handler->override_option('footer_empty', 0);
     $handler->override_option('empty', '<?php
+    //If this view is overridden and then FBSS is disabled, it can
+    //cause a WSOD if these lines are not included here.
+    if (!function_exists(\'_facebook_status_user_load\')) {
+      echo t(\'Facebook-style Statuses has been disabled.\');
+      return;
+    }
+
     if (arg(0) == \'user\') {
       $account = _facebook_status_user_load(arg(1));
       global $user;
       if ($user->uid == $account->uid) {
-        echo \'No one has mentioned you yet.\';
+        echo t(\'No one has mentioned you yet.\');
       }
       else {
-        echo \'No one has mentioned \'. check_plain($account->name) .\'.\';
+        echo t(\'No one has mentioned @name.\', array(\'@name\' => $account->name));
       }
     }
     ?>');

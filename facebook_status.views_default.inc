@@ -243,7 +243,13 @@ function facebook_status_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '  $return = FALSE;
+      'validate_argument_php' => '  //If this view is overridden and then FBSS is disabled, it can
+  //cause a WSOD if these lines are not included here.
+  if (!function_exists(\'_facebook_status_user_load\')) {
+    return;
+  }
+
+  $return = FALSE;
   $account = _facebook_status_user_load($argument);
   if ($account->uid) {
     $handler->argument = $account->name;
@@ -320,6 +326,13 @@ function facebook_status_views_default_views() {
       // change the input format of the Empty text to "PHP code" (you must
       // have the "PHP filter" module enabled) or remove the text.
       // For more information, please read http://drupal.org/node/551698#php
+
+            //If this view is overridden and then FBSS is disabled, it can
+            //cause a WSOD if these lines are not included here.
+            if (!function_exists(\'_facebook_status_user_load\')) {
+              echo t(\'Facebook-style Statuses has been disabled.\');
+              return;
+            }
             $account = _facebook_status_user_load(arg(1));
             if (!$account->uid) {
               echo t(\'This user has no statuses yet.\');
@@ -897,7 +910,13 @@ function facebook_status_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '$names = explode(\',\', $argument);
+      'validate_argument_php' => '      //If this view is overridden and then FBSS is disabled, it can
+      //cause a WSOD if these lines are not included here.
+      if (!function_exists(\'_facebook_status_user_load\')) {
+        return;
+      }
+
+      $names = explode(\',\', $argument);
       $uids = array();
       foreach ($names as $name) {
         if (!is_numeric($name)) {
@@ -976,7 +995,13 @@ function facebook_status_views_default_views() {
       'validate_argument_user_flag_name' => '*relationship*',
       'validate_argument_user_flag_test' => 'flaggable',
       'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '$names = explode(\',\', $argument);
+      'validate_argument_php' => '      //If this view is overridden and then FBSS is disabled, it can
+      //cause a WSOD if these lines are not included here.
+      if (!function_exists(\'_facebook_status_user_load\')) {
+        return;
+      }
+
+      $names = explode(\',\', $argument);
       $uids = array();
       foreach ($names as $name) {
         if (!is_numeric($name)) {
