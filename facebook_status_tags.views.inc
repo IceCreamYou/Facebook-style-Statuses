@@ -90,7 +90,30 @@ function facebook_status_tags_views_data() {
     'title' => t('Status has tags'),
     'help' => t('Only show statuses with tags.'),
     'filter' => array(
+      'field' => 'sid',
       'handler' => 'facebook_status_tags_views_handler_filter_has_tag',
+    ),
+  );
+
+  $data['facebook_status']['has-specific-tag'] = array(
+    'title' => t('Status has specific tag'),
+    'help' => t('Only show statuses with a specific tag.'),
+    'filter' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_tags_views_handler_filter_has_this_tag',
+    ),
+    'argument' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_tags_views_handler_argument_has_this_tag',
+    ),
+  );
+
+  $data['facebook_status']['has-specific-tag-id'] = array(
+    'title' => t('Status has specific tag ID'),
+    'help' => t('Only show statuses with a specific tag ID.'),
+    'argument' => array(
+      'field' => 'sid',
+      'handler' => 'facebook_status_tags_views_handler_argument_has_this_tag_id',
     ),
   );
 
@@ -116,6 +139,12 @@ function facebook_status_tags_views_handlers() {
       'path' => drupal_get_path('module', 'facebook_status'),
     ),
     'handlers' => array(
+      'facebook_status_tags_views_handler_argument_has_this_tag' => array(
+        'parent' => 'views_handler_argument_string',
+      ),
+      'facebook_status_tags_views_handler_argument_has_this_tag_id' => array(
+        'parent' => 'views_handler_argument_numeric',
+      ),
       'facebook_status_tags_views_handler_field_all_terms' => array(
         'parent' => 'views_handler_field',
       ),
@@ -124,6 +153,9 @@ function facebook_status_tags_views_handlers() {
       ),
       'facebook_status_tags_views_handler_filter_has_tag' => array(
         'parent' => 'views_handler_filter',
+      ),
+      'facebook_status_tags_views_handler_filter_has_this_tag' => array(
+        'parent' => 'views_handler_filter_string',
       ),
       'facebook_status_views_handler_filter_string_type' => array(
         'parent' => 'views_handler_filter_in_operator',

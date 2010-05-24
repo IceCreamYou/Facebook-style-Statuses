@@ -113,17 +113,14 @@ function facebook_status_tags_views_default_views() {
     ),
   ));
   $handler->override_option('arguments', array(
-    'name' => array(
-      'default_action' => 'summary asc',
+    'has-specific-tag' => array(
+      'default_action' => 'not found',
       'style_plugin' => 'default_summary',
-      'style_options' => array(
-        'count' => 1,
-        'override' => 0,
-        'items_per_page' => '25',
-      ),
+      'style_options' => array(),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
-      'title' => 'Statuses Referencing #%1',
+      'title' => 'Statuses about #%1',
+      'breadcrumb' => '',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
       'validate_type' => 'taxonomy_term',
@@ -133,9 +130,13 @@ function facebook_status_tags_views_default_views() {
       'case' => 'ucfirst',
       'path_case' => 'none',
       'transform_dash' => 1,
-      'id' => 'name',
-      'table' => 'facebook_status_tags',
-      'field' => 'name',
+      'facebook_status_tags_type' => array(
+        'term' => 'term',
+        'user' => 0,
+      ),
+      'id' => 'has-specific-tag',
+      'table' => 'facebook_status',
+      'field' => 'has-specific-tag',
       'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
@@ -144,26 +145,24 @@ function facebook_status_tags_views_default_views() {
       ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
-      'default_argument_user' => 0,
       'default_argument_fixed' => '',
+      'default_argument_user' => 0,
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
+        'og' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
         '1' => 1,
+        '4' => 0,
+        '3' => 0,
+        '2' => 0,
       ),
       'validate_argument_type' => 'name',
-      'validate_argument_transform' => 1,
+      'validate_argument_transform' => 0,
       'validate_user_restrict_roles' => 0,
-      'validate_argument_node_flag_name' => '*relationship*',
-      'validate_argument_node_flag_test' => 'flaggable',
-      'validate_argument_node_flag_id_type' => 'id',
-      'validate_argument_user_flag_name' => '*relationship*',
-      'validate_argument_user_flag_test' => 'flaggable',
-      'validate_argument_user_flag_id_type' => 'id',
       'validate_argument_php' => '',
     ),
   ));
@@ -180,21 +179,6 @@ function facebook_status_tags_views_default_views() {
       'id' => 'sid_extra',
       'table' => 'facebook_status',
       'field' => 'sid_extra',
-      'relationship' => 'none',
-    ),
-    'type' => array(
-      'operator' => '=',
-      'value' => 'term',
-      'group' => '0',
-      'exposed' => FALSE,
-      'expose' => array(
-        'operator' => FALSE,
-        'label' => '',
-      ),
-      'case' => 1,
-      'id' => 'type',
-      'table' => 'facebook_status_tags',
-      'field' => 'type',
       'relationship' => 'none',
     ),
     'pid_extra_3' => array(
@@ -392,22 +376,27 @@ function facebook_status_tags_views_default_views() {
     ),
   ));
   $handler->override_option('arguments', array(
-    'rid' => array(
-      'default_action' => 'not found',
+    'has-specific-tag-id' => array(
+      'default_action' => 'default',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
       'title' => 'Mentions',
-      'default_argument_type' => 'fixed',
+      'breadcrumb' => '',
+      'default_argument_type' => 'current_user',
       'default_argument' => '',
       'validate_type' => 'php',
       'validate_fail' => 'not found',
       'break_phrase' => 1,
       'not' => 0,
-      'id' => 'rid',
-      'table' => 'facebook_status_tags',
-      'field' => 'rid',
+      'facebook_status_tags_type' => array(
+        'user' => 'user',
+        'term' => 0,
+      ),
+      'id' => 'has-specific-tag-id',
+      'table' => 'facebook_status',
+      'field' => 'has-specific-tag-id',
       'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
@@ -416,70 +405,46 @@ function facebook_status_tags_views_default_views() {
       ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
-      'default_argument_user' => 0,
       'default_argument_fixed' => '',
+      'default_argument_user' => 0,
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
+        'og' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
+        '4' => 0,
         '1' => 0,
+        '3' => 0,
         '2' => 0,
       ),
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
       'validate_user_restrict_roles' => 0,
-      'validate_argument_node_flag_name' => '*relationship*',
-      'validate_argument_node_flag_test' => 'flaggable',
-      'validate_argument_node_flag_id_type' => 'id',
-      'validate_argument_user_flag_name' => '*relationship*',
-      'validate_argument_user_flag_test' => 'flaggable',
-      'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '      //If this view is overridden and then FBSS is disabled, it can
-      //cause a WSOD if these lines are not included here.
-      if (!function_exists(\'_facebook_status_user_load_by_name\')) {
-        return;
-      }
+      'validate_argument_php' => '//If this view is overridden and then FBSS is disabled, it can
+//cause a WSOD if these lines are not included here.
+if (!function_exists(\'_facebook_status_user_load_by_name\')) {
+  return;
+}
 
-      $names = explode(\',\', $argument);
-      $uids = array();
-      foreach ($names as $name) {
-        $account = _facebook_status_user_load_by_name($name);
-        if ($account->uid) {
-          $uids[] = $account->uid;
-        }
-      }
-      if (!empty($uids)) {
-        $handler->argument = implode(\',\', $uids);
-        return TRUE;
-      }
-      return FALSE;',
-      'override' => array(
-        'button' => 'Override',
-      ),
+$names = explode(\',\', $argument);
+$uids = array();
+foreach ($names as $name) {
+  $account = _facebook_status_user_load_by_name($name);
+  if ($account->uid) {
+    $uids[] = $account->uid;
+  }
+}
+if (!empty($uids)) {
+  $handler->argument = implode(\',\', $uids);
+  return TRUE;
+}
+return FALSE;',
     ),
   ));
   $handler->override_option('filters', array(
-    'type' => array(
-      'operator' => '=',
-      'value' => 'user',
-      'group' => '0',
-      'exposed' => FALSE,
-      'expose' => array(
-        'operator' => FALSE,
-        'label' => '',
-      ),
-      'case' => 1,
-      'id' => 'type',
-      'table' => 'facebook_status_tags',
-      'field' => 'type',
-      'relationship' => 'none',
-      'override' => array(
-        'button' => 'Override',
-      ),
-    ),
     'pid_extra_3' => array(
       'operator' => '=',
       'value' => '0',
@@ -548,14 +513,15 @@ function facebook_status_tags_views_default_views() {
   ));
   $handler = $view->new_display('block', 'Block', 'block_1');
   $handler->override_option('arguments', array(
-    'name' => array(
-      'default_action' => 'empty',
+    'has-specific-tag' => array(
+      'default_action' => 'default',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
       'title' => 'Mentions of %1',
-      'default_argument_type' => 'fixed',
+      'breadcrumb' => '',
+      'default_argument_type' => 'php',
       'default_argument' => '',
       'validate_type' => 'php',
       'validate_fail' => 'not found',
@@ -564,10 +530,14 @@ function facebook_status_tags_views_default_views() {
       'case' => 'none',
       'path_case' => 'none',
       'transform_dash' => 0,
-      'id' => 'name',
-      'table' => 'facebook_status_tags',
-      'field' => 'name',
-      'validate_user_argument_type' => 'name',
+      'facebook_status_tags_type' => array(
+        'user' => 'user',
+        'term' => 0,
+      ),
+      'id' => 'has-specific-tag',
+      'table' => 'facebook_status',
+      'field' => 'has-specific-tag',
+      'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
         '3' => 0,
@@ -578,45 +548,45 @@ function facebook_status_tags_views_default_views() {
       ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
-      'default_argument_user' => 0,
       'default_argument_fixed' => '',
-      'default_argument_php' => '',
+      'default_argument_user' => 0,
+      'default_argument_php' => 'return $GLOBALS[\'user\']->name; //The current user',
       'validate_argument_node_type' => array(
+        'og' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
+        '4' => 0,
         '1' => 0,
+        '3' => 0,
         '2' => 0,
       ),
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
       'validate_user_restrict_roles' => 0,
-      'validate_argument_node_flag_name' => '*relationship*',
-      'validate_argument_node_flag_test' => 'flaggable',
-      'validate_argument_node_flag_id_type' => 'id',
-      'validate_argument_user_flag_name' => '*relationship*',
-      'validate_argument_user_flag_test' => 'flaggable',
-      'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '      //If this view is overridden and then FBSS is disabled, it can
-      //cause a WSOD if these lines are not included here.
-      if (!function_exists(\'_facebook_status_user_load\')) {
-        return;
-      }
+      'validate_argument_php' => '//If this view is overridden and then FBSS is disabled, it can
+//cause a WSOD if these lines are not included here.
+if (!function_exists(\'_facebook_status_user_load\')) {
+  return;
+}
 
-      //If the argument is not present, get it from the UID in the URL instead.
-      if (arg(0) == \'user\' && !is_string($argument)) {
-        $account = _facebook_status_user_load(arg(1));
-        if ($account->uid) {
-          $handler->argument = $account->name;
-          return TRUE;
-        }
-      }
-      else if (is_string($argument)) {
-        return TRUE;
-      }
-      return FALSE;',
+//If the argument is not present, get it from the UID in the URL instead.
+if (arg(0) == \'user\' && !is_string($argument)) {
+  $account = _facebook_status_user_load(arg(1));
+  if ($account->uid) {
+    $handler->argument = $account->name;
+    return TRUE;
+  }
+}
+else if (is_string($argument)) {
+  $account = _facebook_status_user_load_by_name($argument);
+  if ($account->uid) {
+    return TRUE;
+  }
+}
+return FALSE;',
     ),
   ));
   if (module_exists('php')) {

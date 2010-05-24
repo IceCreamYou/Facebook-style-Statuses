@@ -1,4 +1,5 @@
 // $Id$
+var allowClickRefresh = true;
 Drupal.behaviors.facebookStatus = function (context) {
   var initialLoad = false;
   if (context == document) {
@@ -61,9 +62,19 @@ Drupal.behaviors.facebookStatus = function (context) {
     if ($(context.target).html() != $(this).html()) {
       return;
     }
-    var loaded = {};
     //Refresh elements by re-loading the current page and replacing the old version with the updated version.
+    var loaded = {};
     if (refreshIDs && refreshIDs != undefined) {
+      var loaded2 = {};
+      $.each(refreshIDs, function(i, val) {
+        if (val && val != undefined) {
+          if ($.trim(val) && loaded2[val] !== true) {
+            loaded2[val] = true;
+            var element = $(val);
+            element.before('<div class="fbss-remove-me ahah-progress ahah-progress-throbber" style="display: block; clear: both; float: none;"><div class="throbber">&nbsp;</div></div>');
+          }
+        }
+      });
       //IE will cache the result unless we add an identifier (in this case, the time).
       $.get(window.location.pathname +"?ts="+ (new Date()).getTime(), function(data, textStatus) {
         //From load() in jQuery source. We already have the scripts we need.
@@ -110,8 +121,12 @@ Drupal.behaviors.facebookStatus = function (context) {
   }
   //Refresh views appropriately.
   context.find('.facebook_status_refresh_link a').click(function() {
-    $(this).after('<div class="fbss-remove-me ahah-progress ahah-progress-throbber"><div class="throbber">&nbsp;</div></div>');
-    $('#facebook_status_replace').trigger('ahah_success', {target: '#facebook_status_replace'});
+    if (allowClickRefresh) {
+      allowClickRefresh = false;
+      setTimeout('allowRefresh()', 2000);
+      $(this).after('<div class="fbss-remove-me ahah-progress ahah-progress-throbber"><div class="throbber">&nbsp;</div></div>');
+      $('#facebook_status_replace').trigger('ahah_success', {target: '#facebook_status_replace'});
+    }
     return false;
   });
   //Restore original status text if the field is blank and the slider is clicked.
@@ -146,4 +161,8 @@ function fbss_print_remaining(fbss_remaining, where) {
       facebook_status_submit_disabled = true;
     }
   }
+}
+//Disallow refreshing too often or double-clicking the Refresh link.
+function allowRefresh() {
+  allowClickRefresh = !allowClickRefresh;
 }

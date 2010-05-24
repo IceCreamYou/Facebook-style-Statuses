@@ -3,11 +3,11 @@
 
 /**
  * @file
- *   Filters to allow only the latest status in Views.
+ *   Filter to statuses containing tags.
  */
 
 /**
- * Filter handler which requires the latest status.
+ * Filter handler to select statuses containing tags.
  */
 class facebook_status_tags_views_handler_filter_has_tag extends views_handler_filter {
   function option_definition() {
@@ -39,15 +39,12 @@ class facebook_status_tags_views_handler_filter_has_tag extends views_handler_fi
     $form['facebook_status_tags_type'] = array(
       '#title' => t('Tag types'),
       '#type'  => 'checkboxes',
-      '#description' => t('Which tag types should be shown in this field?'),
       '#required' => TRUE,
       '#options' => $opt,
       '#default_value' => $options['facebook_status_tags_type'],
     );
   }
   function query() {
-    dsm($this);
-    dsm($this->query);
     $op = ($this->options['facebook_status_tags_has_tags']) ? 'IN' : 'NOT IN';
     $query = "{$this->table}.sid $op (SELECT sid FROM {facebook_status_tags}";
     $options = $this->options['facebook_status_tags_type'];
