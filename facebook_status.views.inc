@@ -269,6 +269,23 @@ function facebook_status_views_data() {
     ),
   );
 
+  if (module_exists('flag')) {
+    $data['facebook_status']['user-flag-plus-current'] = array(
+      'title' => t('Content from flagged users or the current user'),
+      'filter' => array(
+        'field' => 'pid',
+        'handler' => 'facebook_status_views_handler_filter_flagged_user',
+      ),
+    );
+    $data['facebook_status']['user-flag-plus-arg'] = array(
+      'title' => t('Content from flagged users or the argument user'),
+      'argument' => array(
+        'field' => 'pid',
+        'handler' => 'facebook_status_views_handler_argument_flagged_user',
+      ),
+    );
+  }
+
   return $data;
 }
 
@@ -281,6 +298,9 @@ function facebook_status_views_handlers() {
       'path' => drupal_get_path('module', 'facebook_status'),
     ),
     'handlers' => array(
+      'facebook_status_views_handler_argument_flagged_user' => array(
+        'parent' => 'views_handler_argument',
+      ),
       'facebook_status_views_handler_field_cross' => array(
         'parent' => 'views_handler_field',
       ),
@@ -314,10 +334,13 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_filter' => array(
         'parent' => 'views_handler_filter_boolean_operator',
       ),
-      'facebook_status_views_handler_filter_own' => array(
-        'parent' => 'views_handler_filter_boolean_operator',
+      'facebook_status_views_handler_filter_flagged_user' => array(
+        'parent' => 'views_handler_filter',
       ),
       'facebook_status_views_handler_filter_not_own' => array(
+        'parent' => 'views_handler_filter_boolean_operator',
+      ),
+      'facebook_status_views_handler_filter_own' => array(
         'parent' => 'views_handler_filter_boolean_operator',
       ),
     ),
