@@ -107,7 +107,7 @@ function facebook_status_tags_form_facebook_status_admin_alter(&$form, &$form_st
  * Implementation of hook_form_FORM_ID_alter().
  */
 function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, &$form_state) {
-  if (module_exists('taxonomy') || variable_get('facebook_status_tags_vid', -1) == -1) {
+  if (module_exists('taxonomy') && variable_get('facebook_status_tags_vid', -1) == -1) {
     drupal_set_message(
       t('You have the Taxonomy and Facebook-style Statuses Tags modules enabled, but you have not set them up to work together!') .' '.
       t('You must set a vocabulary for #hashtags below in order for the #hashtags feature to work.'),
