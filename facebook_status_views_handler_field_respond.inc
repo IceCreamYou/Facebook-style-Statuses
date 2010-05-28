@@ -10,29 +10,24 @@
  * Formats the "view conversation" link.
  */
 class facebook_status_views_handler_field_respond extends views_handler_field {
-  function query() {
-    $this->ensure_my_table();
-    $this->field_alias = $this->query->add_field($this->table_alias, 'pid');
-    $this->query->add_field($this->table_alias, 'uid');
-    $this->query->add_field($this->table_alias, 'sid');
-    $this->add_additional_fields();
-  }
-  function pre_render($values) {
-    $this->fbss_pid = $this->field_alias;
-    //Obviously, not the right way to do this...
-    $this->fbss_uid = str_replace('pid', 'uid', $this->field_alias);
-    $this->fbss_sid = str_replace('pid', 'sid', $this->field_alias);
+  function construct() {
+    parent::construct();
+    $this->additional_fields['uid'] = 'uid';
+    $this->additional_fields['sid'] = 'sid';
   }
   function render($values) {
     global $user;
-    $owner = _facebook_status_user_load($values->{$this->fbss_uid});
-    $poster = _facebook_status_user_load($values->{$this->fbss_pid});
+    $owner = _facebook_status_user_load($values->{$this->aliases['uid']});
+    $poster = _facebook_status_user_load($values->{$this->field_alias});
     drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
     $options = array('attributes' => array('class' => 'facebook_status_conversation_link'));
     if ($owner->uid != $poster->uid && user_access('post on all profiles')) {
       $title = t('View conversation');
       if ($owner->uid == $user->uid) {
         $title = t('Reply');
+      }
+      if (module_exists('realname')) {
+        return l($title, 'statuses/conversation/'. $poster->uid .','. $owner->uid, $options);
       }
       return l($title, 'statuses/conversation/'. check_plain($poster->name) .','. check_plain($owner->name), $options);
     }
@@ -44,8 +39,11 @@ class facebook_status_views_handler_field_respond extends views_handler_field {
       }
       if (variable_get('facebook_status_reply_type', 'at') == 'at') {
         //Evidently url() sanitizes query strings itself, so we don't have to use check_plain() here.
-        $options['query'] = array('s' => $s, 'rsid' => $values->{$this->fbss_sid}, 'destination' => $_GET['q']);
+        $options['query'] = array('s' => $s, 'rsid' => $values->{$this->aliases['sid']}, 'destination' => $_GET['q']);
         return l(t('Respond'), 'share-status', $options);
+      }
+      if (module_exists('realname')) {
+        return l(t('Respond'), 'statuses/conversation/'. $poster->uid .','. $user->uid, $options);
       }
       return l(t('Respond'), 'statuses/conversation/'. check_plain($poster->name) .','. check_plain($user->name), $options);
     }
