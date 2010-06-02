@@ -4,7 +4,7 @@
  * @file views-view-row-rss.tpl.php
  * Default view template to display a item in an RSS feed.
  *
- * @ingroup views_templates
+ * Copied from views/theme/views-view-row-rss.tpl.php.
  */
 ?>
   <item>
