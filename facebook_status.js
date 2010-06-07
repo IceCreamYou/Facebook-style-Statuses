@@ -12,10 +12,12 @@ Drupal.behaviors.facebookStatus = function (context) {
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
   var refreshIDs = Drupal.settings.facebook_status.refreshIDs;
   if (Drupal.settings.facebook_status.autofocus) {
-     $facebook_status_field.focus();
-     if ($facebook_status_field.val().length != 0) {
-        fbss_print_remaining(fbss_maxlen - facebook_status_original_value.length, $facebook_status_field.parent().next());
-     }
+    $facebook_status_field.focus();
+  }
+  if (Drupal.settings.facebook_status.noautoclear || Drupal.settings.facebook_status.autofocus) {
+    if ($facebook_status_field.val().length != 0) {
+      fbss_print_remaining(fbss_maxlen - facebook_status_original_value.length, $facebook_status_field.parent().next());
+    }
   }
   else {
     $.each(context.find('.facebook_status_text_main'), function(i, val) {

@@ -397,11 +397,21 @@ function facebook_status_twitter_submit($form, &$form_state) {
  * Implementation of hook_init().
  */
 function facebook_status_init() {
+  //Don't clear the default text on first focus if the default text was manually set in the URL.
+  $undefault = ((isset($_GET['s']) && arg(0) == 'share-status') || isset($_GET['share-status']));
+  if (is_numeric($_GET['sid'])) {
+    $rs = facebook_status_load($_GET['sid']);
+    $undefault = $undefault || ($rs->pid != $GLOBALS['user']->uid && $rs->status);
+  }
   drupal_add_js(array('facebook_status' => array(
     'autofocus' => (
       arg(0) == 'share-status' ||
       (arg(0) == 'statuses' && is_numeric(arg(1)) && arg(2) == 'edit') ||
       (arg(0) == 'statuses' && arg(1) == 'conversation')
+    ),
+    'noautoclear' => (
+      $undefault ||
+      (arg(0) == 'statuses' && is_numeric(arg(1)) && arg(2) == 'edit')
     ),
     'maxlength' => variable_get('facebook_status_length', 140),
     'refreshLink' => (bool) variable_get('facebook_status_refresh', 0),
@@ -1490,25 +1500,33 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
   }
 
   if (arg(0) == 'share-status') {
+    //This page is autofocused. We don't want default text there since the user would have to manually remove it.
+    $default = '';
+  }
+  if (isset($_GET['s']) && arg(0) == 'share-status') {
+    //Other modules might use "s," so only accept it on the share-status page.
     $default = str_replace('"', '', $_GET['s']);
-    if (is_numeric($_GET['sid'])) {
-      $rs = facebook_status_load($_GET['sid']);
-      $poster = user_load(array('uid' => $rs->pid));
-      if ($poster->uid != $user->uid && $rs->status) {
-        $name = '@'. $poster->name;
-        //Properly reference tags with word-break characters in them.
-        if (preg_match('/.+\b.+/', $poster->name)) {
-          $name = '[@'. $poster->name .']';
-        }
-        $default = str_replace(array('@name', '@status'), array($name, $rs->status), variable_get('facebook_status_repost', 'Re: @name @status '));
-        $slider = '';
+  }
+  else if (isset($_GET['share-status'])) {
+    $default = str_replace('"', '', $_GET['share-status']);
+  }
+  if (is_numeric($_GET['sid'])) {
+    $rs = facebook_status_load($_GET['sid']);
+    $poster = user_load(array('uid' => $rs->pid));
+    if ($poster->uid != $user->uid && $rs->status) {
+      $name = '@'. $poster->name;
+      //Properly reference tags with word-break characters in them.
+      if (preg_match('/.+\b.+/', $poster->name)) {
+        $name = '[@'. $poster->name .']';
       }
+      $default = str_replace(array('@name', '@status'), array($name, $rs->status), variable_get('facebook_status_repost', 'Re: @name @status '));
+      $slider = '';
     }
-    elseif (is_numeric($_GET['rsid'])) {
-      $status = facebook_status_load($_GET['rsid']);
-      if ($status->sid) {
-        $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status, TRUE, array('exclude' => array('conversation')))));
-      }
+  }
+  elseif (is_numeric($_GET['rsid'])) {
+    $status = facebook_status_load($_GET['rsid']);
+    if ($status->sid) {
+      $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status, TRUE, array('exclude' => array('conversation')))));
     }
   }
 
