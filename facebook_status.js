@@ -34,7 +34,9 @@ Drupal.behaviors.facebookStatus = function (context) {
   }
   //Fix bad redirect destinations.
   context.find('.facebook_status_edit_delete a').each(function() {
-    $(this).attr('href', $(this).attr('href').split('?')[0] +'?destination='+ escape(window.location.href));
+    //window.location.href doesn't work for sites not in the webroot with weird server configurations.
+    var redirectTo = window.location.pathname.substring(Drupal.settings.basePath.length) + window.location.search;
+    $(this).attr('href', $(this).attr('href').split('?')[0] +'?destination='+ escape(redirectTo));
   });
   context.find('a.facebook_status_conversation_link').each(function() {
     var loc = $(this).attr('href').split('?'), base = loc[0], query = '';
@@ -50,7 +52,7 @@ Drupal.behaviors.facebookStatus = function (context) {
         }
         query += param +'=';
         if (param == 'destination') {
-          query += escape(window.location.href);
+          query += escape(window.location.pathname.substring(Drupal.settings.basePath.length) + window.location.search);
         }
         else if (item[1]) {
           query += item[1];
