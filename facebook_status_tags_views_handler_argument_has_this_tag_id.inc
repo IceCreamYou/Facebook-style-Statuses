@@ -57,17 +57,48 @@ class facebook_status_tags_views_handler_argument_has_this_tag_id extends views_
       }
       $where .= implode("' OR type = '", $types) ."')";
     }
-    if (count($this->value) > 1) {
-      $operator = empty($this->options['not']) ? 'IN' : 'NOT IN';
-      $placeholders = implode(', ', array_fill(0, sizeof($this->value), '%d'));
-      $query = "$this->table_alias.$this->real_field IN (SELECT sid FROM {facebook_status_tags} WHERE rid $operator ($placeholders) $where)";
-      $this->query->add_where(0, db_prefix_tables($query), $this->value);
-    }
-    else {
+    //if ($this->operator == 'or') {
+      if (count($this->value) > 2) {
+        $operator = empty($this->options['not']) ? 'IN' : 'NOT IN';
+        $placeholders = implode(', ', array_fill(0, sizeof($this->value), '%d'));
+        $query = "$this->table_alias.$this->real_field IN (SELECT sid FROM {facebook_status_tags} WHERE rid $operator ($placeholders) $where)";
+        $this->query->add_where(0, db_prefix_tables($query), $this->value);
+      }
+      //If there are exactly 2 users specified, show the exchange between them.
+      if (count($this->value) == 2) {
+        $operator = empty($this->options['not']) ? 'IN' : 'NOT IN';
+        $placeholders = implode(', ', array_fill(0, sizeof($this->value), '%d'));
+        $query = "$this->table_alias.$this->real_field IN (SELECT sid FROM {facebook_status_tags} WHERE rid $operator ($placeholders) $where)";
+        $query .= "AND $this->table_alias.pid IN (%d, %d)";
+        $this->query->add_where(0, db_prefix_tables($query), array_merge($this->value, $this->value));
+      }
+      else {
+        $operator = empty($this->options['not']) ? '=' : '!=';
+        $query = "$this->table_alias.$this->real_field IN (SELECT sid FROM {facebook_status_tags} WHERE rid $operator %d $where)";
+        $this->query->add_where(0, db_prefix_tables($query), $this->argument);
+      }
+    //}
+    /*
+     * Default to the "OR" behavior because it's more useful.
+     * We can never actually allow either to happen because modern browsers
+     * convert "+" to " " so we can't parse for the operator.
+    else { //$this->operator == 'and'
       $operator = empty($this->options['not']) ? '=' : '!=';
-      $query = "$this->table_alias.$this->real_field IN (SELECT sid FROM {facebook_status_tags} WHERE rid $operator %d $where)";
-      $this->query->add_where(0, db_prefix_tables($query), $this->argument);
+      if (count($this->value) > 1) {
+        //This causes the query to be pretty slow.
+        $subquery = array();
+        foreach ($this->value as $value) {
+          $subquery[] = "$this->table_alias.$this->real_field IN (SELECT sid FROM {facebook_status_tags} WHERE rid $operator %d $where)";
+        }
+        $query = '('. implode(' AND ', $subquery) .')';
+        $this->query->add_where(0, db_prefix_tables($query), $this->value);
+      }
+      else {
+        $query = "$this->table_alias.$this->real_field IN (SELECT sid FROM {facebook_status_tags} WHERE rid $operator %d $where)";
+        $this->query->add_where(0, db_prefix_tables($query), $this->argument);
+      }
     }
+     */
   }
   function default_actions($which = NULL) {
     $defaults = parent::default_actions($which);

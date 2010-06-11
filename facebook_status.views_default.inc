@@ -327,28 +327,29 @@ function facebook_status_views_default_views() {
       // have the "PHP filter" module enabled) or remove the text.
       // For more information, please read http://drupal.org/node/551698#php
 
-            //If this view is overridden and then FBSS is disabled, it can
-            //cause a WSOD if these lines are not included here.
-            if (!function_exists(\'_facebook_status_user_load\')) {
-              echo t(\'Facebook-style Statuses has been disabled.\');
-              return;
-            }
-            $account = _facebook_status_user_load(arg(1));
-            if (!$account->uid) {
-              echo t(\'This user has no statuses yet.\');
-              return;
-            }
-            $count = facebook_status_has_status(arg(1));
-            if (!$count) {
-              global $user;
-              if ($user->uid == $account->uid) {
-                echo t(\'You have no statuses yet.\');
-              }
-              else {
-                echo t(\'@name has no statuses yet.\', array(\'@name\' => check_plain($account->name)));
-              }
-            }
-            ?>');
+      //If this view is overridden and then FBSS is disabled, it can
+      //cause a WSOD if these lines are not included here.
+      if (!function_exists(\'_facebook_status_user_load\')) {
+        echo t(\'Facebook-style Statuses has been disabled.\');
+        return;
+      }
+
+      $account = _facebook_status_user_load(arg(1));
+      if (!$account->uid) {
+        echo t(\'This user has no statuses yet.\');
+        return;
+      }
+      $count = facebook_status_has_status(arg(1));
+      if (!$count) {
+        global $user;
+        if ($user->uid == $account->uid) {
+          echo t(\'You have no statuses yet.\');
+        }
+        else {
+          echo t(\'!name has no statuses yet.\', array(\'!name\' => theme(\'username\', $account)));
+        }
+      }
+      ?>');
     $handler->override_option('empty_format', '3');
   }
   $handler->override_option('use_ajax', TRUE);

@@ -1947,7 +1947,7 @@ function facebook_status_token_list($type = 'all') {
     }
     //This function was added after 6.1.12.
     if (function_exists('token_get_date_token_info')) {
-      $tokens += token_get_date_token_info(t('The status created'), 'status-time-');
+      $tokens['facebook_status'] += token_get_date_token_info(t('The status created'), 'status-time-');
     }
     return $tokens;
   }

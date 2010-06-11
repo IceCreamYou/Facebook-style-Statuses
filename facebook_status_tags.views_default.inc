@@ -387,7 +387,7 @@ function facebook_status_tags_views_default_views() {
       'default_argument_type' => 'current_user',
       'default_argument' => '',
       'validate_type' => 'php',
-      'validate_fail' => 'not found',
+      'validate_fail' => 'empty',
       'break_phrase' => 1,
       'not' => 0,
       'facebook_status_tags_type' => array(
@@ -429,16 +429,34 @@ if (!function_exists(\'_facebook_status_user_load_by_name\')) {
   return;
 }
 
-$names = explode(\',\', $argument);
+if (is_numeric($argument)) {
+  return TRUE;
+}
+if (strpos($argument, \',\') !== FALSE) {
+  $names = explode(\',\', $argument);
+  $type = \',\';
+}
+else if (strpos($argument, \'+\') !== FALSE) {
+  $names = explode(\'+\', $argument);
+  $type = \'+\';
+}
+else {
+  $names = array($argument);
+  $type = \'\';
+}
 $uids = array();
 foreach ($names as $name) {
+  if (is_numeric($name)) {
+    $uids[] = $name;
+    continue;
+  }
   $account = _facebook_status_user_load_by_name($name);
   if ($account->uid) {
     $uids[] = $account->uid;
   }
 }
 if (!empty($uids)) {
-  $handler->argument = implode(\',\', $uids);
+  $handler->argument = implode($type, $uids);
   return TRUE;
 }
 return FALSE;',
