@@ -10,27 +10,16 @@
  * Field handler to add a field with an edit link.
  */
 class facebook_status_views_handler_field_edit extends views_handler_field {
-  function query() {
-    $this->ensure_my_table();
-    $this->field_alias = $this->query->add_field($this->table_alias, 'sid');
-    $this->query->add_field($this->table_alias, 'uid');
-    $this->query->add_field($this->table_alias, 'pid');
-    $this->add_additional_fields();
-  }
-  function pre_render($values) {
-    $status = new stdClass();
-    $status->sid = $this->field_alias;
-    //Obviously, not the right way to do this...
-    $status->pid = str_replace('sid', 'pid', $this->field_alias);
-    $status->uid = str_replace('sid', 'uid', $this->field_alias);
-    $this->status = $status;
+  function construct() {
+    parent::construct();
+    $this->additional_fields['uid'] = 'uid';
+    $this->additional_fields['pid'] = 'pid';
   }
   function render($values) {
-    $status_fields = $this->status;
     $status = new stdClass();
-    $status->uid = $values->{$status_fields->uid};
-    $status->pid = $values->{$status_fields->pid};
-    $status->sid = $values->{$status_fields->sid};
+    $status->uid = $values->{$this->aliases['uid']};
+    $status->pid = $values->{$this->aliases['pid']};
+    $status->sid = $values->{$this->field_alias};
     if (_facebook_status_can_edit($status)) {
       drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
       $q = $_GET['q'];

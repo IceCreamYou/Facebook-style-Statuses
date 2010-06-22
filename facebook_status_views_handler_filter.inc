@@ -21,7 +21,7 @@ class facebook_status_views_handler_filter extends views_handler_filter_boolean_
     if ($this->value) {
       $this->ensure_my_table();
       $subquery = "(SELECT MAX(sid) FROM {facebook_status} WHERE uid = pid GROUP BY uid)";
-      $this->query->add_where(0, db_prefix_tables("$this->table_alias.sid IN ". $subquery));
+      $this->query->add_where(0, db_prefix_tables("$this->table_alias.sid IN $subquery"));
     }
   }
 }
