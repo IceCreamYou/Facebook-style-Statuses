@@ -1379,11 +1379,13 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
   //This will be used to save the status and notify Activity.
   $object = (object) array('status' => $new_status, 'status_time' => $time, 'uid' => $owner->uid, 'pid' => $poster->uid);
   if (($new_status != $status->status || !$options['ignore duplicate']) && $owner->uid) {
+    $edit = FALSE;
     //If a new status is submitted on one's own profile within 10 seconds of the old one, we assume the user didn't mean to post the first one.
     if (time() - $status->status_time < 10 && $owner->uid == $poster->uid && $options['ten second override']) {
       $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
       db_query($sql, $new_status, $time, $status->sid);
       $object->sid = $status->sid;
+      $edit = TRUE;
     }
     else {
       drupal_write_record('facebook_status', $object);
@@ -1395,7 +1397,7 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
     //Invokes hook_facebook_status_save($status, $edit).
     if ($options['alerts']['hook_facebook_status_save']) {
       $object->owner = $owner;
-      module_invoke_all('facebook_status_save', $object, FALSE);
+      module_invoke_all('facebook_status_save', $object, $edit);
     }
     //Trigger integration. Don't call if the status is blank because that will save an undesirable Activity 2 record.
     if (module_exists('trigger') && $time && $options['alerts']['trigger']) {
