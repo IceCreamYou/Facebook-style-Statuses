@@ -56,14 +56,9 @@ function facebook_status_menu() {
     'type' => MENU_LOCAL_TASK,
     'file' => 'facebook_status.announce.inc',
   );
-  //Annoyingly, this probably requires the menu cache to be rebuilt after changing these settings.
-  $size = variable_get('facebook_status_size_long', 40);
-  //The $view will be ignored if Views does not exist.
-  $view = variable_get('facebook_status_share_view', 'facebook_status');
   $items['share-status'] = array(
     'title' => 'Post to status',
-    'page callback' => 'theme',
-    'page arguments' => array('facebook_status_form_display', FALSE, $size, $view),
+    'page callback' => 'facebook_status_share_page',
     'access arguments' => array('edit own status'),
     'description' => 'Allows users to post items to their status from other sites.',
     'type' => MENU_SUGGESTED_ITEM,
@@ -96,9 +91,10 @@ function facebook_status_menu() {
     'file' => 'facebook_status.edit.inc',
   );
   $items['statuses/%facebook_status'] = array(
-    'title' => 'Status',
-    'page callback' => 'theme',
-    'page arguments' => array('facebook_status_item', 1),
+    'title callback' => '_facebook_status_page_title',
+    'title arguments' => array(1),
+    'page callback' => 'facebook_status_status_page',
+    'page arguments' => array(1),
     'access arguments' => array('view all statuses'),
     'type' => MENU_CALLBACK,
   );
@@ -154,6 +150,64 @@ function _facebook_status_access_js() {
     return TRUE;
   }
   return FALSE;
+}
+
+/**
+ * The page callback for the share-status page.
+ */
+function facebook_status_share_page() {
+  //The status update form will be shown in a wide area (the content region).
+  $size = variable_get('facebook_status_size_long', 40);
+  //The $view will be ignored if Views does not exist.
+  $view = variable_get('facebook_status_share_view', 'facebook_status');
+  //The $account will be automatically determined.
+  return theme('facebook_status_form_display', FALSE, $size, $view);
+}
+
+/**
+ * Generates the page title for individual status pages.
+ * The return value gets run through check_plain() before display;
+ * see http://drupal.org/node/556910 for details. The alternative is to use
+ * drupal_set_title() directly in the page callback.
+ */
+function _facebook_status_page_title($status) {
+  $title = trim($status->status);
+  if (empty($title)) {
+    //This is the sort of ridiculous case of a blank (cleared) status.
+    //We don't actually allow this, but at least we have a backup just in case.
+    return t('Status');
+  }
+  $poster = user_load(array('uid' => $status->pid));
+  if ($status->uid == $status->pid) {
+    $title = t('!poster: !status', array('!poster' => $poster->name, '!status' => $title));
+  }
+  else {
+    $owner = user_load(array('uid' => $status->uid));
+    //"\xC2\xBB" is the unicode escape sequence for the HTML entity &raquo; (a double right angle bracket)
+    $title = t("!poster \xC2\xBB !owner: !status",
+      array('!poster' => $poster->name, '!owner' => $owner->name, '!status' => $title)
+    );
+  }
+  if (drupal_strlen($title) > 80) {
+    //"\xE2\x80\xA6" is the unicode escape sequence for the HTML entity &hellip; (an ellipsis)
+    $title = drupal_substr($title, 0, 79) ."\xE2\x80\xA6";
+  }
+  return $title;
+}
+
+/**
+ * The individual status page callback.
+ */
+function facebook_status_status_page($status) {
+  $text = trim($status->status);
+  //Blank statuses are supposed to represent cleared statuses, plus there
+  //should be nothing to show; so we don't allow viewing those status updates.
+  if (empty($text)) {
+    drupal_not_found();
+  }
+  else {
+    return theme('facebook_status_item', $status);
+  }
 }
 
 /**
@@ -497,10 +551,17 @@ function theme_facebook_status_item($status = FALSE, $cacheable = FALSE, $option
       $access = call_user_func_array($component['access callback'], $component['access arguments']);
     }
     if ($access) {
-      //Ideally, other modules should be able to define theme functions for this.
-      //In practice, that's overkill.
-      if ($component['type'] == 'markup') {
-        $output .= $component['prefix'] .'<span class="fbss_'. $name .'">'. $component['value'] .'</span>'. $component['suffix'];
+      if (isset($component['theme callback'])) {
+        $output .= theme($component['theme callback'], $component);
+      }
+      elseif ($component['type'] == 'markup') {
+        if (!empty($component['prefix'])) {
+          $output .= '<span class="fbss_'. $name .'_prefix">'. $component['prefix'] .'</span>';
+        }
+        $output .= '<span class="fbss_'. $name .'">'. $component['value'] .'</span>';
+        if (!empty($component['suffix'])) {
+          $output .= '<span class="fbss_'. $name .'_suffix">'. $component['suffix'] .'</span>';
+        }
       }
     }
   }
@@ -823,7 +884,7 @@ function facebook_status_delete_status($sid, $alerts = array()) {
   if ($alerts === TRUE) {
     $alerts = array();
   }
-  else if ($alerts === FALSE) {
+  elseif ($alerts === FALSE) {
     $alerts = array(
       'userpoints' => FALSE,
       'rules' => FALSE,
@@ -1047,31 +1108,37 @@ function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
   $conversation = l(t('Conversation'), 'statuses/conversation/'. check_plain($owner->name) .','. check_plain($poster->name));
   $components = array(
     'poster' => array(
-      'value' => $poster_name .' &raquo; ',
+      'value' => $poster_name,
+      'suffix' => ' &raquo; ',
       '#value' => $poster_name,
       '#unformatted' => $status->pid,
       'weight' => -50,
     ),
     'owner' => array(
-      'value' => $owner_name .': ',
+      'value' => $owner_name,
+      'suffix' => ': ',
       '#value' => $owner_name,
       '#unformatted' => $status->uid,
       'weight' => -45,
     ),
     'user' => array(
-      'value' => $owner_name .' ',
+      'value' => $owner_name,
+      'suffix' => ' ',
       '#value' => $owner_name,
       '#unformatted' => $status->pid,
       'weight' => -45,
     ),
     'status' => array(
-      'value' => $status_text .' ',
+      'value' => $status_text,
+      'suffix' => ' ',
       '#value' => $status_text,
       '#unformatted' => $status->status,
       'weight' => -40,
     ),
     'time' => array(
-      'value' => ' <em>'. $time .'</em>',
+      'value' => $time,
+      'prefix' => '<em>',
+      'suffix' => '</em>',
       '#value' => $time,
       '#unformatted' => $status->status_time,
       'weight' => -30,
@@ -1083,7 +1150,8 @@ function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
       'weight' => -20,
     ),
     'conversation' => array(
-      'value' => ' '. $conversation,
+      'value' => $conversation,
+      'prefix' => ' ',
       '#value' => $conversation,
       'weight' => -10,
     ),
@@ -1328,7 +1396,7 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
       'alerts' => FALSE,
     );
   }
-  else if ($options === TRUE) {
+  elseif ($options === TRUE) {
     $options = array(
       'alerts' => TRUE,
     );
@@ -1486,7 +1554,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
     //Translate a blank string so that the default text can be in different languages without having the restriction of being preset.
     $default = t('@fbssdefault', array('@fbssdefault' => ''));
     if (variable_get('facebook_status_concat', 1)) {
-      $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
+      $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;&nbsp;</span>';
     }
     $status = _facebook_status_get_status_fast($account->uid);
     if ($status->status_time || variable_get('facebook_status_default_text', '@laststatus') != '@laststatus') {
@@ -1509,7 +1577,7 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
     //Other modules might use "s," so only accept it on the share-status page.
     $default = str_replace('"', '', $_GET['s']);
   }
-  else if (isset($_GET['share-status'])) {
+  elseif (isset($_GET['share-status'])) {
     $default = str_replace('"', '', $_GET['share-status']);
   }
   if (is_numeric($_GET['sid'])) {
@@ -2326,7 +2394,7 @@ function facebook_status_pathauto_bulkupdate() {
     if (in_array('self', $pattern_types) && !in_array('other', $pattern_types)) {
       $query .= " AND fbss.uid = fbss.pid";
     }
-    else if (in_array('other', $pattern_types) && !in_array('self', $pattern_types)) {
+    elseif (in_array('other', $pattern_types) && !in_array('self', $pattern_types)) {
       $query .= " AND fbss.uid <> fbss.pid";
     }
     $result = db_query_range($query, 0, variable_get('pathauto_max_bulk_update', 50));
@@ -2394,7 +2462,7 @@ function facebook_status_mollom_form_info($form_id) {
       ),
     );
   }
-  else if ($form_id == 'facebook_status_edit') {
+  elseif ($form_id == 'facebook_status_edit') {
     return array(
       'title' => t('Facebook-style Statuses edit status form'),
       'mode' => MOLLOM_MODE_ANALYSIS,

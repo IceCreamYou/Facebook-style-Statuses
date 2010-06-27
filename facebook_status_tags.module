@@ -93,7 +93,7 @@ function facebook_status_tags_form_facebook_status_admin_alter(&$form, &$form_st
         array('!setup' => url('admin/settings/facebook_status/advanced'))),
       'error');
   }
-  else if (!module_exists('taxonomy')) {
+  elseif (!module_exists('taxonomy')) {
     drupal_set_message(
       t('You have the Facebook-style Statuses Tags module enabled.') .' '.
       t('However, you will not be able to use #hashtags unless you <a href="!enable">enable</a> the core Taxonomy module.',
@@ -113,7 +113,7 @@ function facebook_status_tags_form_facebook_status_admin_advanced_alter(&$form, 
       t('You must set a vocabulary for #hashtags below in order for the #hashtags feature to work.'),
       'error');
   }
-  else if (!module_exists('taxonomy')) {
+  elseif (!module_exists('taxonomy')) {
     drupal_set_message(
       t('You have the Facebook-style Statuses Tags module enabled.') .' '.
       t('However, you will not be able to use #hashtags unless you <a href="!enable">enable</a> the core Taxonomy module.',
@@ -291,19 +291,19 @@ function facebook_status_tags_get_statuses($tag, $type = 'term', $count = 1, $ui
  *   The number of tags of the given type the relevant status has.
  */
 function facebook_status_tags_has_tags($sid, $type = NULL) {
-  $extra = '';
+  $sql = "SELECT COUNT(rid) FROM {facebook_status_tags} WHERE sid = %d";
   $args = array($sid);
   if (!empty($type)) {
     if (is_string($type)) {
-      $extra = " AND type = '%s'";
+      $sql .= " AND type = '%s'";
       $args[] = $type;
     }
-    else if (is_array($type)) {
-      $extra = " AND TYPE IN (". db_placeholders($type, 'text') .")";
+    elseif (is_array($type)) {
+      $sql .= " AND TYPE IN (". db_placeholders($type, 'text') .")";
       $args = array_merge($args, $type);
     }
   }
-  return db_result(db_query("SELECT COUNT(rid) FROM {facebook_status_tags} WHERE sid = %d $extra", $args));
+  return db_result(db_query($sql, $args));
 }
 
 /**
@@ -374,7 +374,7 @@ function facebook_status_tags_popular_terms($count = 5, $time = 'all', $options 
       'current user only' => FALSE,
     );
   }
-  else if ($options === TRUE) {
+  elseif ($options === TRUE) {
     $options = array(
       'current user only' => TRUE,
     );
@@ -471,7 +471,7 @@ function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all',
     if ($type == 'term') {
       $tag = taxonomy_get_term($tag->rid);
     }
-    else if ($type == 'user') {
+    elseif ($type == 'user') {
       $tag = user_load(array('uid' => $tag->rid));
     }
     $tag->popularity = $c;

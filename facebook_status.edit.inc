@@ -16,7 +16,7 @@ function facebook_status_edit(&$form_state, $status) {
   $default = $status->status;
 
   if (variable_get('facebook_status_concat', 1)) {
-    $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name ', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;</span>';
+    $prefix = '<span class="facebook_status_prefix">'. t('!fbss_prefix_name', array('!fbss_prefix_name' => theme('username', $account))) .'&nbsp;&nbsp;</span>';
   }
   else {
     $prefix = '';

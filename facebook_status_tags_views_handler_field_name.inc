@@ -53,7 +53,7 @@ class facebook_status_tags_views_handler_field_name extends views_handler_field 
       if ($tag->type == 'term') {
         $prefix = '#';
       }
-      else if ($tag->type == 'user') {
+      elseif ($tag->type == 'user') {
         $prefix = '@';
       }
     }
@@ -61,7 +61,7 @@ class facebook_status_tags_views_handler_field_name extends views_handler_field 
       if ($tag->type == 'term') {
         $tags[] = $prefix . l($tag->name, _facebook_status_tags_resolve($tag));
       }
-      else if ($tag->type == 'user') {
+      elseif ($tag->type == 'user') {
         $tags[] = $prefix . theme('username', _facebook_status_user_load($tag->tid));
       }
       else {

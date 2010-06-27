@@ -72,10 +72,10 @@ class facebook_status_tags_views_handler_filter_has_this_tag extends views_handl
     $where = array();
     preg_match_all('/ (-?)("[^"]+"|[^" ]+)/i', ' ' . $this->value, $matches, PREG_SET_ORDER);
     foreach ($matches as $match) {
-      $phrase = false;
+      $phrase = FALSE;
       if ($match[2]{0} == '"') {
-        $match[2] = substr($match[2], 1, -1);
-        $phrase = true;
+        $match[2] = drupal_substr($match[2], 1, -1);
+        $phrase = TRUE;
       }
       $words = trim($match[2], ',?!();:-');
       $words = $phrase ? array($words) : preg_split('/ /', $words, -1, PREG_SPLIT_NO_EMPTY);
