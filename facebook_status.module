@@ -1112,6 +1112,7 @@ function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
       'suffix' => ' &raquo; ',
       '#value' => $poster_name,
       '#unformatted' => $status->pid,
+      'description' => t('The sender of a status message to another user.'),
       'weight' => -50,
     ),
     'owner' => array(
@@ -1119,6 +1120,7 @@ function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
       'suffix' => ': ',
       '#value' => $owner_name,
       '#unformatted' => $status->uid,
+      'description' => t('The recipient of a status message to another user.'),
       'weight' => -45,
     ),
     'user' => array(
@@ -1126,6 +1128,7 @@ function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
       'suffix' => ' ',
       '#value' => $owner_name,
       '#unformatted' => $status->pid,
+      'description' => t('The creator of a status update.'),
       'weight' => -45,
     ),
     'status' => array(
@@ -1133,6 +1136,7 @@ function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
       'suffix' => ' ',
       '#value' => $status_text,
       '#unformatted' => $status->status,
+      'description' => t('The status text.'),
       'weight' => -40,
     ),
     'time' => array(
@@ -1141,18 +1145,21 @@ function facebook_status_item_components($status = FALSE, $cacheable = FALSE) {
       'suffix' => '</em>',
       '#value' => $time,
       '#unformatted' => $status->status_time,
+      'description' => t('The time the status was created.'),
       'weight' => -30,
     ),
     'edit' => array(
       'value' => $edit,
       '#value' => $edit,
       '#unformatted' => $status->sid,
+      'description' => t('Links to edit and delete the status, for those with permission.'),
       'weight' => -20,
     ),
     'conversation' => array(
       'value' => $conversation,
       'prefix' => ' ',
       '#value' => $conversation,
+      'description' => t('A link to view the conversation, if applicable.'),
       'weight' => -10,
     ),
   );
@@ -1534,7 +1541,14 @@ function _facebook_status_save_status($owner = FALSE, $poster = FALSE, $new_stat
  *   A $form array.
  */
 function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
-  global $user;
+  global $user, $base_path;
+  //Add autogrow JavaScript. I'm not sure if the file_exists() is necessary.
+  if (file_exists('sites/all/libraries/jquery.autogrow.js')) {
+    drupal_add_js('sites/all/libraries/jquery.autogrow.js');
+  }
+  elseif (file_exists('libraries/jquery.autogrow.js')) {
+    drupal_add_js('libraries/jquery.autogrow.js');
+  }
   if (isset($form_state['facebook_status'])) {
     $aid = $form_state['facebook_status']['account'];
     $account = user_load(array('uid' => $aid));

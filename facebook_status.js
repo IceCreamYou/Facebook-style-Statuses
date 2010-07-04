@@ -11,6 +11,9 @@ Drupal.behaviors.facebookStatus = function (context) {
   var facebook_status_original_value = $facebook_status_field.val();
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
   var refreshIDs = Drupal.settings.facebook_status.refreshIDs;
+  if ($.fn.autogrow && $facebook_status_field) {
+    $facebook_status_field.autogrow({expandTolerance: 2});
+  }
   if (Drupal.settings.facebook_status.autofocus) {
     $facebook_status_field.focus();
   }
@@ -65,6 +68,9 @@ Drupal.behaviors.facebookStatus = function (context) {
   context.find('#facebook_status_replace').bind('ahah_success', function(context) {
     if ($(context.target).html() != $(this).html()) {
       return;
+    }
+    if (Drupal.heartbeat) {
+      Drupal.heartbeat.pollMessages();
     }
     //Refresh elements by re-loading the current page and replacing the old version with the updated version.
     var loaded = {};
