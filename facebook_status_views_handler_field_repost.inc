@@ -14,6 +14,23 @@ class facebook_status_views_handler_field_repost extends views_handler_field {
     parent::construct();
     $this->additional_fields['pid'] = 'pid';
   }
+  function option_definition() {
+    $options = parent::option_definition();
+    $options['repost_text'] = array(
+      'default' => t('Share'),
+      'translatable' => TRUE,
+    );
+    return $options;
+  }
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    $form['repost_text'] = array(
+      '#title' => t('Re-post text'),
+      '#type'  => 'textfield',
+      '#description' => t('The text that will display for the "Re-post this" link.'),
+      '#default_value' => $this->options['repost_text'],
+    );
+  }
   function render($values) {
     if ((user_access('edit own status') || user_access('edit all statuses')) && $values->{$this->aliases['pid']} != $GLOBALS['user']->uid) {
       drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
@@ -21,7 +38,7 @@ class facebook_status_views_handler_field_repost extends views_handler_field {
         'attributes' => array('class' => 'facebook_status_conversation_link'),
         'query' => array('sid' => $values->{$this->field_alias}, 'destination' => $_GET['q'])
       );
-      return l(t('Re-post'), 'share-status', $options);
+      return l($this->options['repost_text'], 'share-status', $options);
     }
   }
 }

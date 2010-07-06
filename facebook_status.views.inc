@@ -235,7 +235,7 @@ function facebook_status_views_data() {
     'title' => t('Created time'),
     'help' => t('The time the status message was posted.'),
     'field' => array(
-      'handler' => 'views_handler_field_date',
+      'handler' => 'facebook_status_views_handler_field_created',
       'click sortable' => TRUE,
     ),
     'sort' => array(
@@ -300,6 +300,9 @@ function facebook_status_views_handlers() {
     'handlers' => array(
       'facebook_status_views_handler_argument_flagged_user' => array(
         'parent' => 'views_handler_argument',
+      ),
+      'facebook_status_views_handler_field_created' => array(
+        'parent' => 'views_handler_field_date',
       ),
       'facebook_status_views_handler_field_cross' => array(
         'parent' => 'views_handler_field',
