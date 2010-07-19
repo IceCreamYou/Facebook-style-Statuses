@@ -1310,7 +1310,7 @@ function _facebook_status_possessive($status, $account) {
  */
 function _facebook_status_run_filter($status) {
   if (variable_get('facebook_status_filter', 'none') != 'none') {
-    return check_markup($status, variable_get('facebook_status_filter', 'none'));
+    return check_markup($status, variable_get('facebook_status_filter', 'none'), FALSE);
   }
   return check_plain($status);
 }

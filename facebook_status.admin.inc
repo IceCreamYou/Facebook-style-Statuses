@@ -57,7 +57,7 @@ function facebook_status_admin($form_state) {
   $form['facebook_status_filter'] = array(
     '#type' => 'select',
     '#title' => t('Input filter'),
-    '#description' => t('This input filter will run on all your statuses, so make sure it is secure.'),
+    '#description' => '<strong>'. t('This input filter will run on all your statuses AND ACCESS TO IT IS NOT CHECKED, so make sure it is secure.') .'</strong>',
     '#default_value' => variable_get('facebook_status_filter', 'none'),
     '#options' => $options,
     '#weight' => -20,
