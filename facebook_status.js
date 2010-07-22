@@ -2,9 +2,13 @@
 var allowClickRefresh = true;
 Drupal.behaviors.facebookStatus = function (context) {
   var initialLoad = false;
+  //Drupal passes document as context on page load.
   if (context == document) {
     initialLoad = true;
-    context = $(document);
+  }
+  //Make sure we can run context.find().
+  if (!(context instanceof jQuery)) {
+    context = $(context);
   }
   facebook_status_submit_disabled = false;
   var $facebook_status_field = context.find('.facebook_status_text:first');
@@ -12,6 +16,7 @@ Drupal.behaviors.facebookStatus = function (context) {
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
   var refreshIDs = Drupal.settings.facebook_status.refreshIDs;
   if ($.fn.autogrow && $facebook_status_field) {
+    //jQuery Autogrow plugin integration.
     $facebook_status_field.autogrow({expandTolerance: 2});
   }
   if (Drupal.settings.facebook_status.autofocus) {
