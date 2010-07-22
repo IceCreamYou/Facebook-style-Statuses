@@ -210,7 +210,7 @@ function facebook_status_views_default_views() {
       'limit' => '0',
       'case' => 'none',
       'path_case' => 'none',
-      'transform_dash' => 1,
+      'transform_dash' => 0,
       'id' => 'name',
       'table' => 'users',
       'field' => 'name',
