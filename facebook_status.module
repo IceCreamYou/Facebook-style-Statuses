@@ -221,7 +221,7 @@ function _facebook_status_conversation_title() {
     return t('Conversation');
   }
   if (is_numeric($args[0])) {
-    if (!$args[1]) {
+    if (empty($args[1])) {
       $args[1] = $user->uid;
     }
     $account1 = user_load(array('uid' => $args[0]));
@@ -229,7 +229,7 @@ function _facebook_status_conversation_title() {
     //Technically, we don't know which one is the owner and which one is the poster, but it makes no difference.
     return t('Conversation between @owner and @poster', array('@owner' => $account1->name, '@poster' => $account2->name));
   }
-  if (!$args[1]) {
+  if (empty($args[1])) {
     $args[1] = $user->name;
   }
   return t('Conversation between @owner and @poster', array('@owner' => $args[0], '@poster' => $args[1]));
