@@ -152,12 +152,15 @@ Drupal.behaviors.facebookStatus = function (context) {
     }
   });
   //Count remaining characters.
-  context.find('.facebook_status_text').keyup(function(fbss_key) {
-    var fbss_remaining = fbss_maxlen - $(this).val().length;
-    if (Drupal.settings.facebook_status.ttype == 'textfield' && fbss_remaining < 0) {
-      fbss_remaining = 0;
-    }
-    fbss_print_remaining(fbss_remaining, $(this).parent().next());
+  context.find('.facebook_status_text').keypress(function(fbss_key) {
+    var th = $(this);
+    setTimeout(function() {
+      var fbss_remaining = fbss_maxlen - th.val().length;
+      if (Drupal.settings.facebook_status.ttype == 'textfield' && fbss_remaining < 0) {
+        fbss_remaining = 0;
+      }
+      fbss_print_remaining(fbss_remaining, th.parent().next());
+    }, 10);
   });
 }
 //Change remaining character count.
