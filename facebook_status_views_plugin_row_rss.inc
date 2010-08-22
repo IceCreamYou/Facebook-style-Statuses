@@ -31,7 +31,7 @@ class facebook_status_views_plugin_row_rss extends views_plugin_row {
     $poster = _facebook_status_user_load($status->pid);
 
     $item = new stdClass();
-    $item->title = check_plain($status->status);
+    $item->title = filter_xss($status->status);
     $item->link = url("statuses/$status->sid", array('absolute' => TRUE));
     $item->sid = $status->sid;
     $item->description = '';
