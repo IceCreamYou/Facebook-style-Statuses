@@ -873,6 +873,7 @@ function facebook_status_load($sid) {
  *     'hook_facebook_status_delete' => TRUE,
  *     'activity2' => TRUE,
  *     'path' => TRUE,
+ *     'flag' => TRUE,
  *   );
  *   If $alerts is FALSE, $alerts['hook_facebook_status_delete'] and
  *   $alerts['path'] are still set to TRUE.
@@ -892,6 +893,7 @@ function facebook_status_delete_status($sid, $alerts = array()) {
       'hook_facebook_status_delete' => TRUE,
       'activity2' => FALSE,
       'path' => TRUE,
+      'flag' => FALSE,
     );
   }
   //Merge in defaults.
@@ -902,6 +904,7 @@ function facebook_status_delete_status($sid, $alerts = array()) {
     'hook_facebook_status_delete' => TRUE,
     'activity2' => TRUE,
     'path' => TRUE,
+    'flag' => TRUE,
   );
   //Invokes hook_facebook_status_delete_alerts_alter(&$alerts).
   drupal_alter('facebook_status_delete_alerts', $alerts, $sid);
@@ -921,6 +924,11 @@ function facebook_status_delete_status($sid, $alerts = array()) {
   //Path integration.
   if (module_exists('path') && $alerts['path']) {
     db_query("DELETE FROM {url_alias} WHERE src = 'statuses/%d'", $sid);
+  }
+  //Flag integration.
+  if (module_exists('flag') && $alerts['flag']) {
+    db_query("DELETE FROM {flag_content} WHERE content_type = 'facebook_status' AND content_id = %d", $flag->fid, $sid);
+    db_query("DELETE FROM {flag_counts} WHERE content_type = 'facebook_status' AND content_id = %d", $flag->fid, $sid);
   }
   //Invokes hook_facebook_status_delete($sid).
   if ($alerts['hook_facebook_status_delete']) {
