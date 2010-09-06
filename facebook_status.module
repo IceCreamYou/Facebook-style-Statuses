@@ -1653,7 +1653,10 @@ function facebook_status_box($form_state, $account = NULL, $size = FALSE) {
     '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
     '#weight' => -38,
   );
-  $data = unserialize($account->data);
+  $data = $account->data;
+  if (is_string($data)) {
+    $data = unserialize($data);
+  }
   if (module_exists('twitter') && $data['facebook_status_twitter'] && $account->uid == $GLOBALS['user']->uid && variable_get('facebook_status_twitter_default', 'off') != 'disallow') {
     $form['twitter'] = array(
       '#type' => 'checkbox',
