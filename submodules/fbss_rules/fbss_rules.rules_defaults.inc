@@ -16,7 +16,7 @@ function facebook_status_rules_defaults() {
       'facebook_status_rules_update' =>
       array(
         '#type' => 'rule',
-        '#set' => 'event_facebook_status_update',
+        '#set' => 'event_facebook_status_save',
         '#label' => 'Submit Facebook-style Status',
         '#active' => 0,
         '#weight' => '0',

@@ -1,0 +1,79 @@
+.fbssc {
+  border: 1px solid #E0E0E0;
+  margin: 1em 1.5em;
+  padding: 0.75em;
+}
+
+.fbssc_comment {
+  border-bottom: 1px solid #E0E0E0;
+  margin: 0.5em 0;
+  padding: 0.5em 0.25em 0.75em;
+}
+
+.fbssc .first {
+  margin: 0 0 0.5em;
+  padding: 0.25em 0.25em 0.75em;
+}
+
+.fbssc .last {
+  border-bottom: none;
+  padding: 0;
+}
+
+.fbssc_author {
+  display: inline;
+  padding-right: 0.5em;
+}
+
+.fbssc_text {
+  display: inline;
+  padding: 0.5em 0 0;
+}
+
+.fbssc_closure {
+  font-size: 90%;
+  margin-top: 0.25em;
+}
+
+.fbssc_closure span {
+  padding-right: 1em;
+}
+
+.fbssc_time {
+  font-style: italic;
+}
+
+.fbssc_form .resizable-textarea {
+  margin: 1.5em 1.5em 1em;
+}
+
+.fbssc_form .form-submit {
+  margin: 0 1.5em;
+}
+
+.fbssc_hide {
+  display: none;
+}
+
+/* The "Comment" link. */
+.fbssc_show_comment_form {
+  display: inline;
+  font-size: 90%;
+  margin-left: 0.5em;
+}
+.fbssc_show_comment_form_inner {
+  display: inline;
+  font-size: 90%;
+  margin-left: 2.25em;
+}
+
+/* The "Show all comments" link. */
+.fbssc_show_comments_link {
+  border-bottom :1px solid #E0E0E0;
+  display: block;
+  font-size: 90%;
+  padding-bottom: 0.5em;
+}
+
+/* The "Show all comments" link when it expands instead of redirecting. */
+.fbssc_show_comments {}

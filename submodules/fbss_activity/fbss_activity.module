@@ -1,0 +1,72 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Integrates Activity 2 with Facebook-style Statuses.
+ */
+
+/**
+ * Implementation of hook_facebook_status_delete().
+ */
+function fbss_activity_facebook_status_delete($sid) {
+  $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $sid);
+  $records = array();
+  while ($record = db_fetch_object($result)) {
+    $records[] = $record->aid;
+  }
+  if (!empty($records)) {
+    activity_delete($records);
+  }
+}
+
+/**
+ * Implementation of hook_activity_info().
+ */
+function fbss_activity_activity_info() {
+  $info = new stdClass();
+  $info->api = 2;
+  $info->name = 'facebook_status';
+  $info->object_type = 'facebook_status';
+  $info->eid_field = 'sid';
+  $info->objects = array('Owner' => 'facebook_status', 'Poster' => 'poster');
+  $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other'));
+  $info->realms = array('facebook_status_poster' => 'Facebook-style Statuses Poster', 'facebook_status_owner' => 'Facebook-style Statuses Owner');
+  return $info;
+}
+
+/**
+ * Implementation of hook_activity_grants().
+ */
+function fbss_activity_activity_grants($activity) {
+  $realms = array();
+  if ($activity->type == 'facebook_status') {
+    $realms['facebook_status_owner'] = array($activity->uid);
+    $result = db_fetch_object(db_query("SELECT pid FROM {facebook_status} WHERE sid = %d", $activity->eid));
+    $realms['facebook_status_poster'] = array($result->pid);
+  }
+  return $realms;
+}
+
+/**
+ * Implementation of hook_activity_access_grants().
+ */
+function fbss_activity_activity_access_grants($account) {
+  return array(
+    'facebook_status_owner' => array($account->uid),
+    'facebook_status_poster' => array($account->uid),
+  );
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function fbss_activity_form_activity_form_alter(&$form, &$form_state) {
+  if ($form_state['storage']['values']['triggers']['hook'] == 'facebook_status') {
+    if ($form_state['storage']['values']['operations']['operation'] == 'fbss_submitted') {
+      foreach (activity_enabled_languages() as $id => $language) {
+        unset($form["{$id}_fieldset"]['poster-pattern-'. $id]);
+      }
+    }
+  }
+}

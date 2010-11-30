@@ -9,7 +9,7 @@
 /**
  * Implementation of hook_rules_event_info().
  */
-function facebook_status_rules_event_info() {
+function fbss_rules_rules_event_info() {
   return array(
     'facebook_status_delete' => array(
       'label' => t('User deletes a status'),
@@ -25,8 +25,8 @@ function facebook_status_rules_event_info() {
         'status' => array('type' => 'facebook_status', 'label' => t('The status.')),
       ),
     ),
-    'facebook_status_update' => array(
-      'label' => t('User adds or updates a status'),
+    'facebook_status_save' => array(
+      'label' => t('User saves a status'),
       'module' => 'Facebook-style Statuses',
       'arguments' => array(
         'owner' => array('type' => 'user', 'label' => t('The user to whose profile the status was posted.')),
@@ -40,9 +40,9 @@ function facebook_status_rules_event_info() {
 /**
  * Implementation of hook_rules_condition_info().
  */
-function facebook_status_rules_condition_info() {
+function fbss_rules_rules_condition_info() {
   return array(
-    'facebook_status_is_self' => array(
+    'fbss_rules_is_self' => array(
       'label' => t('Status was posted to own profile'),
       'arguments' => array(
         'status' => array('type' => 'facebook_status', 'label' => t('The status')),
@@ -57,14 +57,14 @@ function facebook_status_rules_condition_info() {
       ),
       'module' => 'Facebook-style Statuses',
     ),
-    'facebook_status_rules_condition_can_edit' => array(
+    'fbss_rules_rules_condition_can_edit' => array(
       'label' => t('User has permission to edit a status'),
       'arguments' => array(
         'status' => array('type' => 'facebook_status', 'label' => t('The status')),
       ),
       'module' => 'Facebook-style Statuses',
     ),
-    'facebook_status_rules_condition_can_delete' => array(
+    'fbss_rules_rules_condition_can_delete' => array(
       'label' => t('User has permission to delete a status'),
       'arguments' => array(
         'status' => array('type' => 'facebook_status', 'label' => t('The status')),
@@ -77,30 +77,30 @@ function facebook_status_rules_condition_info() {
 /**
  * Checks if the status was posted to the user's own profile.
  */
-function facebook_status_is_self($status) {
+function fbss_rules_is_self($status) {
   return $status->uid == $status->pid;
 }
 
 /**
  * Checks if the current user can edit the status.
  */
-function facebook_status_rules_condition_can_edit($status) {
+function fbss_rules_rules_condition_can_edit($status) {
   _facebook_status_can_edit($status);
 }
 
 /**
  * Checks if the current user can delete the status.
  */
-function facebook_status_rules_condition_can_delete($status) {
+function fbss_rules_rules_condition_can_delete($status) {
   _facebook_status_can_edit($status, TRUE);
 }
 
 /**
  * Implementation of hook_rules_action_info().
  */
-function facebook_status_rules_action_info() {
+function fbss_rules_rules_action_info() {
   return array(
-    'facebook_status_load_action' => array(
+    'fbss_rules_load_action' => array(
       'label' => t('Load a status'),
       'new variables' => array(
         'status_loaded' => array('type' => 'facebook_status', 'label' => t('Loaded status')),
@@ -109,19 +109,19 @@ function facebook_status_rules_action_info() {
       'module' => 'Facebook-style Statuses',
       'eval input' => array('sid'),
     ),
-    'facebook_status_edit_action' => array(
+    'fbss_rules_edit_action' => array(
       'label' => t('Edit a status'),
       'help' => t('Enter the Status ID of the status to edit and the text you wish to replace the status.'),
       'module' => 'Facebook-style Statuses',
       'eval input' => array('sid', 'status'),
     ),
-    'facebook_status_delete_action' => array(
+    'fbss_rules_delete_action' => array(
       'label' => t('Delete a status'),
       'help' => t('Enter the Status ID of the status to delete.'),
       'module' => 'Facebook-style Statuses',
       'eval input' => array('sid'),
     ),
-    'facebook_status_add_action' => array(
+    'fbss_rules_add_action' => array(
       'label' => t('Add a status'),
       'help' => t('Enter the status text and the User ID or Username of the user to whose profile the status will be posted.'),
       'module' => 'Facebook-style Statuses',
@@ -133,7 +133,7 @@ function facebook_status_rules_action_info() {
 /**
  * Builds the form for loading a status.
  */
-function facebook_status_load_action_form($settings, &$form) {
+function fbss_rules_load_action_form($settings, &$form) {
   $settings += array('sid' => '');
   $form['settings']['sid'] = array(
     '#type' => 'textfield',
@@ -146,14 +146,14 @@ function facebook_status_load_action_form($settings, &$form) {
 /**
  * Loads a status.
  */
-function facebook_status_load_action($settings) {
+function fbss_rules_load_action($settings) {
   return array('status_loaded' => facebook_status_load($settings['sid']));
 }
 
 /**
  * Builds the form for editing a status.
  */
-function facebook_status_edit_action_form($settings, &$form) {
+function fbss_rules_edit_action_form($settings, &$form) {
   $settings += array('sid' => '', 'status' => '');
   $form['settings']['sid'] = array(
     '#type' => 'textfield',
@@ -172,7 +172,7 @@ function facebook_status_edit_action_form($settings, &$form) {
 /**
  * Edits a status.
  */
-function facebook_status_edit_action($settings) {
+function fbss_rules_edit_action($settings) {
   $status_old = facebook_status_load($settings['sid']);
   $account = user_load(array('uid' => $status_old->uid));
   $new_status = trim($settings['status']);
@@ -202,7 +202,7 @@ function facebook_status_edit_action($settings) {
 /**
  * Builds the form for deleting a status.
  */
-function facebook_status_delete_action_form($settings, &$form) {
+function fbss_rules_delete_action_form($settings, &$form) {
   $settings += array('sid' => '');
   $form['settings']['sid'] = array(
     '#type' => 'textfield',
@@ -215,14 +215,14 @@ function facebook_status_delete_action_form($settings, &$form) {
 /**
  * Deletes a status.
  */
-function facebook_status_delete_action($settings) {
+function fbss_rules_delete_action($settings) {
   facebook_status_delete_status($settings['sid']);
 }
 
 /**
  * Builds the form for adding a status.
  */
-function facebook_status_add_action_form($settings, &$form) {
+function fbss_rules_add_action_form($settings, &$form) {
   $settings += array('poster' => '', 'uid' => '', 'name' => '', 'status' => '');
   $form['settings']['poster'] = array(
     '#type' => 'textfield',
@@ -252,7 +252,7 @@ function facebook_status_add_action_form($settings, &$form) {
 /**
  * Validates the form for adding a status.
  */
-function facebook_status_add_action_validate($form, $form_state) {
+function fbss_rules_add_action_validate($form, $form_state) {
   if (!$form_state['values']['settings']['uid'] && !$form_state['values']['settings']['name']) {
     form_set_error('settings][uid', t('You must enter either a User ID or Username (or both).'));
   }
@@ -261,7 +261,7 @@ function facebook_status_add_action_validate($form, $form_state) {
 /**
  * Adds a status.
  */
-function facebook_status_add_action($settings) {
+function fbss_rules_add_action($settings) {
   $status = $settings['status'];
   $from = user_load(array('name' => $settings['poster']));
   if (!$from->uid) {
@@ -285,7 +285,7 @@ function facebook_status_add_action($settings) {
 /**
  * Implementation of hook_rules_data_type_info().
  */
-function facebook_status_rules_data_type_info() {
+function fbss_rules_rules_data_type_info() {
   return array(
     'facebook_status' => array(
       'label' => t('Facebook-style Status'),

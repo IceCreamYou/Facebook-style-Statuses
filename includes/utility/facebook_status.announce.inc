@@ -18,7 +18,7 @@ function facebook_status_announce_admin(&$form_state) {
     '#type' => 'textfield',
     '#title' => t('Sender'),
     '#description' => t('The username of the user from whom the messages will be sent.'),
-    '#autocomplete_path'  => 'user/autocomplete',
+    '#autocomplete_path' => 'user/autocomplete',
     '#required' => TRUE,
   );
   $form['message'] = array(
@@ -38,7 +38,7 @@ function facebook_status_announce_admin(&$form_state) {
  */
 function facebook_status_announce_admin_submit($form, &$form_state) {
   $v = $form_state['values'];
-  $from = user_load(array('name' => $v['from']));
+  $from = _facebook_status_user_load_by_name($v['from']);
   if (!$from->uid) {
     $from = FALSE;
   }
@@ -70,22 +70,10 @@ function facebook_status_announce_generate_status($message, $from, $count, &$con
     $context['sandbox']['progress'] = 0;
   }
   $uid = db_result(db_query_range("SELECT uid FROM {users} WHERE status = 1", $context['sandbox']['progress'], 1));
+  //Caching here is actually slower than not caching because we should only load each user once.
+  //So we use user_load() instead of _facebook_status_user_load().
   $to = user_load(array('uid' => $uid));
-  $options = array(
-    'ignore duplicate' => FALSE,
-    'ten second override' => FALSE,
-    'ignore blank status' => FALSE,
-    'alerts' => array(
-      'userpoints' => FALSE,
-      'hook_facebook_status_save' => TRUE,
-      'trigger' => FALSE, //Also calls Activity 2
-      'activity1' => FALSE,
-      'rules' => TRUE,
-      'twitter' => FALSE,
-      'appbar' => TRUE,
-    ),
-  );
-  _facebook_status_save_status($to, $from, $message, $options);
+  facebook_status_save_status($to, 'user', $message, $from);
   $context['message'] = t('Sending message to %user (@current of @total)',
     array('%user' => $to->name, '@current' => $context['sandbox']['progress'], '@total' => $count));
   $context['sandbox']['progress']++;
@@ -98,12 +86,18 @@ function facebook_status_announce_generate_status($message, $from, $count, &$con
  */
 function facebook_status_announce_batch_finished($success, $results, $operations) {
   if ($success) {
-    drupal_set_message(t('Sent message to @count users: !list',
-      array(
-        '@count' => count($results),
-        '!list' => theme('item_list', $results),
-      )
-    ));
+    $count = count($results);
+    if ($count < 50) {
+      drupal_set_message(t('Sent message to @count users: !list',
+        array(
+          '@count' => count($results),
+          '!list' => theme('item_list', $results),
+        )
+      ));
+    }
+    else {
+      drupal_set_message(t('Sent message to @count users.', array('@count' => $count)));
+    }
   }
   else {
     $error_operation = reset($operations);

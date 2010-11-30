@@ -7,18 +7,23 @@
  */
 
 /**
+ * Make sure the flag_flag class is loaded before we extend it.
+ * It won't be loaded yet if the Flag module hasn't loaded yet, because Flag
+ * doesn't provide the kind of fancy autoloading that Views does.
+ */
+if (!class_exists('flag_flag')) {
+  module_load_include(drupal_get_path('module', 'flag') .'/flag.inc');
+}
+
+/**
  * Adds a new flag type.
  */
-class facebook_status_flag extends flag_flag {
+class fbss_flag extends flag_flag {
   function _load_content($content_id) {
     return is_numeric($content_id) ? facebook_status_load($content_id) : NULL;
   }
   function applies_to_content_object($status) {
-    //Check for status_time == 0 so we don't flag blank statuses.
-    if ($status && $status->status_time) {
-      return TRUE;
-    }
-    return FALSE;
+    return !empty($status) && !empty($status->message);
   }
   function get_content_id($status) {
     return $status->sid;
@@ -57,8 +62,9 @@ class facebook_status_flag extends flag_flag {
   function get_flag_action($content_id) {
     $flag_action = parent::get_flag_action($content_id);
     $status = $this->fetch_content($content_id);
-    $flag_action->content_title = $status->status;
-    $flag_action->content_url = _flag_url('user/'. $status->uid);
+    $flag_action->content_title = $status->message;
+    $context = facebook_status_determine_context($status->type);
+    $flag_action->content_url = $context['handler']->recipient_url($context['handler']->load_recipient($status->recipient));
     return $flag_action;
   }
   function rules_get_event_arguments_definition() {

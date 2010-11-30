@@ -1,0 +1,72 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Installs comments for Facebook-style Statuses.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function fbssc_schema() {
+  $schema = array();
+  $schema['fbssc'] = array(
+    'description' => 'Comments on statuses.',
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'The Comment ID.',
+      ),
+      'sid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The Status ID.',
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The User ID of the poster of the comment.',
+      ),
+      'comment_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The time the comment was submitted.',
+      ),
+      'comment' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'The comment text.',
+      ),
+    ),
+    'indexes' => array(
+      'cid' => array('cid'),
+      'sid' => array('sid'),
+      'uid' => array('uid'),
+      'comment_time' => array('comment_time'),
+    ),
+    'primary key' => array('cid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function fbssc_install() {
+  drupal_install_schema('fbssc');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function fbssc_uninstall() {
+  drupal_uninstall_schema('fbssc');
+}

@@ -3,7 +3,7 @@
 
 /**
  * @file
- *   Allows users to have a "status."
+ *   (Un)installs the Facebook-style Statuses module.
  */
 
 /**
@@ -20,38 +20,81 @@ function facebook_status_schema() {
         'unsigned' => TRUE,
         'description' => 'The Status ID.',
       ),
-      'uid' => array(
+      'sender' => array(
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'description' => 'The User ID of the owner of the profile.',
+        'description' => 'The User ID of the user who created the status message.',
       ),
-      'pid' => array(
+      'recipient' => array(
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'description' => 'The User ID of the poster of the status.',
+        'description' => 'The ID of the entity that received the status message..',
       ),
-      'status_time' => array(
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The stream context type.',
+      ),
+      'created' => array(
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
-        'description' => 'The time the status was submitted.',
+        'description' => 'The time the status message was saved.',
       ),
-      'status' => array(
+      'message' => array(
         'type' => 'text',
         'not null' => TRUE,
-        'description' => 'The status text.',
+        'description' => 'The status message.',
       ),
     ),
     'indexes' => array(
-      'uid' => array('uid'),
-      'pid' => array('pid'),
-      'status_time' => array('status_time'),
+      'sender' => array('sender'),
+      'recipient' => array('recipient'),
+      'type' => array('type'),
+      'created' => array('created'),
     ),
     'primary key' => array('sid'),
+  );
+  $schema['facebook_status_contexts'] = array(
+    'description' => 'Stores stream context configurations.',
+    'fields' => array(
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The stream context type.',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The weight of the component.',
+      ),
+      'view' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The view used as the stream.',
+      ),
+      'selectors' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Additional DOM selectors representing sections of the page that should be automatically refreshed via AJAX when a status is saved.',
+      ),
+    ),
+    'indexes' => array(
+      'weight' => array('weight'),
+    ),
+    'primary key' => array('type'),
   );
   return $schema;
 }
@@ -60,165 +103,55 @@ function facebook_status_schema() {
  * Implementation of hook_install().
  */
 function facebook_status_install() {
-  //Create tables.
   drupal_install_schema('facebook_status');
-  //Lower weight so that the Flag module's classes are available to us.
-  db_query("UPDATE {system} SET weight = 1 WHERE name = 'facebook_status'");
-  //Set a variable that tells us the weight has been lowered.
-  variable_set('facebook_status_flag_update', TRUE);
 }
 
 /**
  * Implementation of hook_update_N().
- */
-function facebook_status_update_6200() {
-  //Update old variables to new variable names.
-  variable_set('facebook_status_concat', variable_get('facebook_status_mode', 1));
-  variable_set('facebook_status_slide', variable_get('facebook_status_ajax', 1));
-  variable_set('facebook_status_size', variable_get('facebook_status_field_length', 32));
-  $exclude = array();
-  $exclude_list = variable_get('facebook_status_clear_user', array());
-  foreach ($exclude_list as $excluded) {
-    if ($excluded != 0) {
-      $exclude[] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $excluded));
-    }
-  }
-  $exclude_string = implode(', ', $exclude);
-  variable_set('facebook_status_exclude', $exclude_string);
-  $new_special = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", variable_get('facebook_status_special_user', 1)));
-  variable_set('facebook_status_special_user', $new_special);
+ *
+function facebook_status_update_6300() {
+  //Remove old variables.
+  variable_del('facebook_status_default_text');
+  variable_del('facebook_status_profile_view');
+  variable_del('facebook_status_special_user');
+  variable_del('facebook_status_hide_status');
+  variable_del('facebook_status_flag_update');
+  variable_del('facebook_status_flood_user');
+  variable_del('facebook_status_hide_blank');
+  variable_del('facebook_status_share_view');
+  variable_del('facebook_status_size_long');
+  variable_del('facebook_status_default');
+  variable_del('facebook_status_exclude');
+  variable_del('facebook_status_concat');
+  variable_del('facebook_status_legacy');
+  variable_del('facebook_status_size');
+  variable_del('facebook_status_type');
 
-  //Rename column.
-  $result = array();
-  $spec = array(
-    'type' => 'varchar',
-    'length' => 255,
-    'not null' => TRUE,
-    'default' => '',
-  );
-  db_change_field($result, 'facebook_status', 'status_fb', 'status', $spec);
-
-  //Delete old variables.
-  variable_del('facebook_status_clear_user_records_string');
-  variable_del('facebook_status_max_num_block_stats_all');
-  variable_del('facebook_status_max_num_block_stats');
-  variable_del('facebook_status_clear_user_records');
-  variable_del('facebook_status_max_block_len_all');
-  variable_del('facebook_status_clear_user_string');
-  variable_del('facebook_status_max_block_len');
-  variable_del('facebook_status_field_length');
-  variable_del('facebook_status_clear_user');
-  variable_del('facebook_status_clear_all');
-  variable_del('facebook_status_activity');
-  variable_del('facebook_status_ur_type');
-  variable_del('facebook_status_mode');
-  variable_del('facebook_status_advf');
-  variable_del('facebook_status_ajax');
-
-  return $result;
-}
-
-/**
- * Implementation of hook_update_N().
- */
-function facebook_status_update_6201() {
-  $result = array();
-  $result[] = update_sql("UPDATE {system} SET weight = 1 WHERE name = 'facebook_status'");
-  variable_set('facebook_status_flag_update', TRUE);
-  return $result;
-}
-
-/**
- * Implementation of hook_update_N().
- */
-function facebook_status_update_6202() {
-  $result = array();
-  variable_del('facebook_status_slide');
-  db_add_index($result, 'facebook_status', 'status_time', array('status_time'));
-  //Change column definition so it can be longer.
-  $spec = array(
-    'type' => 'text',
-    'not null' => TRUE,
-    'description' => 'The status text.',
-  );
-  db_change_field($result, 'facebook_status', 'status', 'status', $spec);
-  //Add a field to track who posted the status.
-  $spec = array(
-    'type' => 'int',
-    'unsigned' => TRUE,
-    'not null' => TRUE,
-    'default' => 0,
-    'description' => 'The User ID of the poster of the status.',
-  );
-  db_add_field($result, 'facebook_status', 'pid', $spec, array('indexes' => array('pid' => array('pid'))));
-  //Before this field was added, users could only post on their own profiles.
-  $result[] = update_sql("UPDATE {facebook_status} SET pid = uid");
-  return $result;
-}
-
-/**
- * facebook_status_update_6203 was moved to facebook_status_tags.install.
- */
-
-/**
- * Implementation of hook_update_N().
- */
-function facebook_status_update_6204() {
-  if (!variable_get('facebook_status_twitter', 1)) {
-    variable_set('facebook_status_twitter_default', 'disallow');
-    variable_del('facebook_status_twitter');
-  }
-  return array(array(
-    'success' => TRUE,
-    'query' => t('Settings for posting statuses to Twitter updated'),
-  ));
-}
-
-/**
- * Implementation of hook_update_N().
- */
-function facebook_status_update_6205() {
-  variable_del('facebook_status_activity_self_patterns');
-  return array(array(
-    'success' => TRUE,
-    'query' => t('None'),
-  ));
+  //@todo: Update DB schema.
+  //Rename uid to recipient
+  //Add sender, fill with recipient
+  //Add type, fill with 'user'
+  //Rename status_time to created
+  //Rename status to message
+  //Replace indices
+  //Add new {facebook_status_contexts} table
+  
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {
-  //Remove tables.
   drupal_uninstall_schema('facebook_status');
-  //Remove variables.
-  variable_del('facebook_status_userpoints_other');
-  variable_del('facebook_status_twitter_default');
-  variable_del('facebook_status_twitter_special');
-  variable_del('facebook_status_userpoints_max');
-  variable_del('facebook_status_userpoints_own');
   variable_del('facebook_status_default_text');
-  variable_del('facebook_status_profile_view');
-  variable_del('facebook_status_special_user');
-  variable_del('facebook_status_hide_status');
-  variable_del('facebook_status_flag_update');
   variable_del('facebook_status_block_view');
-  variable_del('facebook_status_flood_user');
-  variable_del('facebook_status_hide_blank');
   variable_del('facebook_status_reply_type');
-  variable_del('facebook_status_share_view');
-  variable_del('facebook_status_size_long');
   variable_del('facebook_status_box_rows');
-  variable_del('facebook_status_default');
-  variable_del('facebook_status_exclude');
+  variable_del('facebook_status_profile');
   variable_del('facebook_status_refresh');
-  variable_del('facebook_status_concat');
   variable_del('facebook_status_filter');
-  variable_del('facebook_status_legacy');
   variable_del('facebook_status_length');
   variable_del('facebook_status_repost');
   variable_del('facebook_status_nl2br');
   variable_del('facebook_status_ahah');
-  variable_del('facebook_status_size');
-  variable_del('facebook_status_type');
 }

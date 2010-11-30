@@ -23,6 +23,7 @@ class facebook_status_views_handler_field_created extends views_handler_field_da
   function render($values) {
     $value = $values->{$this->field_alias};
     $format = $this->options['date_format'];
+    $custom_format = '';
     if (in_array($format, array('custom', 'raw time ago', 'time ago', 'raw time span', 'time span'))) {
       $custom_format = $this->options['custom_date_format'];
     }
@@ -39,7 +40,11 @@ class facebook_status_views_handler_field_created extends views_handler_field_da
         case 'raw time span':
           return ($time_diff < 0 ? '-' : '') . format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2);
         case 'time span':
-          return t(($time_diff < 0 ? '%time hence' : '%time ago'), array('%time' => format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2)));
+          $args = array('%time' => format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2));
+          if ($time_diff < 0) {
+            return t('%time hence', $args);
+          }
+          return t('%time ago', $args);
         case 'custom':
           return format_date($value, $format, $custom_format);
         case 'themed':

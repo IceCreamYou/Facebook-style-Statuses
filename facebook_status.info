@@ -1,5 +1,6 @@
 ; $Id$
 name = Facebook-style Statuses
-description = "Allows users to have an arbitrary status, Facebook-style."
+description = "Creates context-sensitive social streams."
 package = Facebook-style Statuses
+dependencies[] = views
 core = 6.x
