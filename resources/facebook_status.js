@@ -23,7 +23,7 @@ Drupal.behaviors.facebookStatus = function (context) {
     $facebook_status_field.focus();
   }
   if (Drupal.settings.facebook_status.noautoclear || Drupal.settings.facebook_status.autofocus) {
-    if ($facebook_status_field.val().length != 0) {
+    if ($facebook_status_field.val() && $facebook_status_field.val().length != 0) {
       fbss_print_remaining(fbss_maxlen - facebook_status_original_value.length, $facebook_status_field.parent().next());
     }
   }
