@@ -176,7 +176,7 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
       unset($context['view']);
     }
     $block['subject'] = t('Status');
-    $block['content'] = theme('facebook_status_form_display', $context);
+    $block['content'] = theme('facebook_status_form_display', $context->find_recipient(), $context->type());
     return $block;
   }
   elseif ($op == 'configure' && $delta == 'facebook_status') {
@@ -230,7 +230,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
     db_query("DELETE FROM {facebook_status} WHERE sender = %d OR (recipient = %d AND type = 'user')", $account->uid, $account->uid);
   }
   elseif ($op == 'view' && variable_get('facebook_status_profile', 1)) {
-    $value = theme('facebook_status_form_display', array('recipient' => $account, 'type' => 'user'));
+    $value = theme('facebook_status_form_display', $account, 'user');
     //Don't show this section if there's nothing there or the user doesn't have permission to see it.
     if (empty($value)) {
       return;
