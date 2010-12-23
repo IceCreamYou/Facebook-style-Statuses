@@ -176,7 +176,7 @@ function facebook_status_block($op = 'list', $delta = 0, $edit = NULL) {
       unset($context['view']);
     }
     $block['subject'] = t('Status');
-    $block['content'] = theme('facebook_status_form_display', $context->find_recipient(), $context->type());
+    $block['content'] = theme('facebook_status_form_display', $context);
     return $block;
   }
   elseif ($op == 'configure' && $delta == 'facebook_status') {

@@ -9,11 +9,18 @@
 /**
  * Returns the status update form.
  *
- * @param $recipient
- *   An object representing the owner of the status stream, i.e. the entity to
- *   which status messages will be posted using this form.
+ * @param $context
+ *   One of the following:
+ *   - A fully qualified context array
+ *   - NULL, to have the context automatically determined
+ *   - An object representing the owner of the status stream, i.e. the entity
+ *     to which status messages will be posted using this form.
  * @param $type
- *   The context stream type.
+ *   The context stream type. Only applicable if a recipient object is
+ *   specified for $context, but it is required in that case.
+ * @param $view
+ *   The machine name of the view to display with the form. Overrides the one
+ *   requested by the context.
  * @return
  *   HTML to display the status update form, or FALSE if:
  *   - The current user has no access to both the form and the associated
@@ -21,9 +28,18 @@
  *   - There are no relevant status messages and the current user does not
  *     have access to use the form
  */
-function theme_facebook_status_form_display($recipient, $type = 'user') {
+function theme_facebook_status_form_display($context = NULL, $type = NULL, $view = NULL) {
   global $user;
-  $context = facebook_status_determine_context($type);
+  if (empty($context) && empty($type)) {
+    $context = facebook_status_determine_context();
+    $recipient = $context['handler']->find_recipient();
+    $type = $context['handler']->type();
+  }
+  else {
+    $recipient = $context;
+    $context = facebook_status_determine_context($type);
+  }
+  $view = empty($view) ? $context['view'] : $view;
   $selectors = module_invoke_all('facebook_status_refresh_selectors', $recipient, $type) + explode("\n", $context['selectors']);
   $conversation = (arg(0) == 'statuses' && arg(1) == 'conversation' && $type == 'user');
   $output = '';
@@ -48,12 +64,12 @@ function theme_facebook_status_form_display($recipient, $type = 'user') {
       }
       $arg = implode(',', $args);
       $output .= views_embed_view('facebook_status_conversation', 'default', $arg, $arg);
-      $selectors[] = '.view-id-'. $context['view'];
+      $selectors[] = '.view-id-facebook_status_conversation';
     }
   }
-  elseif (!empty($context['view'])) {
-    $output .= views_embed_view($context['view'], 'default', $context['handler']->recipient_id($recipient), $type);
-    $selectors[] = '.view-id-'. $context['view'];
+  elseif (!empty($view)) {
+    $output .= views_embed_view($view, 'default', $context['handler']->recipient_id($recipient), $type);
+    $selectors[] = '.view-id-'. $view;
   }
   if (!empty($selectors)) {
     drupal_alter('facebook_status_refresh_selectors', $selectors, $recipient, $type);
