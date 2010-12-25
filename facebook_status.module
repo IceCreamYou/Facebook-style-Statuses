@@ -584,6 +584,7 @@ function facebook_status_determine_context($type = NULL) {
     else {
       facebook_status_determine_context($context['parent']);
     }
+    $context['handler'] = new $context['handler']();
   }
   else {
     //We can't find the requested context, so abort.
