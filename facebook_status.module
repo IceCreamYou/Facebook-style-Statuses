@@ -625,7 +625,6 @@ function facebook_status_all_contexts() {
           unset($contexts[$type]);
           break;
         }
-        $contexts[$type]['handler'] = new $context['handler'];
       }
     }
   }
@@ -726,7 +725,7 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
       module_invoke_all('facebook_status', $op, $object, $context);
     }
   }
-  elseif ($new_status == $status->status) {
+  elseif ($message == $status->status) {
     $object->sid = $status->sid;
   }
   return $object;
