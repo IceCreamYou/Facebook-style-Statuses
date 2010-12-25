@@ -625,6 +625,7 @@ function facebook_status_all_contexts() {
           unset($contexts[$type]);
           break;
         }
+        $contexts[$type]['handler'] = new $context['handler'];
       }
     }
   }
