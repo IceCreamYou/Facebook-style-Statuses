@@ -210,7 +210,8 @@ class facebook_status_og_context extends facebook_status_node_context {
     return 'og';
   }
   function is_applicable() {
-    return !(empty(og_get_group_context()));
+    $g_ctx = og_get_group_context();
+    return !(empty($g_ctx));
   }
   function find_recipient() {
     return $this->is_applicable() ? menu_get_object() : new stdClass();
