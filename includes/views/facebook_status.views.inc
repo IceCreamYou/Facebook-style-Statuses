@@ -295,7 +295,7 @@ function facebook_status_views_data() {
 function facebook_status_views_handlers() {
   return array(
     'info' => array(
-      'path' => drupal_get_path('module', 'facebook_status'),
+      'path' => drupal_get_path('module', 'facebook_status') .'/includes/views/handlers',
     ),
     'handlers' => array(
       'facebook_status_views_handler_argument_flagged_user' => array(
@@ -361,7 +361,7 @@ function facebook_status_views_plugins() {
         'help' => t('Displays statuses as RSS items.'),
         'handler' => 'facebook_status_views_plugin_row_rss',
         'parent' => 'fields',
-        'path' => drupal_get_path('module', 'facebook_status'),
+        'path' => drupal_get_path('module', 'facebook_status') .'/includes/views/handlers',
         'theme' => 'views_view_row_rss',
         'base' => array('facebook_status'),
         'uses fields' => FALSE,
