@@ -127,17 +127,9 @@ function facebook_status_admin_advanced($form_state) {
  * Validate function for the advanced settings form.
  */
 function facebook_status_admin_advanced_validate($form, &$form_state) {
-  $size = $form_state['values']['facebook_status_size_long'];
-  if (!is_numeric($size) || $size < 1 || $size != round($size)) {
-    form_set_error('facebook_status_size_long', t('The size of the long status update field must be a positive integer.'));
-  }
   $size = $form_state['values']['facebook_status_box_rows'];
   if (!is_numeric($size) || $size < 1 || $size != round($size)) {
     form_set_error('facebook_status_box_rows', t('The number of rows of the status update box must be a positive integer.'));
-  }
-  $amount = $form_state['values']['facebook_status_flood_user'];
-  if (!is_numeric($amount) || $amount < 1 || $amount != round($amount)) {
-    form_set_error('facebook_status_flood_user', t('The number of OpenAPI Accesses per IP must be a positive integer.'));
   }
 }
 
@@ -153,7 +145,7 @@ function facebook_status_admin_contexts(&$form_state) {
   $views = views_get_all_views();
   $options = array('' => t('None'));
   foreach ($views as $name => $view) {
-    if ($view->disabled == 0) {
+    if (empty($view->disabled)) {
       $options[$name] = $name;
     }
   }

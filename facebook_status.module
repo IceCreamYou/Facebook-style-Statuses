@@ -259,7 +259,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
 function facebook_status_init() {
   //Don't clear the default text on first focus if the default text was manually set in the URL.
   $undefault = isset($_GET['status-text']);
-  if (is_numeric($_GET['sid'])) {
+  if (isset($_GET['sid']) && is_numeric($_GET['sid'])) {
     $rs = facebook_status_load($_GET['sid']);
     $undefault = $undefault || ($rs->sender != $GLOBALS['user']->uid && $rs->message);
   }
@@ -275,7 +275,7 @@ function facebook_status_init() {
     ),
     'maxlength' => variable_get('facebook_status_length', 140),
     'refreshLink' => (bool) variable_get('facebook_status_refresh', 0)
-  ), 'setting');
+  )), 'setting');
 }
 
 /**
@@ -612,12 +612,13 @@ function facebook_status_all_contexts() {
     return $contexts;
   }
   $result = db_query("SELECT * FROM {facebook_status_contexts}");
-  $contexts = array();
+  $contexts = module_invoke_all('facebook_status_context_info');
   while ($c = db_fetch_array($result)) {
-    $c['in_db'] = TRUE;
-    $contexts[$c['type']] = $c;
+    $contexts[$c['type']]['in_db'] = TRUE;
+    $contexts[$c['type']]['weight'] = $c['weight'];
+    $contexts[$c['type']]['view'] = $c['view'];
+    $contexts[$c['type']]['selectors'] = $c['selectors'];
   }
-  $contexts += module_invoke_all('facebook_status_context_info');
   uasort($contexts, '_facebook_status_element_sort');
   foreach ($contexts as $type => $context) {
     if (isset($context['dependencies'])) {

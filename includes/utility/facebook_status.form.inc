@@ -58,7 +58,7 @@ function theme_facebook_status_form_display($context = NULL, $type = NULL, $view
   if ($conversation) {
     $args = explode(',', $arg);
     $count = count($args);
-    if ((($count === 1 && $args[0] != $user->uid) || ($count === 2 && is_numeric($args[1])) && is_numeric($args[0])) {
+    if (($count === 1 && $args[0] != $user->uid) || ($count === 2 && is_numeric($args[1])) && is_numeric($args[0])) {
       if (count($args) === 1) {
         $args[1] = $user->uid;
       }
@@ -115,7 +115,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
     $default = $_GET['share-status'];
   }
   //@todo: Replace with a "true" re-posting system.
-  if (is_numeric($_GET['sid'])) {
+  if (isset($_GET['sid']) && is_numeric($_GET['sid'])) {
     $rs = facebook_status_load($_GET['sid']);
     $sender = user_load(array('uid' => $rs->sender));
     if ($sender->uid != $user->uid && $rs->status) {
@@ -128,7 +128,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
       $slider = '';
     }
   }
-  elseif (is_numeric($_GET['rsid'])) {
+  elseif (isset($_GET['rsid']) && is_numeric($_GET['rsid'])) {
     $status = facebook_status_load($_GET['rsid']);
     if ($status->sid) {
       $sender = user_load(array('uid' => $status->sender));

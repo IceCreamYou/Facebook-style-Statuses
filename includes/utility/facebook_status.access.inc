@@ -39,6 +39,7 @@ function facebook_status_user_access_add($recipient = NULL, $type = 'user', $sen
  *   FALSE otherwise.
  */
 function facebook_status_user_access_converse() {
+  global $user;
   $uids = explode(',', arg(2), 2);
   if (empty($uids)) {
     return FALSE;
