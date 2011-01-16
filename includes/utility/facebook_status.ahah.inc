@@ -6,17 +6,6 @@
  */
 
 /**
- * Access callback for the JS callback.
- */
-function _facebook_status_access_js() {
-  //The only reason the JS page is useful is that form data can be POSTed to it.
-  //Forms have tokens, so that data can't be spoofed. Therefore, we don't need
-  //to check access; anyone who shouldn't have access will just get a blank page.
-  //Theoretically.
-  return TRUE;
-}
-
-/**
  * Saves statuses via AHAH.
  */
 function facebook_status_save_js() {

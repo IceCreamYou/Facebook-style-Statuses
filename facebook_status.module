@@ -133,8 +133,7 @@ function facebook_status_menu() {
   $items['facebook_status/js'] = array(
     'title' => 'Save status update form',
     'page callback' => 'facebook_status_save_js',
-    'access callback' => '_facebook_status_access_js',
-    'access arguments' => FALSE,
+    'access callback' => TRUE,
     'type' => MENU_CALLBACK,
     'file' => 'includes/utility/facebook_status.ahah.inc',
   );
