@@ -12,7 +12,7 @@
 function facebook_status_edit(&$form_state, $status) {
   $context = facebook_status_determine_context($status->type);
   $maxlength = variable_get('facebook_status_length', 140);
-  $path = drupal_get_path('module', 'facebook_status');
+  $path = drupal_get_path('module', 'facebook_status') .'/resources';
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_css($path .'/facebook_status.css');
   $slider = _facebook_status_get_edit_slider($status, $context);

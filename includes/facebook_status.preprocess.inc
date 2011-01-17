@@ -92,6 +92,6 @@ function _facebook_status_show($status, $options) {
     }
     drupal_set_title($title);
   }
-  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
+  drupal_add_css(drupal_get_path('module', 'facebook_status') .'/resources/facebook_status.css');
   return theme('facebook_status_item', $status, $options);
 }

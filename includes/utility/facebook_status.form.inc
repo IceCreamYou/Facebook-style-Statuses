@@ -144,7 +144,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
     }
   }
 
-  $path = drupal_get_path('module', 'facebook_status');
+  $path = drupal_get_path('module', 'facebook_status') .'/resources';
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_js($path .'/facebook_status_ahah.js', 'module', 'footer');
   drupal_add_css($path .'/facebook_status.css');
