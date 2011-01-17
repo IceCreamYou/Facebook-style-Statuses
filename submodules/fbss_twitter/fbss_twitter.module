@@ -17,7 +17,13 @@ function fbss_twitter_facebook_status_save($status, $context, $edit) {
     && $owner->name == variable_get('facebook_status_special_user', '')
     && $owner->uid == $poster->uid) {
     module_load_include('inc', 'twitter');
-    twitter_set_status(variable_get('twitter_global_name', NULL), variable_get('twitter_global_password', NULL), $new_status);
+    $twitter_accounts = twitter_get_user_accounts($poster->uid);
+    foreach ($twitter_accounts as $twitter_account_available) {
+      if ($twitter_account_available->is_global == 1) {
+        twitter_set_status($twitter_account_available, $new_status);
+        break;
+      }
+    }
   }
 }
 
@@ -63,23 +69,16 @@ function fbss_twitter_facebook_status_box_submit(&$form, &$form_state) {
  * No need to check permissions since the form is already restricted.
  */
 function fbss_twitter_form_twitter_account_list_form_alter(&$form, &$form_state) {
-  //Twitter module branch 3.x is not supported yet.
-  if (function_exists('_twitter_use_oauth')) {
-    watchdog('facebook_status', 'The 3.x branch of the Twitter module is not supported by the Facebook-style Statuses module yet.');
+  //The 2.x branch of the Twitter module is no longer supported.
+  if (!function_exists('_twitter_use_oauth')) {
+    watchdog('facebook_status', 'The 2.x branch of the Twitter module is no longer supported by the Facebook-style Statuses module.');
     return;
   }
   $account = user_load(array('uid' => arg(1)));
   if (!user_access('update own statuses', $account)) {
     return;
   }
-  //Twitter 3.x.
-  if (function_exists('_twitter_use_oauth')) {
-    $result = db_query("SELECT screen_name FROM {twitter_account} WHERE uid = %d", arg(1));
-  }
-  //Twitter 2.x.
-  else {
-    $result = db_query("SELECT screen_name FROM {twitter_user} WHERE uid = %d", arg(1));
-  }
+  $result = db_query("SELECT screen_name FROM {twitter_account} WHERE uid = %d", arg(1));
   $options = array(0 => t('None'));
   while ($option = db_fetch_array($result)) {
     $options[$option['screen_name']] = $option['screen_name'];
@@ -175,8 +174,12 @@ function fbss_twitter_twitter($account, $status) {
   module_load_include('inc', 'twitter');
   $twitter_accounts = twitter_get_user_accounts($account->uid);
   $data = unserialize($account->data);
-  $twitter_account = $twitter_accounts[$data['facebook_status_twitter']];
-  twitter_set_status($twitter_account['screen_name'], $twitter_account['password'], $status);
+  foreach ($twitter_accounts as $twitter_account_available) {
+    if ($twitter_account_available->screen_name == $data['facebook_status_twitter']) {
+      twitter_set_status($twitter_account_available, $status);
+      break;
+    }
+  }
 }
 
 /**
