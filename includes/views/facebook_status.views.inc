@@ -10,48 +10,32 @@
  * Implementation of hook_views_data().
  */
 function facebook_status_views_data() {
-  //Basic table information.
+  // Basic table information.
   $data['facebook_status']['table']['group']  = t('Facebook-style Statuses');
   $data['facebook_status']['table']['join'] = array(
     'users' => array(
       'left_field' => 'uid',
-      'field' => 'uid',
+      'field' => 'sender',
       'type' => 'INNER',
     ),
   );
   $data['users']['table']['join'] = array(
     'facebook_status' => array(
       'left_field' => 'uid',
-      'field' => 'uid',
+      'field' => 'sender',
       'type' => 'INNER',
     ),
   );
 
-  //Advertise this table as a possible base table.
+  // Advertise this table as a possible base table.
   $data['facebook_status']['table']['base'] = array(
     'field' => 'sid',
     'title' => t('Facebook-style Statuses Updates'),
     'help' => t('Stores status updates.'),
     'weight' => 10,
   );
-  /*
-  $data['facebook_status']['users'] = array(
-    'group' => t('Facebook-style Statuses'),
-    'relationship' => array(
-      'title' => t('Users'),
-      'label' => t('Users'),
-      'help' => t('Add a relationship to gain access to information related to the users who submitted the relevant statuses.'),
-      'relationship table' => 'users',
-      'relationship field' => 'uid',
-      'base' => 'facebook_status',
-      'field' => 'uid',
-      'type' => 'INNER',
-      'handler' => 'views_handler_relationship',
-    ),
-  );
-   */
 
-  //Declares the Status ID column.
+  // Declares the Status ID column.
   $data['facebook_status']['sid'] = array(
     'title' => t('Status ID'),
     'help' => t('The ID of the status update.'),
@@ -70,8 +54,8 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Alias for Status ID to extend its use.
-  $data['facebook_status']['sid_extra'] = array(
+  // Alias for Status ID to extend its use.
+  $data['facebook_status']['last_per_user'] = array(
     'title' => t('Last Status per User'),
     'help' => t('Show only the last status update for each user.'),
     'filter' => array(
@@ -108,10 +92,10 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Declares the Owner UID column.
-  $data['facebook_status']['uid'] = array(
-    'title' => t('User ID'),
-    'help' => t('The User ID of the owner of the status (if the status is from one user to another, this is the recipient).'),
+  // Declares the Recipient ID column.
+  $data['facebook_status']['recipient'] = array(
+    'title' => t('Recipient ID'),
+    'help' => t('The ID of the recipient of the status.'),
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -127,10 +111,10 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Declares the Poster UID column.
-  $data['facebook_status']['pid'] = array(
-    'title' => t('Poster UID'),
-    'help' => t('The User ID of the poster of the status.'),
+  // Declares the Sender ID column.
+  $data['facebook_status']['sender'] = array(
+    'title' => t('Sender ID'),
+    'help' => t('The User ID of the creator of the status.'),
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -146,74 +130,74 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Alias for Poster UID to use the name.
-  $data['facebook_status']['pid_name'] = array(
-    'title' => t('Poster Name'),
+  // Alias for Sender UID to use the name.
+  $data['facebook_status']['sender_name'] = array(
+    'title' => t('Sender Name'),
     'help' => t('The name of the user who posted the status.'),
     'field' => array(
-      'field' => 'pid',
-      'handler' => 'facebook_status_views_handler_field_poster',
+      'field' => 'sender',
+      'handler' => 'facebook_status_views_handler_field_sender',
       'click sortable' => FALSE,
     ),
     'filter' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'views_handler_filter_user_name',
     ),
     'sort' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'views_handler_sort',
     ),
     'argument' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'views_handler_argument_user_uid',
     ),
   );
-  //Alias for poster picture.
-  $data['facebook_status']['pid_pic'] = array(
-    'title' => t('Poster picture'),
+  // Alias for poster picture.
+  $data['facebook_status']['sender_pic'] = array(
+    'title' => t('Sender picture'),
     'help' => t('The picture of the user who posted the status.'),
     'field' => array(
-      'field' => 'pid',
-      'handler' => 'facebook_status_views_handler_field_poster_pic',
+      'field' => 'sender',
+      'handler' => 'facebook_status_views_handler_field_sender_pic',
       'click sortable' => FALSE,
     ),
   );
 
-  //Alias for extras for the poster.
-  $data['facebook_status']['pid_extra'] = array(
+  // Alias for extras for the poster.
+  $data['facebook_status']['user_contextual'] = array(
     'title' => t('Usernames (context-aware)'),
     'help' => t('The themed username(s) of either the owner or the sender and recipient of the status, depending on the context.'),
     'field' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'facebook_status_views_handler_field_cross',
       'click sortable' => FALSE,
       'label' => t('Users'),
     ),
   );
-  $data['facebook_status']['pid_extra_2'] = array(
+  $data['facebook_status']['not_own'] = array(
     'title' => t('Not own statuses'),
     'help' => t("Do not show statuses posted to one's own profile."),
     'filter' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'facebook_status_views_handler_filter_not_own',
-      'label' => t("Restrict to others' statuses"),
+      'label' => t("Exclude own status updates"),
     ),
   );
-  //This is slightly different than, but could probably be combined with, pid_extra_2.
-  $data['facebook_status']['pid_extra_3'] = array(
+  // This is slightly different than, but could probably be combined with, not_own.
+  $data['facebook_status']['only_own'] = array(
     'title' => t('Only own statuses'),
     'help' => t("Only show statuses posted to one's own profile."),
     'filter' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'facebook_status_views_handler_filter_own',
-      'label' => t('Restrict to own statuses'),
+      'label' => t('Restrict to own status updates'),
     ),
   );
-  $data['facebook_status']['crosspost_users_pics'] = array(
+  $data['facebook_status']['user_contextual_pic'] = array(
     'title' => t('Users with Pictures'),
     'help' => t('The themed username(s) and pictures of either the owner or the sender and recipient of the status, depending on the context.'),
     'field' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'facebook_status_views_handler_field_cross_pic',
       'click sortable' => FALSE,
       'label' => t('Users with Pictures'),
@@ -223,15 +207,15 @@ function facebook_status_views_data() {
     'title' => t('Respond link'),
     'help' => t('Links to view the conversation or respond to it when appropriate.'),
     'field' => array(
-      'field' => 'pid',
+      'field' => 'sender',
       'handler' => 'facebook_status_views_handler_field_respond',
       'click sortable' => FALSE,
       'label' => t('Respond to conversation'),
     ),
   );
 
-  //Declares the status message timestamp column.
-  $data['facebook_status']['status_time'] = array(
+  // Declares the status message timestamp column.
+  $data['facebook_status']['created'] = array(
     'title' => t('Created time'),
     'help' => t('The time the status message was posted.'),
     'field' => array(
@@ -247,11 +231,11 @@ function facebook_status_views_data() {
   );
 
   //Declares the status text column.
-  $data['facebook_status']['status'] = array(
-    'title' => t('Status text'),
+  $data['facebook_status']['message'] = array(
+    'title' => t('Status message'),
     'help' => t('The text of the status update.'),
     'field' => array(
-      'handler' => 'facebook_status_views_handler_field_status',
+      'handler' => 'facebook_status_views_handler_field_message',
       'click sortable' => TRUE,
     ),
     'filter' => array(
@@ -259,28 +243,18 @@ function facebook_status_views_data() {
     ),
   );
 
-  $data['activity']['activity-fbss-poster-pic'] = array(
-    'title' => t('Poster picture'),
-    'help' => t("The picture of the user who took action (normally the same as Users: Picture, but shows the poster's picture for status messages)."),
-    'field' => array(
-      'field' => 'uid',
-      'handler' => 'facebook_status_views_handler_field_poster_pic_activity',
-      'click sortable' => FALSE,
-    ),
-  );
-
   if (module_exists('flag')) {
     $data['facebook_status']['user-flag-plus-current'] = array(
       'title' => t('Content from flagged users or the current user'),
       'filter' => array(
-        'field' => 'pid',
+        'field' => 'sender',
         'handler' => 'facebook_status_views_handler_filter_flagged_user',
       ),
     );
     $data['facebook_status']['user-flag-plus-arg'] = array(
       'title' => t('Content from flagged users or the argument user'),
       'argument' => array(
-        'field' => 'pid',
+        'field' => 'sender',
         'handler' => 'facebook_status_views_handler_argument_flagged_user',
       ),
     );
@@ -316,13 +290,7 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_field_edit' => array(
         'parent' => 'views_handler_field',
       ),
-      'facebook_status_views_handler_field_poster' => array(
-        'parent' => 'views_handler_field_user',
-      ),
-      'facebook_status_views_handler_field_poster_pic' => array(
-        'parent' => 'views_handler_field',
-      ),
-      'facebook_status_views_handler_field_poster_pic_activity' => array(
+      'facebook_status_views_handler_field_message' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_repost' => array(
@@ -331,7 +299,10 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_field_respond' => array(
         'parent' => 'views_handler_field',
       ),
-      'facebook_status_views_handler_field_status' => array(
+      'facebook_status_views_handler_field_sender' => array(
+        'parent' => 'views_handler_field_user',
+      ),
+      'facebook_status_views_handler_field_sender_pic' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_filter' => array(
