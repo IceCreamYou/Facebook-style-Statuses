@@ -28,7 +28,7 @@ class facebook_status_views_handler_field_repost extends views_handler_field {
     );
   }
   function render($values) {
-    if (facebook_status_user_access('add') {
+    if (facebook_status_user_access('add')) {
       drupal_add_css(drupal_get_path('module', 'facebook_status') .'/resources/facebook_status.css');
       $options = array(
         'attributes' => array('class' => 'facebook-status-repost'),

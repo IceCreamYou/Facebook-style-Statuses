@@ -48,7 +48,7 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
     $recipient_id = $values->{$this->aliases['recipient']};
     $sender_id = $values->{$this->field_alias};
     $sender = _facebook_status_user_load($sender_id);
-    $type = $values->{this->aliases['type']};
+    $type = $values->{$this->aliases['type']};
     $options = $this->options;
     if ($sender_id == $recipient_id && $type == 'user') {
       if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
