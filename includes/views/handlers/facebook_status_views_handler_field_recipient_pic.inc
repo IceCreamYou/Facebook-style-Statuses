@@ -37,12 +37,19 @@ class facebook_status_views_handler_field_recipient_pic extends views_handler_fi
       );
     }
   }
+  function construct() {
+    parent::construct();
+    $this->additional_fields['type'] = 'type';
+  }
   function render($values) {
-    $account = _facebook_status_user_load($values->{$this->field_alias});
-    $options = $this->options;
-    if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
-      $account->imagecache_preset = $options['imagecache_preset'];
+    $type = $values->{$this->aliases['type']};
+    if ($type == 'user') {
+      $account = _facebook_status_user_load($values->{$this->field_alias});
+      $options = $this->options;
+      if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
+        $account->imagecache_preset = $options['imagecache_preset'];
+      }
+      return facebook_status_display_user_picture($account);
     }
-    return facebook_status_display_user_picture($account);
   }
 }

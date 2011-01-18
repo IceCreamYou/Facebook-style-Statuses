@@ -47,17 +47,16 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
   function render($values) {
     $recipient_id = $values->{$this->aliases['recipient']};
     $sender_id = $values->{$this->field_alias};
+    $sender = _facebook_status_user_load($sender_id);
     $type = $values->{this->aliases['type']};
     $options = $this->options;
     if ($sender_id == $recipient_id && $type == 'user') {
-      $account = _facebook_status_user_load($sender_id);
       if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
-        $account->imagecache_preset = $options['imagecache_preset'];
+        $sender->imagecache_preset = $options['imagecache_preset'];
       }
-      return t('!picture !user', array('!picture' => facebook_status_display_user_picture($account), '!user' => theme('username', $account)));
+      return t('!picture !user', array('!picture' => facebook_status_display_user_picture($sender), '!user' => theme('username', $sender)));
     }
-    else {
-      $sender = _facebook_status_user_load($sender_id);
+    else if ($type == 'user') {
       $recipient = _facebook_status_user_load($recipient_id);
       if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
         $sender->imagecache_preset = $options['imagecache_preset'];
@@ -67,6 +66,20 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
       $args['!sender-picture'] = facebook_status_display_user_picture($sender);
       $args['!recipient-picture'] = facebook_status_display_user_picture($recipient);
       return t('!sender-picture !sender &raquo; !recipient-picture !recipient', $args);
+    }
+    else {
+      $context = facebook_status_determine_context($type);
+      $recipient = $context['handler']->load_recipient($recipient_id);
+      if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
+        $sender->imagecache_preset = $options['imagecache_preset'];
+        $recipient->imagecache_preset = $options['imagecache_preset'];
+      }
+      $args = array(
+        '!sender' => theme('username', $sender),
+        '!recipient' => $context['handler']->recipient_link($recipient),
+        '!sender-picture' => facebook_status_display_user_picture($sender),
+      );
+      return t('!sender-picture !sender &raquo; !recipient', $args);
     }
   }
 }

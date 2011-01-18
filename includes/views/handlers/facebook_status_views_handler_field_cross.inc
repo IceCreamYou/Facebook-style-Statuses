@@ -24,9 +24,11 @@ class facebook_status_views_handler_field_cross extends views_handler_field {
       return theme('username', _facebook_status_user_load($sender_id));
     }
     else {
+      $context = facebook_status_determine_context($type);
+      $recipient = $context['handler']->load_recipient($recipient_id);
       $args = array(
         '!sender' => theme('username', _facebook_status_user_load($sender_id)),
-        '!recipient' => theme('username', _facebook_status_user_load($recipient_id))
+        '!recipient' => $context['handler']->recipient_link($recipient),
       );
       return t('!sender &raquo; !recipient', $args);
     }
