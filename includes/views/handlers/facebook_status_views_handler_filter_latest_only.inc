@@ -9,10 +9,10 @@
 /**
  * Filter handler which requires the latest status.
  */
-class facebook_status_views_handler_filter extends views_handler_filter_boolean_operator {
+class facebook_status_views_handler_filter_latest_only extends views_handler_filter_boolean_operator {
   function construct() {
     $this->definition['type'] = 'yes-no';
-    $this->definition['label'] = t('Show Latest Status Update Only (per User)');
+    $this->definition['label'] = t('Show only latest status update (per user)');
     $this->value_value = $this->definition['label'];
     parent::construct();
   }
@@ -20,7 +20,7 @@ class facebook_status_views_handler_filter extends views_handler_filter_boolean_
   function query() {
     if ($this->value) {
       $this->ensure_my_table();
-      $subquery = "(SELECT MAX(sid) FROM {facebook_status} WHERE uid = pid GROUP BY uid)";
+      $subquery = "(SELECT MAX(sid) FROM {facebook_status} WHERE sender = recipient GROUP BY recipient)";
       $this->query->add_where(0, db_prefix_tables("$this->table_alias.sid IN $subquery"));
     }
   }

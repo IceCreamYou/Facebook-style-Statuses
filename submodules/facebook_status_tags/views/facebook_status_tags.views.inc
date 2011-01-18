@@ -64,7 +64,7 @@ function facebook_status_tags_views_data() {
       'click sortable' => TRUE,
     ),
     'filter' => array(
-      'handler' => 'facebook_status_views_handler_filter_string_type',
+      'handler' => 'facebook_status_tags_views_handler_filter_string_type',
     ),
   );
 
@@ -157,7 +157,7 @@ function facebook_status_tags_views_handlers() {
       'facebook_status_tags_views_handler_filter_has_this_tag' => array(
         'parent' => 'views_handler_filter_string',
       ),
-      'facebook_status_views_handler_filter_string_type' => array(
+      'facebook_status_tags_views_handler_filter_string_type' => array(
         'parent' => 'views_handler_filter_in_operator',
       ),
     ),

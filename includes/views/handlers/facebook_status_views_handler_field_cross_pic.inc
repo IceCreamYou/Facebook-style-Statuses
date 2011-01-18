@@ -41,30 +41,32 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
   }
   function construct() {
     parent::construct();
-    $this->additional_fields['uid'] = 'uid';
+    $this->additional_fields['recipient'] = 'recipient';
+    $this->additional_fields['type'] = 'type';
   }
   function render($values) {
-    $uid = $values->{$this->aliases['uid']};
-    $pid = $values->{$this->field_alias};
+    $recipient_id = $values->{$this->aliases['recipient']};
+    $sender_id = $values->{$this->field_alias};
+    $type = $values->{this->aliases['type']};
     $options = $this->options;
-    if (isset($uid) && $pid == $uid) {
-      $account = _facebook_status_user_load($uid);
+    if ($sender_id == $recipient_id && $type == 'user') {
+      $account = _facebook_status_user_load($sender_id);
       if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
         $account->imagecache_preset = $options['imagecache_preset'];
       }
       return t('!picture !user', array('!picture' => facebook_status_display_user_picture($account), '!user' => theme('username', $account)));
     }
     else {
-      $poster = _facebook_status_user_load($pid);
-      $owner = _facebook_status_user_load($uid);
+      $sender = _facebook_status_user_load($sender_id);
+      $recipient = _facebook_status_user_load($recipient_id);
       if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
-        $poster->imagecache_preset = $options['imagecache_preset'];
-        $owner->imagecache_preset = $options['imagecache_preset'];
+        $sender->imagecache_preset = $options['imagecache_preset'];
+        $recipient->imagecache_preset = $options['imagecache_preset'];
       }
-      $args = array('!poster' => theme('username', $poster), '!owner' => theme('username', $owner));
-      $args['!poster-picture'] = facebook_status_display_user_picture($poster);
-      $args['!owner-picture'] = facebook_status_display_user_picture($owner);
-      return t('!poster-picture !poster &raquo; !owner-picture !owner', $args);
+      $args = array('!sender' => theme('username', $sender), '!recipient' => theme('username', $recipient));
+      $args['!sender-picture'] = facebook_status_display_user_picture($sender);
+      $args['!recipient-picture'] = facebook_status_display_user_picture($recipient);
+      return t('!sender-picture !sender &raquo; !recipient-picture !recipient', $args);
     }
   }
 }

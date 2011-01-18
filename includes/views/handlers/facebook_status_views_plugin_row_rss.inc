@@ -27,20 +27,20 @@ class facebook_status_views_plugin_row_rss extends views_plugin_row {
     if (empty($status)) {
       return;
     }
-    $owner = _facebook_status_user_load($status->uid);
-    $poster = _facebook_status_user_load($status->pid);
+    $sender = _facebook_status_user_load($status->sender);
+    $recipient = _facebook_status_user_load($status->recipient);
 
     $item = new stdClass();
-    $item->title = filter_xss($status->status);
+    $item->title = filter_xss($status->message);
     $item->link = url("statuses/$status->sid", array('absolute' => TRUE));
     $item->sid = $status->sid;
     $item->description = '';
 
     $item->elements = array(
-      array('key' => 'pubDate', 'value' => gmdate('r', $status->status_time)),
+      array('key' => 'pubDate', 'value' => gmdate('r', $status->created)),
       array(
         'key' => 'dc:creator',
-        'value' => check_plain($poster->name),
+        'value' => check_plain($sender->name),
         'namespace' => array('xmlns:dc' => 'http://purl.org/dc/elements/1.1/'),
       ),
       array(

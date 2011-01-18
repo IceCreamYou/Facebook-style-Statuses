@@ -39,7 +39,7 @@ class facebook_status_views_handler_filter_flagged_user extends views_handler_fi
     );
   }
   function query() {
-    $query = "({$this->table}.pid IN (SELECT content_id FROM {flag_content} WHERE fid = %d AND uid = %d) OR {$this->table}.pid = %d)";
+    $query = "({$this->table}.sender IN (SELECT content_id FROM {flag_content} WHERE fid = %d AND uid = %d) OR {$this->table}.sender = %d)";
     $query = db_prefix_tables($query);
     $this->query->add_where($this->options['group'], $query, $this->options['facebook_status_flag_type'], $GLOBALS['user']->uid, $GLOBALS['user']->uid);
   }

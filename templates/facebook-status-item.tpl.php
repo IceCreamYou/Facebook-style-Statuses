@@ -45,7 +45,7 @@
       <span class="facebook-status-meta"><?php echo $meta; ?></span>
     <?php endif; ?>
     <?php if ($links): ?>
-      <div class="facebook_status_links"><?php echo $links; ?></div>
+      <div class="facebook-status-links"><?php echo $links; ?></div>
     <?php endif; ?>
   </div>
 </div>

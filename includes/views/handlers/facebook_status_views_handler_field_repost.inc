@@ -10,10 +10,6 @@
  * Formats the "re-post" link.
  */
 class facebook_status_views_handler_field_repost extends views_handler_field {
-  function construct() {
-    parent::construct();
-    $this->additional_fields['pid'] = 'pid';
-  }
   function option_definition() {
     $options = parent::option_definition();
     $options['repost_text'] = array(
@@ -32,10 +28,10 @@ class facebook_status_views_handler_field_repost extends views_handler_field {
     );
   }
   function render($values) {
-    if ((user_access('edit own status') || user_access('edit all statuses')) && $values->{$this->aliases['pid']} != $GLOBALS['user']->uid) {
-      drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
+    if (facebook_status_user_access('add') {
+      drupal_add_css(drupal_get_path('module', 'facebook_status') .'/resources/facebook_status.css');
       $options = array(
-        'attributes' => array('class' => 'facebook_status_conversation_link'),
+        'attributes' => array('class' => 'facebook-status-repost'),
         'query' => array('sid' => $values->{$this->field_alias}, 'destination' => $_GET['q'])
       );
       return l($this->options['repost_text'], 'share-status', $options);

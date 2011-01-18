@@ -60,7 +60,7 @@ function facebook_status_views_data() {
     'help' => t('Show only the last status update for each user.'),
     'filter' => array(
       'field' => 'sid',
-      'handler' => 'facebook_status_views_handler_filter',
+      'handler' => 'facebook_status_views_handler_filter_latest_only',
       'label' => t('Last Status per User'),
     ),
   );
@@ -305,7 +305,7 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_field_sender_pic' => array(
         'parent' => 'views_handler_field',
       ),
-      'facebook_status_views_handler_filter' => array(
+      'facebook_status_views_handler_filter_latest_only' => array(
         'parent' => 'views_handler_filter_boolean_operator',
       ),
       'facebook_status_views_handler_filter_flagged_user' => array(

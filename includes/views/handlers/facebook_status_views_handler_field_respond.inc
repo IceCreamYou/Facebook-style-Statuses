@@ -12,40 +12,36 @@
 class facebook_status_views_handler_field_respond extends views_handler_field {
   function construct() {
     parent::construct();
-    $this->additional_fields['uid'] = 'uid';
+    $this->additional_fields['recipient'] = 'recipient';
     $this->additional_fields['sid'] = 'sid';
+    $this->additional_fields['type'] = 'type';
   }
   function render($values) {
     global $user;
-    $owner = _facebook_status_user_load($values->{$this->aliases['uid']});
-    $poster = _facebook_status_user_load($values->{$this->field_alias});
-    drupal_add_css(drupal_get_path('module', 'facebook_status') .'/facebook_status.css');
-    $options = array('attributes' => array('class' => 'facebook_status_conversation_link'));
-    if ($owner->uid != $poster->uid && user_access('post on all profiles')) {
+    $recipient = _facebook_status_user_load($values->{$this->aliases['recipient']});
+    $sender = _facebook_status_user_load($values->{$this->field_alias});
+    $type = $values->{$this->aliases['type']};
+    drupal_add_css(drupal_get_path('module', 'facebook_status') .'/resources/facebook_status.css');
+    $options = array('attributes' => array('class' => 'facebook-status-respond'));
+    if ($type == 'user' && $sender->uid != $recipient->uid && facebook_status_user_access('view_stream', $recipient) && facebook_status_user_access('view_stream', $sender)) {
       $title = t('View conversation');
-      if ($owner->uid == $user->uid) {
+      if ($recpient->uid == $user->uid) {
         $title = t('Reply');
       }
-      if (module_exists('realname')) {
-        return l($title, 'statuses/conversation/'. $poster->uid .','. $owner->uid, $options);
-      }
-      return l($title, 'statuses/conversation/'. check_plain($poster->name) .','. check_plain($owner->name), $options);
+      return l($title, 'statuses/conversation/'. $poster->uid .','. $owner->uid, $options);
     }
-    elseif ((user_access('edit own status') || user_access('edit all statuses')) && $owner->uid == $poster->uid && $poster->uid != $user->uid) {
-      $s = '@'. $poster->name .' ';
+    elseif ($type != 'user' || ($sender->uid == $recipient->uid && $sender->uid != $user->uid)) {
+      $s = '@'. $sender->name .' ';
       //Properly reference tags with word-break characters in them.
-      if (preg_match('/.+\b.+/', $poster->name)) {
-        $s = '[@'. $poster->name .'] ';
+      if (preg_match('/.+\b.+/', $sender->name)) {
+        $s = '[@'. $sender->name .'] ';
       }
       if (variable_get('facebook_status_reply_type', 'at') == 'at') {
         //Evidently url() sanitizes query strings itself, so we don't have to use check_plain() here.
         $options['query'] = array('s' => $s, 'rsid' => $values->{$this->aliases['sid']}, 'destination' => $_GET['q']);
         return l(t('Respond'), 'share-status', $options);
       }
-      if (module_exists('realname')) {
-        return l(t('Respond'), 'statuses/conversation/'. $poster->uid .','. $user->uid, $options);
-      }
-      return l(t('Respond'), 'statuses/conversation/'. check_plain($poster->name) .','. check_plain($user->name), $options);
+      return l(t('Respond'), 'statuses/conversation/'. $poster->uid .','. $user->uid, $options);
     }
   }
 }
