@@ -111,6 +111,39 @@ function facebook_status_views_data() {
     ),
   );
 
+  // Alias for Recipient ID to use the name.
+  $data['facebook_status']['recipient_name'] = array(
+    'title' => t('Recipient Name'),
+    'help' => t('The name of the entity on whose stream the status message was posted.'),
+    'field' => array(
+      'field' => 'recipient',
+      'handler' => 'facebook_status_views_handler_field_recipient',
+      'click sortable' => FALSE,
+    ),
+    'filter' => array(
+      'field' => 'recipient',
+      'handler' => 'views_handler_filter_user_name',
+    ),
+    'sort' => array(
+      'field' => 'recipient',
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'field' => 'recipient',
+      'handler' => 'views_handler_argument_user_uid',
+    ),
+  );
+  // Alias for poster picture.
+  $data['facebook_status']['recipient_pic'] = array(
+    'title' => t('Recipient picture'),
+    'help' => t('The picture of the user who received the status message, if applicable.'),
+    'field' => array(
+      'field' => 'recipient',
+      'handler' => 'facebook_status_views_handler_field_recipient_pic',
+      'click sortable' => FALSE,
+    ),
+  );
+
   // Declares the Sender ID column.
   $data['facebook_status']['sender'] = array(
     'title' => t('Sender ID'),
@@ -127,39 +160,6 @@ function facebook_status_views_data() {
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_numeric',
-    ),
-  );
-
-  // Alias for Sender UID to use the name.
-  $data['facebook_status']['sender_name'] = array(
-    'title' => t('Sender Name'),
-    'help' => t('The name of the user who posted the status.'),
-    'field' => array(
-      'field' => 'sender',
-      'handler' => 'facebook_status_views_handler_field_sender',
-      'click sortable' => FALSE,
-    ),
-    'filter' => array(
-      'field' => 'sender',
-      'handler' => 'views_handler_filter_user_name',
-    ),
-    'sort' => array(
-      'field' => 'sender',
-      'handler' => 'views_handler_sort',
-    ),
-    'argument' => array(
-      'field' => 'sender',
-      'handler' => 'views_handler_argument_user_uid',
-    ),
-  );
-  // Alias for poster picture.
-  $data['facebook_status']['sender_pic'] = array(
-    'title' => t('Sender picture'),
-    'help' => t('The picture of the user who posted the status.'),
-    'field' => array(
-      'field' => 'sender',
-      'handler' => 'facebook_status_views_handler_field_sender_pic',
-      'click sortable' => FALSE,
     ),
   );
 
@@ -293,16 +293,16 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_field_message' => array(
         'parent' => 'views_handler_field',
       ),
+      'facebook_status_views_handler_field_recipient' => array(
+        'parent' => 'views_handler_field_user',
+      ),
+      'facebook_status_views_handler_field_recipient_pic' => array(
+        'parent' => 'views_handler_field',
+      ),
       'facebook_status_views_handler_field_repost' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_respond' => array(
-        'parent' => 'views_handler_field',
-      ),
-      'facebook_status_views_handler_field_sender' => array(
-        'parent' => 'views_handler_field_user',
-      ),
-      'facebook_status_views_handler_field_sender_pic' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_filter_latest_only' => array(
