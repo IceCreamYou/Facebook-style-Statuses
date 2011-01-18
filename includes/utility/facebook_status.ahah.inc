@@ -9,6 +9,8 @@
  * Saves statuses via AHAH.
  */
 function facebook_status_save_js() {
+  //Make sure we have form stuff available.
+  module_load_include('inc', 'facebook_status', 'includes/utility/facebook_status.form');
   $form_state = array('storage' => NULL, 'submitted' => FALSE);
   $form_build_id = $_POST['form_build_id'];
   $form = form_get_cache($form_build_id, $form_state);

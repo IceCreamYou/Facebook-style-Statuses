@@ -80,9 +80,9 @@ function facebook_status_admin_advanced($form_state) {
   $form['facebook_status_refresh'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show AJAX "Refresh" link after status update views'),
-    '#description' => t('Display a "Refresh" link under content that will be automatically refreshed when the status update form is submitted.') .
-      t('Clicking the link will similarly update the related content via JavaScript, without refreshing the page.') .
-      t('Obviously, the "Refresh" link will only appear when there is something that can be refreshed.') .
+    '#description' => t('Display a "Refresh" link under content that will be automatically refreshed when the status update form is submitted.') .' '.
+      t('Clicking the link will similarly update the related content via JavaScript, without refreshing the page.') .' '.
+      t('Obviously, the "Refresh" link will only appear when there is something that can be refreshed.') .' '.
       t('If you disable AHAH refreshing below or if you have no views attached to your status update forms, this setting is useless.'),
     '#default_value' => variable_get('facebook_status_refresh', 0),
     '#weight' => -60,
