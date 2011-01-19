@@ -83,7 +83,7 @@ class facebook_status_context {
    * representing the recipient.
    */
   function recipient_name($recipient) {
-    return isset($recipient->name) ? $recipient->name : (isset($recipient->title) ? $recipient->title : '');
+    return isset($recipient->title) ? $recipient->title : (isset($recipient->name) ? $recipient->name : '');
   }
 
   /**
@@ -138,7 +138,7 @@ class facebook_status_user_context extends facebook_status_context {
     return TRUE;
   }
   function find_recipient() {
-    return arg(0) == 'user' && is_numeric(arg(1)) ? menu_get_object('user') : $GLOBALS['user'];
+    return arg(0) == 'user' && is_numeric(arg(1)) ? /*menu_get_object('user')*/ _facebook_status_user_load(arg(1)) : $GLOBALS['user'];
   }
   function load_recipient($id) {
     //FBSS has its own user_load() with extra caching for efficiency.
