@@ -697,7 +697,7 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
     'recipient' => $recipient_id,
     'type' => $type,
   );
-  if ($message != $status->message || !$options['discard duplicates']) {
+  if ($message != $status->message || $type != $status->type || $recipient_id != $status->recipient || !$options['discard duplicates']) {
     $edit = FALSE;
     //If a new status is submitted on one's own profile within
     //FACEBOOK_STATUS_OVERRIDE_TIMER seconds of the old one, we assume the user
@@ -831,7 +831,7 @@ function facebook_status_facebook_status_context_info() {
       'description' => t('The stream belongs to the currently viewed node, if applicable.'),
       'handler' => 'facebook_status_node_context',
       'view' => 'facebook_status_node_stream',
-      'weight' => 0,
+      'weight' => -1,
       'file' => $path .'/includes/utility/facebook_status.contexts.inc',
     ),
     'og' => array(

@@ -30,16 +30,25 @@
  */
 function theme_facebook_status_form_display($context = NULL, $type = NULL, $view = NULL) {
   global $user;
-  if (empty($context) && empty($type)) {
+  // $context is NULL, so find everything.
+  if (empty($context)) {
     $context = facebook_status_determine_context();
     $recipient = $context['handler']->find_recipient();
     $type = $context['handler']->type();
   }
-  else {
+  // Neither $context nor $type is NULL, so $context is really $recipient.
+  else if (!empty($type)) {
     $recipient = $context;
     $context = facebook_status_determine_context($type);
   }
-  $view = empty($view) ? $context['view'] : $view;
+  // $type is NULL and $context is not, so $context is a full context array.
+  else {
+    $recipient = $context['handler']->find_recipient();
+    $type = $context['handler']->type();
+  }
+  if (empty($view) && isset($context['view'])) {
+    $view = $context['view'];
+  }
   $selectors = module_invoke_all('facebook_status_refresh_selectors', $recipient, $type) + explode("\n", $context['selectors']);
   $conversation = (arg(0) == 'statuses' && arg(1) == 'conversation' && $type == 'user');
   $output = '';
@@ -107,7 +116,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
   }
 
   $default = variable_get('facebook_status_default_text', '');
-  $slider = '';
+  $intro = '';
   if (arg(0) == 'statuses' && arg(1) == 'share') {
     //This page is autofocused. We don't want default text there since the user would have to manually remove it.
     $default = '';
@@ -130,7 +139,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
         $name = '['. $name .']';
       }
       $default = str_replace(array('@name', '@status'), array($name, $rs->status), variable_get('facebook_status_repost', 'Re: @name @status '));
-      $slider = '';
+      $intro = '';
     }
   }
   elseif (isset($_GET['rsid']) && is_numeric($_GET['rsid'])) {
@@ -145,7 +154,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
         }
         $default = $name;
       }
-      $slider = t('In response to !status', array('!status' => theme('facebook_status_item', $status, array('links' => FALSE))));
+      $intro = t('In response to !status', array('!status' => theme('facebook_status_item', $status, array('links' => FALSE))));
     }
   }
 
@@ -156,24 +165,26 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
   $form = array('#cache' => TRUE);
   //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['opendiv'] = array(
-    '#value' => '<div id="facebook_status_replace">',
+    '#value' => '<div id="facebook-status-replace">',
     '#weight' => -50,
   );
-  $form['slider'] = array(
-    '#value' => '<span class="facebook_status_slider">'. $slider .'</span>',
-    '#weight' => -45,
-  );
+  if (!empty($intro)) {
+    $form['intro'] = array(
+      '#value' => '<span class="facebook-status-intro">'. $intro .'</span>',
+      '#weight' => -45,
+    );
+  }
   $form['fbss-status'] = array(
     '#type' => 'textarea',
     '#rows' => variable_get('facebook_status_box_rows', 2),
     '#default_value' => $default,
-    '#attributes' => array('class' => 'facebook_status_text facebook_status_text_main'),
+    '#attributes' => array('class' => 'facebook-status-text facebook-status-text-main'),
     '#resizable' => FALSE,
     '#weight' => -40,
   );
   if (variable_get('facebook_status_length', 140) > 0) {
     $form['chars'] = array(
-      '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => variable_get('facebook_status_length', 140))) .'</span>',
+      '#value' => '<span class="facebook-status-chars">'. t('%chars characters allowed', array('%chars' => variable_get('facebook_status_length', 140))) .'</span>',
       '#weight' => -35,
     );
   }
@@ -181,13 +192,13 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
     '#type' => 'submit',
     '#value' => t('Share'),
     '#submit' => array('facebook_status_box_submit'),
-    '#attributes' => array('class' => 'facebook_status_submit'),
+    '#attributes' => array('class' => 'facebook-status-submit'),
     '#weight' => -25,
   );
   if (variable_get('facebook_status_ahah', 1)) {
     $form['fbss-submit']['#ahah'] = array(
       'path' => 'facebook_status/js',
-      'wrapper' => 'facebook_status_replace',
+      'wrapper' => 'facebook-status-replace',
       'effect' => 'fade',
       'method' => 'replace',
     );

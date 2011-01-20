@@ -15,27 +15,27 @@ function facebook_status_edit(&$form_state, $status) {
   $path = drupal_get_path('module', 'facebook_status') .'/resources';
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_css($path .'/facebook_status.css');
-  $slider = _facebook_status_get_edit_slider($status, $context);
+  $intro = _facebook_status_get_edit_intro($status, $context);
   $self = '';
   if ($type == 'user' && $status->sender == $status->recipient) {
     $self = ' facebook-status-form-self-update';
   }
   $form = array('#cache' => TRUE);
-  $form['slider'] = array(
-    '#value' => '<div class="clear-block facebook_status_update facebook-status-form-type-"'. $status->type . $self .'>'.
-      '<span class="facebook_status_slider">'. $slider .'</span>',
+  $form['intro'] = array(
+    '#value' => '<div class="clear-block facebook-status-update facebook-status-form-type-"'. $status->type . $self .'>'.
+      '<span class="facebook-status-intro">'. $intro .'</span>',
     '#weight' => -45,
   );
   $form['fbss-status'] = array(
     '#type' => 'textarea',
     '#rows' => variable_get('facebook_status_box_rows', 2),
     '#default_value' => $status->message,
-    '#attributes' => array('class' => 'facebook_status_text'),
+    '#attributes' => array('class' => 'facebook-status-text'),
     '#resizable' => FALSE,
     '#weight' => -40,
   );
   $form['chars'] = array(
-    '#value' => '<span id="facebook_status_chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
+    '#value' => '<span id="facebook-status-chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
     '#weight' => -38,
   );
   $form['sid'] = array(
@@ -46,7 +46,7 @@ function facebook_status_edit(&$form_state, $status) {
   $form['fbss-submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
-    '#attributes' => array('class' => 'facebook_status_submit'),
+    '#attributes' => array('class' => 'facebook-status-submit'),
     '#suffix' => '</div>',
     '#weight' => -25,
   );
@@ -155,33 +155,33 @@ function _facebook_status_delete_cancel($form, &$form_state) {
  * @return
  *   A translated string to display above the edit status form.
  */
-function _facebook_status_get_edit_slider($status, $context) {
+function _facebook_status_get_edit_intro($status, $context) {
   global $user;
   $orig = nl2br(check_plain($status->message));
   if ($status->type == 'user') {
     if ($user->uid == $status->sender && $status->sender == $status->recipient) {
-      $slider = '<strong>'. t('Original status: !status', array('!status' => $orig)) .' </strong>';
+      $intro = '<strong>'. t('Original status: !status', array('!status' => $orig)) .' </strong>';
     }
     elseif ($user->uid == $status->sender) {
-      $slider = '<strong>'. t('Original message from you to !recipient: !status', array(
+      $intro = '<strong>'. t('Original message from you to !recipient: !status', array(
         '!recipient' => theme('username', _facebook_status_user_load($status->recipient)),
         '!status' => $orig
       )) .'</strong>';
     }
     elseif ($user->uid == $status->recipient) {
-      $slider = '<strong>'. t('Original message from !sender to you: !status', array(
+      $intro = '<strong>'. t('Original message from !sender to you: !status', array(
         '!sender' => theme('username', _facebook_status_user_load($status->sender)),
         '!status' => $orig
       )) .'</strong>';
     }
     elseif ($status->sender == $status->recipient) {
-      $slider = '<strong>'. t('Original status by !creator: !status', array(
+      $intro = '<strong>'. t('Original status by !creator: !status', array(
         '!creator' => theme('username', _facebook_status_user_load($status->sender)),
         '!status' => $orig
       )) .'</strong>';
     }
     else {
-      $slider = '<strong>'. t('Original message from !sender to !recipient: !status', array(
+      $intro = '<strong>'. t('Original message from !sender to !recipient: !status', array(
         '!sender' => theme('username', _facebook_status_user_load($status->sender)),
         '!recipient' => theme('username', _facebook_status_user_load($status->recipient)),
         '!status' => $orig
@@ -190,18 +190,18 @@ function _facebook_status_get_edit_slider($status, $context) {
   }
   else {
     if ($status->sender == $user->uid) {
-      $slider = '<strong>'. t('Original message from you to !recipient: !status', array(
+      $intro = '<strong>'. t('Original message from you to !recipient: !status', array(
         '!recipient' => $context['handler']->recipient_link($context['handler']->load_recipient($status->recipient)),
         '!status' => $orig
       )) .'</strong>';
     }
     else {
-      $slider = '<strong>'. t('Original message from !sender to !recipient: !status', array(
+      $intro = '<strong>'. t('Original message from !sender to !recipient: !status', array(
         '!sender' => theme('username', _facebook_status_user_load($status->sender)),
         '!recipient' => $context['handler']->recipient_link($context['handler']->load_recipient($status->recipient)),
         '!status' => $orig
       )) .'</strong>';
     }
   }
-  return $slider;
+  return $intro;
 }
