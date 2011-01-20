@@ -21,8 +21,8 @@ function facebook_status_views_data() {
   );
   $data['users']['table']['join'] = array(
     'facebook_status' => array(
-      'left_field' => 'uid',
-      'field' => 'sender',
+      'left_field' => 'sender',
+      'field' => 'uid',
       'type' => 'INNER',
     ),
   );
@@ -89,6 +89,33 @@ function facebook_status_views_data() {
       'field' => 'sid',
       'handler' => 'facebook_status_views_handler_field_repost',
       'click sortable' => FALSE,
+    ),
+  );
+
+  // Declares the Type column.
+  $data['facebook_status']['type'] = array(
+    'title' => t('Recipient type'),
+    'help' => t('The type of the recipient of the status message.'),
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
+  );
+  $data['facebook_status']['auto-type'] = array(
+    'title' => t('Use current context'),
+    'help' => t('Only show status updates that match the current context (i.e. that appear in the stream that belongs to the entity the user is viewing).'),
+    'filter' => array(
+      'field' => 'type',
+      'handler' => 'facebook_status_views_handler_filter_autotype',
     ),
   );
 
@@ -304,6 +331,9 @@ function facebook_status_views_handlers() {
       ),
       'facebook_status_views_handler_field_respond' => array(
         'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_filter_autotype' => array(
+        'parent' => 'views_handler_filter',
       ),
       'facebook_status_views_handler_filter_latest_only' => array(
         'parent' => 'views_handler_filter_boolean_operator',
