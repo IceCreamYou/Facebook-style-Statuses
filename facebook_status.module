@@ -7,8 +7,10 @@
  * @todo
  *   - Make sure values can be computed in facebook_status_token_values()
  *   - Write update path
- *   - Update CSS/JS if necessary
- *   - (Important) Update Views integration
+ *   - Fix that the statuses/share page currently can't show a view (it uses
+ *     the old, no-longer-existent setting).
+ *   - The facebook_status_views_handler_filter_participant filter doesn't work.
+ *   - CSS could use a little more tweaking.
  *   - Finish upgrading the other integrations that are now in submodules
  *   - Add a context configuration page that lets admin change the pages on
  *     which the context applies. Note that this also requires changing
