@@ -190,7 +190,7 @@ function facebook_status_views_data() {
     ),
   );
 
-  // Alias for extras for the poster.
+  // Alias for extras for the sender.
   $data['facebook_status']['user_contextual'] = array(
     'title' => t('Usernames (context-aware)'),
     'help' => t('The themed username(s) of either the owner or the sender and recipient of the status, depending on the context.'),
@@ -238,6 +238,22 @@ function facebook_status_views_data() {
       'handler' => 'facebook_status_views_handler_field_respond',
       'click sortable' => FALSE,
       'label' => t('Respond to conversation'),
+    ),
+  );
+
+  // Adds an argument and filter for "is participant."
+  $data['facebook_status']['participant'] = array(
+    'title' => t('User is sender or recipient'),
+    'help' => t('Limits status messages to those where the specified user ID belongs to either the sender or recipient.'),
+    'filter' => array(
+      'field' => 'sender',
+      'handler' => 'facebook_status_views_handler_filter_participant',
+      'label' => t('User is participant'),
+    ),
+    'argument' => array(
+      'field' => 'sender',
+      'handler' => 'facebook_status_views_handler_argument_participant',
+      'label' => t('User is participant'),
     ),
   );
 
@@ -302,6 +318,9 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_argument_flagged_user' => array(
         'parent' => 'views_handler_argument',
       ),
+      'facebook_status_views_handler_argument_participant' => array(
+        'parent' => 'views_handler_argument',
+      ),
       'facebook_status_views_handler_field_created' => array(
         'parent' => 'views_handler_field_date',
       ),
@@ -333,6 +352,9 @@ function facebook_status_views_handlers() {
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_filter_autotype' => array(
+        'parent' => 'views_handler_filter',
+      ),
+      'facebook_status_views_handler_filter_participant' => array(
         'parent' => 'views_handler_filter',
       ),
       'facebook_status_views_handler_filter_latest_only' => array(
