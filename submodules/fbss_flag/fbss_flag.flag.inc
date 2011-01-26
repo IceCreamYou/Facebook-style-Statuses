@@ -35,7 +35,7 @@ class fbss_flag extends flag_flag {
     return array(
       'views table' => 'facebook_status',
       'join field' => 'sid',
-      'title field' => 'status',
+      'title field' => 'message',
       'title' => t('Facebook-style Statuses'),
       'help' => t('Display information about the flag set on a status.'),
       'counter title' => t('Facebook-style Statuses flag counter'),

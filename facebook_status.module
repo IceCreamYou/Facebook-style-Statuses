@@ -16,6 +16,7 @@
  *     which the context applies. Note that this also requires changing
  *     facebook_status_determine_context() to handle the case where no contexts
  *     apply.
+ *   - The edit form might not submit correctly?
  */
 
 /**
