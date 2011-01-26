@@ -90,11 +90,11 @@ function facebook_status_menu() {
     'file' => 'includes/utility/facebook_status.announce.inc',
   );
   $items['statuses/share'] = array(
-    'title' => 'Update status',
+    'title' => 'Share status',
     'page callback' => 'facebook_status_share_page',
     'access callback' => 'facebook_status_user_access',
     'access arguments' => array('add'),
-    'description' => "The current user's social stream.",
+    'description' => 'Allows users to share statuses.',
     'type' => MENU_SUGGESTED_ITEM,
   );
   $items['statuses/conversation'] = array(

@@ -34,7 +34,7 @@ class facebook_status_views_handler_field_repost extends views_handler_field {
         'attributes' => array('class' => 'facebook-status-repost'),
         'query' => array('sid' => $values->{$this->field_alias}, 'destination' => $_GET['q'])
       );
-      return l($this->options['repost_text'], 'share-status', $options);
+      return l($this->options['repost_text'], 'statuses/share', $options);
     }
   }
 }

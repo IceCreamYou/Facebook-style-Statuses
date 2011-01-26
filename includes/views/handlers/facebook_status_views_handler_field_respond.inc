@@ -25,10 +25,10 @@ class facebook_status_views_handler_field_respond extends views_handler_field {
     $options = array('attributes' => array('class' => 'facebook-status-respond'));
     if ($type == 'user' && $sender->uid != $recipient->uid && facebook_status_user_access('view_stream', $recipient) && facebook_status_user_access('view_stream', $sender)) {
       $title = t('View conversation');
-      if ($recpient->uid == $user->uid) {
+      if ($recipient->uid == $user->uid) {
         $title = t('Reply');
       }
-      return l($title, 'statuses/conversation/'. $poster->uid .','. $owner->uid, $options);
+      return l($title, 'statuses/conversation/'. $sender->uid .','. $recipient->uid, $options);
     }
     elseif ($type != 'user' || ($sender->uid == $recipient->uid && $sender->uid != $user->uid)) {
       $s = '@'. $sender->name .' ';
@@ -39,9 +39,9 @@ class facebook_status_views_handler_field_respond extends views_handler_field {
       if (variable_get('facebook_status_reply_type', 'at') == 'at') {
         //Evidently url() sanitizes query strings itself, so we don't have to use check_plain() here.
         $options['query'] = array('s' => $s, 'rsid' => $values->{$this->aliases['sid']}, 'destination' => $_GET['q']);
-        return l(t('Respond'), 'share-status', $options);
+        return l(t('Respond'), 'statuses/share', $options);
       }
-      return l(t('Respond'), 'statuses/conversation/'. $poster->uid .','. $user->uid, $options);
+      return l(t('Respond'), 'statuses/conversation/'. $sender->uid .','. $user->uid, $options);
     }
   }
 }

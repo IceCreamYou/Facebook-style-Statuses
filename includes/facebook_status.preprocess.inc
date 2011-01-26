@@ -43,7 +43,7 @@ function template_preprocess_facebook_status_item(&$vars) {
       }
     }
     elseif (!empty($vars['recipient_name'])) {
-      $vars['meta'] = t('Posted on %entity', array('@entity' => $vars['recipient_name']));
+      $vars['meta'] = t('Posted on %entity', array('%entity' => $vars['recipient_name']));
     }
     if ($options['links']) {
       $vars['links'] = !empty($status->links) ? theme('links', $node->links, array('class' => 'links inline')) : '';
