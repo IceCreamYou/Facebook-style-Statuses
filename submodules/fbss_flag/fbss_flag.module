@@ -17,7 +17,7 @@ function fbss_flag_facebook_status_delete($sid) {
 /**
  * Implementation of hook_flag_definitions().
  */
-function fbss_flag_definitions() {
+function fbss_flag_flag_definitions() {
   return array(
     'facebook_status' => array(
       'title' => 'Facebook-style Statuses',
@@ -30,7 +30,7 @@ function fbss_flag_definitions() {
 /**
  * Implementation of hook_flag_default_flags().
  */
-function fbss_flag_default_flags() {
+function fbss_flag_flag_default_flags() {
   $flags = array();
   $flags[] = array(
     'content_type' => 'facebook_status',
