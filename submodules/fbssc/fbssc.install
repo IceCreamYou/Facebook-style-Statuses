@@ -34,7 +34,7 @@ function fbssc_schema() {
         'default' => 0,
         'description' => 'The User ID of the poster of the comment.',
       ),
-      'comment_time' => array(
+      'created' => array(
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
@@ -50,7 +50,7 @@ function fbssc_schema() {
       'cid' => array('cid'),
       'sid' => array('sid'),
       'uid' => array('uid'),
-      'comment_time' => array('comment_time'),
+      'created' => array('created'),
     ),
     'primary key' => array('cid'),
   );

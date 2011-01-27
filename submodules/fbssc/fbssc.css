@@ -39,7 +39,7 @@
   padding-right: 1em;
 }
 
-.fbssc_time {
+.fbssc_created {
   font-style: italic;
 }
 
@@ -69,7 +69,7 @@
 
 /* The "Show all comments" link. */
 .fbssc_show_comments_link {
-  border-bottom :1px solid #E0E0E0;
+  border-bottom: 1px solid #E0E0E0;
   display: block;
   font-size: 90%;
   padding-bottom: 0.5em;

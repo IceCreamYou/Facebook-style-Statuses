@@ -10,7 +10,7 @@
  * Implementation of hook_views_data().
  */
 function fbssc_views_data() {
-  //Basic table information.
+  // Basic table information.
   $data['fbssc']['table']['group']  = t('Facebook-style Statuses Comments');
   $data['fbssc']['table']['join'] = array(
     'users' => array(
@@ -25,7 +25,7 @@ function fbssc_views_data() {
     ),
   );
 
-  //Advertise this table as a possible base table.
+  // Advertise this table as a possible base table.
   $data['fbssc']['table']['base'] = array(
     'field' => 'cid',
     'title' => t('Facebook-style Statuses Comments'),
@@ -33,7 +33,7 @@ function fbssc_views_data() {
     'weight' => 10,
   );
 
-  //Alias for the FBSS Status ID to extend its use.
+  // Alias for the FBSS Status ID to extend its use.
   $data['facebook_status']['comment-box'] = array(
     'title' => t('Status comment box'),
     'help' => t('Shows the list of comments for the relevant status and the form to submit a new status comment.'),
@@ -45,7 +45,7 @@ function fbssc_views_data() {
   );
 
 
-  //Declares the Comment ID column.
+  // Declares the Comment ID column.
   $data['fbssc']['cid'] = array(
     'title' => t('Status Comment ID'),
     'help' => t('The ID of the status comment.'),
@@ -64,7 +64,7 @@ function fbssc_views_data() {
     ),
   );
 
-  //Declares the Status ID column.
+  // Declares the Status ID column.
   $data['fbssc']['sid'] = array(
     'title' => t('Status ID'),
     'help' => t('The ID of the status.'),
@@ -83,7 +83,7 @@ function fbssc_views_data() {
     ),
   );
 
-  //"Comment count."
+  // "Comment count."
   $data['facebook_status']['comment-count'] = array(
     'title' => t('Comment count'),
     'help' => t('The number of comments on the status.'),
@@ -94,7 +94,7 @@ function fbssc_views_data() {
     ),
   );
 
-  //"Comment count" with plural-sensitive string.
+  // "Comment count" with plural-sensitive string.
   $data['facebook_status']['plural-comment-count'] = array(
     'title' => t('Pluralized comment count'),
     'help' => t('The number of comments on the status in words ("1 comment" or "N comments").'),
@@ -105,7 +105,7 @@ function fbssc_views_data() {
     ),
   );
 
-  //Declares the User ID column.
+  // Declares the commenter's User ID column.
   $data['fbssc']['uid'] = array(
     'title' => t('User ID'),
     'help' => t('The User ID of the status comment author.'),
@@ -124,8 +124,8 @@ function fbssc_views_data() {
     ),
   );
 
-  //Declares the status comment timestamp column.
-  $data['fbssc']['comment_time'] = array(
+  // Declares the status comment timestamp column.
+  $data['fbssc']['created'] = array(
     'title' => t('Created time'),
     'help' => t('The time the status comment was posted.'),
     'field' => array(
@@ -140,7 +140,7 @@ function fbssc_views_data() {
     ),
   );
 
-  //Declares the status comment text column.
+  // Declares the status comment text column.
   $data['fbssc']['comment'] = array(
     'title' => t('Comment text'),
     'help' => t('The text of the status comment.'),
@@ -158,7 +158,6 @@ function fbssc_views_data() {
 
 /**
  * Implementation of hook_views_data_alter().
- *
  */
 function fbssc_views_data_alter(&$data) {
   $data['fbssc']['users'] = array(

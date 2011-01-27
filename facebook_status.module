@@ -17,6 +17,7 @@
  *     facebook_status_determine_context() to handle the case where no contexts
  *     apply.
  *   - The edit form might not submit correctly?
+ *   - Rename fbssc to fbss_comments, and write its upgrade function
  */
 
 /**

@@ -11,7 +11,6 @@
  *       + rules
  *       + userpoints
  *       + devel generate
- *       + appbar
  *       + popups api
  *       + sms framework
  *       + views bulk operations
@@ -144,12 +143,12 @@ function theme_fbssc_item($comment, $classes = array(), $destination = '') {
   array_unshift($classes, 'fbssc_comment');
   $classes = implode(' ', $classes);
   $output = '<div class="'. $classes .'">';
-  $output .= '<div class="fbssc_author">'. theme('username', user_load(array('uid' => $comment->uid))) .'</div>';
+  $output .= '<div class="fbssc_author">'. theme('username', _facebook_status_user_load($comment->uid)) .'</div>';
   $comment_text = _facebook_status_run_filter($comment->comment);
   $comment_text = nl2br($comment_text);
   $output .= '<div class="fbssc_text">'. $comment_text .'</div>';
   $output .= '<div class="fbssc_closure">';
-  $output .= '<span class="fbssc_time">'. theme('facebook_status_time', $comment->comment_time) .'</span>';
+  $output .= '<span class="fbssc_created">'. theme('facebook_status_time', $comment->created) .'</span>';
   $q = $_GET['q'];
   if ($destination) {
     $q = $destination;
@@ -168,7 +167,7 @@ function theme_fbssc_item($comment, $classes = array(), $destination = '') {
       .'</span>';
   }
   $output .= '</div></div>';
-  //Invokes hook_fbssc_render_alter(&$output, $comment).
+  // Invokes hook_fbssc_render_alter(&$output, $comment).
   drupal_alter('fbssc_render', $output, $comment);
   return $output;
 }
@@ -296,7 +295,7 @@ function fbssc_load($cid) {
  *   An array of comment objects for the relative thread.
  */
 function fbssc_get_comments($sid) {
-  $result = db_query("SELECT * FROM {fbssc} WHERE sid = %d ORDER BY comment_time ASC, cid ASC", $sid);
+  $result = db_query("SELECT * FROM {fbssc} WHERE sid = %d ORDER BY created ASC, cid ASC", $sid);
   $results = array();
   while ($comment = db_fetch_object($result)) {
     $results[] = $comment;
@@ -316,10 +315,9 @@ function fbssc_save_comment($sid, $comment, $uid = NULL) {
   if (!$uid) {
     $uid = $GLOBALS['user']->uid;
   }
-  $c = (object) array('sid' => $sid, 'uid' => $uid, 'comment_time' => time(), 'comment' => $comment);
+  $c = (object) array('sid' => $sid, 'uid' => $uid, 'created' => time(), 'comment' => $comment);
   drupal_write_record('fbssc', $c);
   module_invoke_all('fbss_after_save', $c, FALSE);
-  _fbssc_appbar_save($sid, $comment, $uid);
   return $c;
 }
 
@@ -356,7 +354,7 @@ function fbssc_has_commented($sid, $uid = NULL) {
   if (!$uid) {
     $uid = $GLOBALS['user']->uid;
   }
-  $result = db_result(db_query("SELECT COUNT(cid) FROM {fbssc} WHERE sid = %d and UID = %d", $sid, $uid));
+  $result = db_result(db_query("SELECT COUNT(cid) FROM {fbssc} WHERE sid = %d and uid = %d", $sid, $uid));
   return $result > 0;
 }
 
@@ -374,8 +372,8 @@ function fbssc_can_view($comment, $account = NULL) {
     $account = $GLOBALS['user'];
   }
   $allow = TRUE;
-  //Only change $allow if you need it to be FALSE.
-  //Do not set it to TRUE as this may override other modules' actions.
+  // Only change $allow if you need it to be FALSE.
+  // Do not set it to TRUE as this may override other modules' actions.
   drupal_alter('fbssc_can_view', $allow, $comment, $account);
   return $allow && user_access('view all status comments', $account);
 }
@@ -396,8 +394,8 @@ function fbssc_can_post($status, $account = NULL) {
     $account = $GLOBALS['user'];
   }
   $allow = TRUE;
-  //Only change $allow if you need it to be FALSE.
-  //Do not set it to TRUE as this may override other modules' actions.
+  // Only change $allow if you need it to be FALSE.
+  // Do not set it to TRUE as this may override other modules' actions.
   drupal_alter('fbssc_can_post', $allow, $status, $account);
   return $allow && user_access('post status comment', $account);
 }
@@ -418,11 +416,11 @@ function fbssc_can_edit($comment, $account = NULL) {
     $account = $GLOBALS['user'];
   }
   $allow = TRUE;
-  //Only change $allow if you need it to be FALSE.
-  //Do not set it to TRUE as this may override other modules' actions.
+  // Only change $allow if you need it to be FALSE.
+  // Do not set it to TRUE as this may override other modules' actions.
   drupal_alter('fbssc_can_edit', $allow, $comment, $account);
-  //This is in two separate statements (instead of one big return statement)
-  //so that the SQL in _fbssc_get_thread_author() does not usually need to be run.
+  // This is in two separate statements (instead of one big return statement)
+  // so that the SQL in _fbssc_get_thread_author() does not usually need to be run.
   if ($allow && (user_access('edit all status comments', $account) ||
     (user_access('edit own status comments', $account) && $account->uid == $comment->uid)
   )) {
@@ -448,11 +446,11 @@ function fbssc_can_delete($comment, $account = NULL) {
     $account = $GLOBALS['user'];
   }
   $allow = TRUE;
-  //Only change $allow if you need it to be FALSE.
-  //Do not set it to TRUE as this may override other modules' actions.
+  // Only change $allow if you need it to be FALSE.
+  // Do not set it to TRUE as this may override other modules' actions.
   drupal_alter('fbssc_can_delete', $allow, $comment, $account);
-  //This is in two separate statements (instead of one big return statement)
-  //so that the SQL in _fbssc_get_thread_author() does not usually need to be run.
+  // This is in two separate statements (instead of one big return statement)
+  // so that the SQL in _fbssc_get_thread_author() does not usually need to be run.
   if ($allow && (user_access('delete all status comments', $account) ||
     (user_access('delete own status comments', $account) && $account->uid == $comment->uid)
   )) {
@@ -475,7 +473,7 @@ function fbssc_can_delete($comment, $account = NULL) {
  *   The User ID of the author of the relevant status.
  */
 function _fbssc_get_thread_author($sid) {
-  return db_result(db_query("SELECT uid FROM {facebook_status} WHERE sid = %d", $sid));
+  return db_result(db_query("SELECT sender FROM {facebook_status} WHERE sid = %d", $sid));
 }
 
 //===============
@@ -559,7 +557,7 @@ function fbssc_save_js() {
   $form_state['post'] = $form['#post'] = $_POST;
   $form['#programmed'] = $form['#redirect'] = FALSE;
   $args = $form['#parameters'];
-  //This happens if someone goes directly to the JS processing page.
+  // This happens if someone goes directly to the JS processing page.
   if (!is_array($args) && !$args) {
     drupal_goto('user');
     watchdog('facebook_status',
@@ -569,12 +567,12 @@ function fbssc_save_js() {
   $form_id = array_shift($args);
   drupal_process_form($form_id, $form, $form_state);
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
-  //Get HTML for the replacement form. Only these elements will be AHAH-refreshed.
+  // Get HTML for the replacement form. Only these elements will be AHAH-refreshed.
   $new_form['comments']       = $form['comments'];
   $new_form['status-comment'] = $form['status-comment'];
   $new_form['save']           = $form['save'];
   $output = theme('status_messages') . drupal_render($new_form);
-  //Return the results.
+  // Return the results.
   drupal_json(array('status' => TRUE, 'data' => $output));
 }
 
@@ -603,70 +601,6 @@ function fbssc_facebook_status_render_components($status) {
 }
 
 /**
- * Helper function for Appbar integration.
- */
-function _fbssc_appbar_save($sid, $comment, $uid) {
-  global $user; //@todo: really should use $uid instead of $user->uid here
-  if (!module_exists('appbar')) {
-    return;
-  }
-  $user_link = theme('username', user_load(array('uid' => $uid)));
-  $status_link = url('statuses/'. $sid);
-  $uids = array();
-  $status = db_fetch_object(db_query("SELECT uid, pid FROM {facebook_status} WHERE sid = %d", $sid));
-  $uids[] = $status->uid;
-  $uids[] = $status->pid;
-  $recipient = theme('username', user_load(array('uid' => $status->uid)));
-  if ($status->uid != $status->pid) {
-    if ($status->uid != $user->uid) {
-      appbar_set_message(t('!user commented on a <a href="!message">message</a> to you.', array('!user' => $user_link, '!message' => $status_link)), 'fbssc-owner', $uids[0]);
-    }
-    if ($status->pid != $user->uid) {
-      appbar_set_message(t('!user commented on your <a href="!message">message</a> to !recipient.', array('!user' => $user_link, '!message' => $status_link, '!recipient' => $recipient)), 'fbssc-poster', $uids[1]);
-    }
-  }
-  else {
-    if ($status->uid != $user->uid) {
-      appbar_set_message(t('!user commented on your <a href="!message">message</a>.', array('!user' => $user_link, '!message' => $status_link)), 'fbssc-own', $uids[0]);
-    }
-  }
-  $result = db_query("SELECT uid FROM {fbssc} WHERE sid = %d", $sid);
-  while ($account = db_fetch_object($result)) {
-    if (!in_array($account->uid, $uids) && $account->uid != $user->uid) {
-      $uids[] = $account->uid;
-    }
-  }
-  array_shift($uids);
-  array_shift($uids);
-  foreach ($uids as $nuid) {
-    if ($status->uid == $status->pid) {
-      appbar_set_message(t('!user commented on a <a href="!message">status</a> on which you also commented.',
-        array('!user' => $user_link, '!message' => $status_link)), 'fbssc-commenter', $nuid);
-    }
-    else {
-      $r = $recipient;
-      if ($status->uid == $nuid) {
-        $r = theme('username', user_load(array('uid' => $nuid)));
-      }
-      appbar_set_message(t('!user commented on a <a href="!message">message</a> to !recipient on which you also commented.',
-        array('!user' => $user_link, '!message' => $status_link, '!recipient' => $r)), 'fbssc-commenter', $nuid);
-    }
-  }
-}
-
-/**
- * Implementation of hook_appbar_id().
- */
-function fbssc_appbar_id() {
-  return array(
-    'fbssc-owner' => t('Facebook-style Statuses Comment (to status owner)'),
-    'fbssc-poster' => t('Facebook-style Statuses Comment (to status poster)'),
-    'fbssc-own' => t('Facebook-style Statuses Comment (to status owner on own status)'),
-    'fbssc-commenter' => t('Facebook-style Statuses Comment (to other commenters)'),
-  );
-}
-
-/**
  * Implementation of hook_views_api().
  */
 function fbssc_views_api() {
@@ -678,12 +612,12 @@ function fbssc_views_api() {
  */
 function fbssc_views_default_views_alter(&$views) {
   foreach ($views as $view) {
-    //We can't use the base_table property because some FBSS views are based on the {users} table.
+    // We can't use the base_table property because some FBSS views are based on the {users} table.
     if ($view->tag == 'facebook_status') {
-      //Do some trickery to make sure the comment box comes before the time field so that it's available as a token.
-      $s = $view->display['default']->display_options['fields']['status_time'];
-      unset($view->display['default']->display_options['fields']['status_time']);
-      //This won't work anywhere fields are overridden in the default views.
+      // Do some trickery to make sure the comment box comes before the global:nothing field so that it's available as a token.
+      $s = $view->display['default']->display_options['fields']['nothing'];
+      unset($view->display['default']->display_options['fields']['nothing']);
+      // This won't work anywhere fields are overridden in the default views.
       $view->display['default']->display_options['fields']['comment-box'] = array(
         'label' => '',
         'alter' => array(
@@ -716,9 +650,15 @@ function fbssc_views_default_views_alter(&$views) {
           'button' => 'Override',
         ),
       );
-      $view->display['default']->display_options['fields']['status_time'] = $s;
-      $view->display['default']->display_options['fields']['status_time']['alter']['text'] =
-        '[pid_extra] [status] [status_time] [edit] [delete] [respond] [comment-box]';
+      $view->display['default']->display_options['fields']['nothing'] = $s;
+      $t = $view->display['default']->display_options['fields']['nothing']['alter']['text'];
+      if (drupal_substr($t, -6) == '</div>') {
+        $t = drupal_substr($t, 0, -6) . ' [comment-box]</div>';
+      }
+      else {
+        $t .= "\n\n<div>[comment-box]</div>";
+      }
+      $view->display['default']->display_options['fields']['nothing']['alter']['text'] .= $t;
     }
   }
 }
