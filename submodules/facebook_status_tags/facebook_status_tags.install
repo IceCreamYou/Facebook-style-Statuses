@@ -53,28 +53,6 @@ function facebook_status_tags_schema() {
 }
 
 /**
- * Implementation of hook_update_N().
- */
-function facebook_status_tags_update_6201() {
-  $result = array();
-  //In the last few cycles, some bugs were fixed that could cause blank tags to
-  //be saved. Clean up that mess.
-  $result[] = update_sql("DELETE FROM {facebook_status_tags} WHERE name = ''");
-  return $result;
-}
-
-/**
- * Implementation of hook_update_N().
- */
-function facebook_status_tags_update_6202() {
-  $result = array();
-  //The current primary key causes errors when a user @mention and term #tag
-  //with the same ID exist in the same status.
-  db_drop_primary_key($result, 'facebook_status_tags');
-  return $result;
-}
-
-/**
  * Implementation of hook_install().
  */
 function facebook_status_tags_install() {
@@ -102,8 +80,8 @@ function facebook_status_tags_uninstall() {
   variable_del('facebook_status_tags_vid');
   variable_del('facebook_status_tags_time');
   variable_del('facebook_status_tags_count');
-  //Although not deleting this leaves an unnecessary row in the variable table,
-  //it's a PITA for site admin to change its value, so it stays in case FBSST
-  //is ever installed again.
+  // Although not deleting this leaves an unnecessary row in the variable
+  // table, it's a PITA for site admin to change its value, so it stays in case
+  // FBSST is ever installed again.
   //variable_del('facebook_status_tags_alt_pattern');
 }

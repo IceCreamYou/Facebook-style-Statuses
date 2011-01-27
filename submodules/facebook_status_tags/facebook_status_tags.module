@@ -180,20 +180,15 @@ function theme_facebook_status_popular_tags($count = NULL, $time = NULL) {
  * @param $count
  *   The number of statuses to retrieve, starting with the most recent one. If
  *   zero, all relevant statuses are returned.
- * @param $uid
+ * @param $sender
  *   If zero, has no effect. If a positive integer, restricts results to
- *   statuses on the profile of the user with that UID. If an array of positive
- *   integers, restricts results to statuses on the profile of users with a UID
+ *   status messages created by the user with that UID. If an array of positive
+ *   integers, restricts results to status messages created by users with a UID
  *   in the array.
- * @param $pid
- *   If zero, has no effect. If a positive integer, restricts results to
- *   statuses posted by the user with that UID. If an array of positive
- *   integers, restricts results to statuses posted by users with a UID in the
- *   array.
  * @return
  *   An array of status objects.
  */
-function facebook_status_tags_get_statuses($tag, $type = 'term', $count = 1, $uid = 0, $pid = 0) {
+function facebook_status_tags_get_statuses($tag, $type = 'term', $count = 1, $sender = 0) {
   $params = array($tag, $type);
   if (is_int($tag)) {
     $rid = 'rid = %d';
@@ -201,39 +196,21 @@ function facebook_status_tags_get_statuses($tag, $type = 'term', $count = 1, $ui
   elseif (is_string($tag)) {
     $rid = "name = '%s'";
   }
-  $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.". $rid ." AND fbst.type = '%s' AND (";
-  if ($uid == 0 && $pid == 0) {
+  $sql = "SELECT fbst.sid FROM {facebook_status_tags} fbst INNER JOIN {facebook_status} fb ON fbst.sid = fb.sid WHERE fbst.". $rid ." AND fbst.type = '%s' AND ";
+  if ($sender == 0) {
     $sql = "SELECT sid FROM {facebook_status_tags} WHERE ". $rid ." AND type = '%s'";
   }
-  elseif ($uid == 0) {
-    if (is_numeric($pid)) {
-      $pid = array($pid);
-    }
-    $params = array_merge($params, $pid);
-    $sql .= implode(' OR ', array_fill(0, count($pid), 'fb.pid = %d'));
-    $sql .= ')';
+  elseif (is_numeric($sender)) {
+    $params[] = $sender;
+    $sql .= 'fb.sender = %d';
   }
-  elseif ($pid == 0) {
-    if (is_numeric($uid)) {
-      $uid = array($uid);
-    }
-    $params = array_merge($params, $uid);
-    $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
-    $sql .= ')';
+  elseif (is_array($sender)) {
+    $params = array_merge($params, $sender);
+    $sql .= 'fb.sender IN ('. db_placeholders($sender) .')';
   }
   else {
-    if (is_numeric($uid)) {
-      $uid = array($uid);
-    }
-    if (is_numeric($pid)) {
-      $pid = array($pid);
-    }
-    $params = array_merge($params, $uid);
-    $params = array_merge($params, $pid);
-    $sql .= implode(' OR ', array_fill(0, count($uid), 'fb.uid = %d'));
-    $sql .= ') AND (';
-    $sql .= implode(' OR ', array_fill(0, count($pid), 'fb.pid = %d'));
-    $sql .= ')';
+    // Something unexpected happened; abort.
+    return array();
   }
 
   if ($count) {
@@ -380,9 +357,10 @@ function facebook_status_tags_popular_users($count = 5, $time = 'all', $options 
  *   - include self updates: Results should include status updates posted to
  *     the relevant user's own profile. Default is TRUE.
  *   - include messages to others: Results should include status messages
- *     from one user to another. Default is TRUE.
+ *     from one user to other entities. Default is TRUE.
  *   - current user only: Results should only include statuses posted by the
- *     current user. Default is FALSE for terms and TRUE for users.
+ *     current user to any recipient. Default is FALSE for terms and TRUE for
+ *     users.
  * @return
  *   An array of user or taxonomy term objects, ordered by popularity (most
  *   popular first) and with the property "popularity" added to each object.
@@ -421,19 +399,19 @@ function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all',
     );
   }
   if (!$options['include messages to others']) {
-    $restrict .= 'f.uid = f.pid AND ';
+    $restrict .= "f.sender = f.recipient AND f.type = 'user' AND ";
   }
   if (!$options['include self updates']) {
-    $restrict .= 'f.uid <> f.pid AND ';
+    $restrict .= "(f.sender <> f.recipient OR f.type <> 'user') AND ";
   }
   if ($options['current user only']) {
-    $restrict .= 'f.pid = %d AND ';
+    $restrict .= "f.sender = %d AND ";
     $args[] = $GLOBALS['user']->uid;
   }
   $args[] = $type;
   $args[] = $time;
   $result = db_query_range("SELECT COUNT(t.sid) count, t.rid FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid
-    WHERE ". $restrict ."t.type = '%s' AND f.status_time > %d GROUP BY t.rid ORDER BY count DESC, t.sid DESC", $args, 0, $count);
+    WHERE ". $restrict ."t.type = '%s' AND f.created > %d GROUP BY t.rid ORDER BY count DESC, t.sid DESC", $args, 0, $count);
   $tags = array();
   while ($tag = db_fetch_object($result)) {
     $c = $tag->count;
@@ -441,7 +419,7 @@ function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all',
       $tag = taxonomy_get_term($tag->rid);
     }
     elseif ($type == 'user') {
-      $tag = user_load(array('uid' => $tag->rid));
+      $tag = _facebook_status_user_load($tag->rid);
     }
     $tag->popularity = $c;
     $tags[] = $tag;
@@ -481,8 +459,8 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
 
   preg_match_all($pattern, $subject, $matches);
   $words = $matches[0];
-  //Order the results by descending length so that "#the #therapy" matches
-  //"#the" and "#therapy" instead of "#the" twice and "#therapy" never.
+  // Order the results by descending length so that "#the #therapy" matches
+  // "#the" and "#therapy" instead of "#the" twice and "#therapy" never.
   uasort($words, '_facebook_status_tags_sort');
   $search = array();
   $replace = array();
@@ -505,7 +483,7 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
       }
       elseif (variable_get('facebook_status_tags_vid', -1) != -1) {
         $term = _facebook_status_tags_get_term($match);
-        //If the term does not exist, create it.
+        // If the term does not exist, create it.
         if (empty($term)) {
           $term = array(
             'vid' => variable_get('facebook_status_tags_vid', -1),
@@ -567,7 +545,7 @@ function _facebook_status_tags_resolve($term) {
     return;
   }
   $phpversion = drupal_substr(phpversion(), 0, 1);
-  //str_ireplace() is not defined in PHP4 so we use the case-sensitive version.
+  // str_ireplace() is not defined in PHP4 so we use the case-sensitive version.
   if ($phpversion == 5) {
     return str_ireplace(array('[term-id]', '[term-name]'), array($term->tid, $term->name), $url);
   }
@@ -588,27 +566,26 @@ function _facebook_status_tags_get_term($name) {
 //=================
 
 /**
- * Implementation of hook_facebook_status_render_components_alter().
+ * Implementation of hook_preprocess_facebook_status_item().
  */
-function facebook_status_tags_facebook_status_render_components_alter(&$components, $status) {
-  $status_text = $components['status']['#value'];
-  //$status_text comes in pre-encoded. Temporarily replace the single-quote
-  //character encoding so it doesn't get unintentionally linkified.
-  $status_text = str_replace("'", '&#039;', _facebook_status_tags_filter(str_replace('&#039;', "'", $status_text)));
-  $components['status']['#value'] = $status_text;
-  $components['status']['value'] = $status_text .' ';
+function facebook_status_tags_preprocess_facebook_status_item(&$vars) {
+  $message = $vars['message'];
+  // $message comes in pre-encoded. Temporarily replace the single-quote
+  // character encoding so it doesn't get unintentionally linkified.
+  $message = str_replace("'", '&#039;', _facebook_status_tags_filter(str_replace('&#039;', "'", $message)));
+  $vars['message'] = $message;
 }
 
 /**
  * Implementation of hook_facebook_status_save().
  */
 function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
-  //If the status was just edited, the tags could have changed, so we flush them.
+  // If the status was just edited, the tags could have changed, so we flush them.
   if ($edit) {
     db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $status->sid);
   }
-  $matches = _facebook_status_tags_filter($status->status, TRUE);
-  //Users.
+  $matches = _facebook_status_tags_filter($status->message, TRUE);
+  // Users.
   $old_matches = array();
   foreach ($matches['@'] as $account) {
     if (!in_array($account->uid, $old_matches)) {
@@ -623,7 +600,7 @@ function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
     }
   }
   
-  //Terms.
+  // Terms.
   if (!module_exists('taxonomy') || variable_get('facebook_status_tags_vid', -1) == -1) {
     return;
   }
@@ -673,7 +650,7 @@ function facebook_status_tags_taxonomy($op, $type, $array = NULL) {
   }
   elseif ($type == 'vocabulary') {
     if ($array['vid'] === variable_get('facebook_status_tags_vid', -1)) {
-      //If the vocabulary is deleted, all the tags will no longer exist, so the references are invalid.
+      // If the vocabulary is deleted, all the tags will no longer exist, so the references are invalid.
       db_query("DELETE FROM {facebook_status_tags} WHERE type = 'term'");
       variable_set('facebook_status_tags_vid', -1);
     }

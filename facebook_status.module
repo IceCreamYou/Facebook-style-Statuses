@@ -18,6 +18,7 @@
  *     apply.
  *   - The edit form might not submit correctly?
  *   - Rename fbssc to fbss_comments, and write its upgrade function
+ *   - Make FBSST work with Views
  */
 
 /**

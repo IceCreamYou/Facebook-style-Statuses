@@ -12,7 +12,7 @@
 function facebook_status_tags_views_data() {
   $data['facebook_status_tags']['table']['group']  = t('Facebook-style Statuses Tags');
 
-  //Advertise this table as a possible base table.
+  // Advertise this table as a possible base table.
   $data['facebook_status_tags']['table']['base'] = array(
     'field' => 'sid',
     'title' => t('Facebook-style Statuses Tags'),
