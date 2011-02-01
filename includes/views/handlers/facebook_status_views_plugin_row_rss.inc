@@ -29,12 +29,21 @@ class facebook_status_views_plugin_row_rss extends views_plugin_row {
     }
     $sender = _facebook_status_user_load($status->sender);
     $recipient = _facebook_status_user_load($status->recipient);
+    $message = _facebook_status_run_filter($status->message);
+    if (variable_get('facebook_status_nl2br', 0)) {
+      $message = nl2br($message);
+    }
+    $args = array(
+      '@sender' => (module_exists('realname') && !empty($sender->realname)) ? $sender->realname : $sender->name,
+      '@recipient' => (module_exists('realname') && !empty($recipient->realname)) ? $recipient->realname : $recipient->name,
+      '!message' => filter_xss($status->message, array()),
+    );
 
     $item = new stdClass();
-    $item->title = filter_xss($status->message);
+    $item->title = ($sender->uid == $recipient->uid) ? t('@sender: !message', $args) : t('@sender &raquo; @recipient: !message', $args);
     $item->link = url("statuses/$status->sid", array('absolute' => TRUE));
     $item->sid = $status->sid;
-    $item->description = '';
+    $item->description = $message;
 
     $item->elements = array(
       array('key' => 'pubDate', 'value' => gmdate('r', $status->created)),
