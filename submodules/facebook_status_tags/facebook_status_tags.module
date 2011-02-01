@@ -13,16 +13,16 @@
  * - "Term" means a taxonomy term.
  */
 
-//=============
-//DRUPAL HOOKS.
-//=============
+//===============
+// DRUPAL HOOKS.
+//===============
 
 /**
  * Implementation of hook_help().
  */
 function facebook_status_tags_help($path, $arg) {
   if ($path == 'admin/help#facebook_status_tags') {
-    return t('Modifies Facebook-style Statuses on display to replace @username references with the themed username and #hashtags with taxonomy terms.') .' '.
+    return t('Modifies Facebook-style Statuses on display to replace @mentions with the themed username and #hashtags with taxonomy terms.') .' '.
       t('Please see the <a href="http://drupal.org/project/facebook_status" rel="nofollow">Facebook-style Statuses project page</a> for more information.');
   }
 }
@@ -164,9 +164,9 @@ function theme_facebook_status_popular_tags($count = NULL, $time = NULL) {
   }
 }
 
-//====
-//API.
-//====
+//======
+// API.
+//======
 
 /**
  * Gets statuses that have a given tag by tag name.
@@ -314,17 +314,6 @@ function facebook_status_tags_get_status_tags($sid, $type = 'term') {
  * @see facebook_status_tags_popular()
  */
 function facebook_status_tags_popular_terms($count = 5, $time = 'all', $options = array()) {
-  //Backwards compatibility.
-  if ($options === FALSE) {
-    $options = array(
-      'current user only' => FALSE,
-    );
-  }
-  elseif ($options === TRUE) {
-    $options = array(
-      'current user only' => TRUE,
-    );
-  }
   return facebook_status_tags_popular('term', $count, $time, $options);
 }
 
@@ -427,9 +416,24 @@ function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all',
   return $tags;
 }
 
-//=================
-//HELPER FUNCTIONS.
-//=================
+/**
+ * Convert tags in message to links.
+ *
+ * @param $message
+ *   The message to process.
+ * @param
+ *   The message text with @mentions and #hashtags replaced.
+ */
+function facebook_status_tags_process_message($message) {
+  // $status_text comes in pre-encoded. Temporarily replace the single-quote
+  // character encoding so it doesn't get unintentionally linkified.
+  $message = str_replace("'", '&#039;', _facebook_status_tags_filter(str_replace('&#039;', "'", $message)));
+  return $message;
+}
+
+//===================
+// HELPER FUNCTIONS.
+//===================
 
 /**
  * Replaces tags with a themed version.
@@ -449,11 +453,8 @@ function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all',
  *   nested array of tags. The outer array is keyed by type ('@' and '#').
  */
 function _facebook_status_tags_filter($subject, $new = FALSE) {
-  //'%(\A(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?)|-)+\b)|(\[(#|@).+?\])%u'
-  //$pattern = '%(\A(#|@)(\w|(\p{L}\p{M}?))+\b)|((?<=\s)(#|@)(\w|(\p{L}\p{M}?))+\b)|(\[(#|@).+?\])%u';
   $pattern = '%((?:\A|(?<=\s))(?:#|@)(\w|(\p{L}\p{M}?))+\b)|(\[(#|@)[^\]]+\])%u';
   if (variable_get('facebook_status_tags_alt_pattern', FALSE)) {
-    //$pattern = '%(\A(#|@)\w+\b)|((?<=\s)(#|@)\w+\b)|(\[(#|@).+?\])%u';
     $pattern = '%((?:\A|(?<=\s))(?:#|@)\w+\b)|(\[(#|@)[^\]]+\])%u';
   }
 
@@ -561,9 +562,9 @@ function _facebook_status_tags_get_term($name) {
   return db_fetch_object(db_query("SELECT tid, name FROM {term_data} WHERE LOWER(name) = LOWER('%s') AND vid = %d", $name, variable_get('facebook_status_tags_vid', -1)));
 }
 
-//=================
-//FBSS INTEGRATION.
-//=================
+//===================
+// FBSS INTEGRATION.
+//===================
 
 /**
  * Implementation of hook_preprocess_facebook_status_item().
@@ -627,15 +628,27 @@ function facebook_status_tags_facebook_status_delete($sid) {
   db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
 }
 
-//===================
-//OTHER INTEGRATIONS.
-//===================
+//=====================
+// OTHER INTEGRATIONS.
+//=====================
 
 /**
  * Implementation of hook_views_api().
  */
 function facebook_status_tags_views_api() {
-  return array('api' => 2);
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'facebook_status_tags') .'/views',
+  );
+}
+
+/**
+ * Implementation of hook_views_data_alter().
+ *
+ * Overrides message handler to convert tags to links.
+ */
+function facebook_status_tags_views_data_alter(&$data) {
+  $data['facebook_status']['message']['field']['handler'] = 'facebook_status_tags_views_handler_field_message';
 }
 
 /**

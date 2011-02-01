@@ -27,9 +27,9 @@
  */
 define("FACEBOOK_STATUS_OVERRIDE_TIMER", 10);
 
-//=============
-//DRUPAL HOOKS.
-//=============
+//===============
+// DRUPAL HOOKS.
+//===============
 
 /**
  * Implementation of hook_help().
@@ -133,7 +133,6 @@ function facebook_status_menu() {
     'access callback' => 'facebook_status_user_access',
     'access arguments' => array('view', 1),
     'type' => MENU_CALLBACK,
-    'file' => 'includes/utility/facebook_status.status-page.inc',
   );
   $items['facebook_status/js'] = array(
     'title' => 'Save status update form',
@@ -230,12 +229,12 @@ function facebook_status_perm() {
  */
 function facebook_status_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'delete') {
-    //Remove abandoned statuses from the database on user account deletion.
+    // Remove abandoned statuses from the database on user account deletion.
     db_query("DELETE FROM {facebook_status} WHERE sender = %d OR (recipient = %d AND type = 'user')", $account->uid, $account->uid);
   }
   elseif ($op == 'view' && variable_get('facebook_status_profile', 1)) {
     $value = theme('facebook_status_form_display', $account, 'user');
-    //Don't show this section if there's nothing there or the user doesn't have permission to see it.
+    // Don't show this section if there's nothing there or the user doesn't have permission to see it.
     if (empty($value)) {
       return;
     }
@@ -244,7 +243,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
     }
     $account->content['facebook_status'] += array(
       '#type' => 'user_profile_category',
-      '#attributes' => array('class' => 'facebook_status-profile-category'),
+      '#attributes' => array('class' => 'facebook-status-profile-category'),
       '#weight' => -5,
       '#title' => t('Messages'),
     );
@@ -252,7 +251,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
       '#type' => 'user_profile_item',
       '#title' => '',
       '#value' => $value,
-      '#attributes' => array('class' => 'facebook_status profile'),
+      '#attributes' => array('class' => 'facebook-status profile'),
     );
   }
 }
@@ -295,40 +294,40 @@ function facebook_status_link($type, $status) {
     $links['edit'] = array(
       'href' => 'statuses/'. $status->sid .'/edit',
       'title' => t('edit'),
-      'attributes' => array('class' => 'facebook_status-edit-link facebook_status-action-link'),
+      'attributes' => array('class' => 'facebook-status-edit-link facebook-status-action-link'),
     );
   }
   if (facebook_status_user_access('delete', $status)) {
     $links['delete'] = array(
       'href' => 'statuses/'. $status->sid .'/delete',
       'title' => t('delete'),
-      'attributes' => array('class' => 'facebook_status-delete-link facebook_status-action-link'),
+      'attributes' => array('class' => 'facebook-status-delete-link facebook-status-action-link'),
     );
   }
-  //If not self update by current user (because if it is a self update by the current user, there is no need for a response)
+  // If not self update by current user (because if it is a self update by the current user, there is no need for a response)
   if ($status->type != 'user' || $status->recipient != $status->sender || $status->sender != $user->uid) {
-    //If permission to respond
+    // If permission to respond
     if (facebook_status_user_access('add', facebook_status_user_load($status->sender), 'user', $user)) {
-      //If to current user (not a self update)
+      // If to current user (not a self update)
       if ($status->type == 'user' && $status->recipient == $user->uid) {
         $title = t('reply');
       }
-      //If self update (not by current user)
+      // If self update (not by current user)
       elseif ($status->type == 'user' && $status->recipient == $status->sender) {
         $title = t('respond');
       }
-      //If from one user to another and the current user is not the recipient
+      // If from one user to another and the current user is not the recipient
       elseif ($status->type == 'user') {
         $title = t('view conversation');
       }
-      //If not to a user
+      // If not to a user
       else {
         $title = t('discuss');
       }
       $links['respond'] = array(
         'href' => 'statuses/conversation/'. $status->sender .','. $user->uid,
         'title' => $title,
-        'attributes' => array('class' => 'facebook_status-respond-link facebook_status-action-link'),
+        'attributes' => array('class' => 'facebook-status-respond-link facebook-status-action-link'),
       );
     }
   }
@@ -337,7 +336,7 @@ function facebook_status_link($type, $status) {
       'href' => 'statuses/share',
       'title' => t('share'),
       'query' => array('sid' => $status->mid, 'destination' => $_GET['q']),
-      'attributes' => array('class' => 'facebook_status-share-link facebook_status-action-link'),
+      'attributes' => array('class' => 'facebook-status-share-link facebook-status-action-link'),
     );
   }
   return $links;
@@ -377,9 +376,9 @@ function facebook_status_theme($existing, $type, $theme, $path) {
   );
 }
 
-//================
-//THEME FUNCTIONS.
-//================
+//==================
+// THEME FUNCTIONS.
+//==================
 
 /**
  * Display a status message.
@@ -424,9 +423,9 @@ function theme_facebook_status_time($time) {
   }
 }
 
-//==================================
-//APPLICATION PROGRAMMING INTERFACE.
-//==================================
+//====================================
+// APPLICATION PROGRAMMING INTERFACE.
+//====================================
 
 /**
  * Checks that users have permission to perform various status-related tasks.
@@ -558,12 +557,12 @@ function facebook_status_determine_context($type = NULL) {
   $contexts = facebook_status_all_contexts();
   if (empty($type)) {
     $context = array();
-    //The user context is our base case, so we never end up with no context.
+    // The user context is our base case, so we never end up with no context.
     foreach ($contexts as $context) {
       if (!empty($context['file']) && file_exists($context['file'])) {
         require_once $context['file'];
       }
-      //Make sure the parent class is always loaded.
+      // Make sure the parent class is always loaded.
       if (empty($context['parent'])) {
         module_load_include('inc', 'facebook_status', '/includes/utility/facebook_status.contexts');
       }
@@ -581,7 +580,7 @@ function facebook_status_determine_context($type = NULL) {
     if (!empty($context['file']) && file_exists($context['file'])) {
       require_once $context['file'];
     }
-    //Make sure the parent class is always loaded.
+    // Make sure the parent class is always loaded.
     if (empty($context['parent'])) {
       module_load_include('inc', 'facebook_status', '/includes/utility/facebook_status.contexts');
     }
@@ -591,10 +590,10 @@ function facebook_status_determine_context($type = NULL) {
     $context['handler'] = new $context['handler']();
   }
   else {
-    //We can't find the requested context, so abort.
+    // We can't find the requested context, so abort.
     return;
   }
-  //title and handler are required.
+  // title and handler are required.
   $context += array(
     'description' => '',
     'view' => '',
@@ -647,7 +646,7 @@ function facebook_status_delete_status($sid) {
   if (is_object($sid)) {
     $sid = $sid->sid;
   }
-  //Trigger integration.
+  // Trigger integration.
   if (module_exists('trigger')) {
     module_invoke_all('facebook_status', 'fbss_deleted', $sid);
   }
@@ -684,17 +683,17 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
   $recipient_id = $context['handler']->recipient_id($recipient);
   $time = time();
   $message = trim($message);
-  //Merge in defaults.
+  // Merge in defaults.
   $options += array(
     'discard duplicates' => TRUE,
     'timed override' => TRUE,
     'discard blank statuses' => TRUE,
   );
-  //Calls hook_facebook_status_save_options_alter(&$options).
+  // Calls hook_facebook_status_save_options_alter(&$options).
   drupal_alter('facebook_status_save_options', $options);
-  //Pretend to have set a new status if the submitted status is exactly the same as the old one.
+  // Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = _facebook_status_get_status_fast($sender->uid);
-  //The status object to be saved.
+  // The status object to be saved.
   $object = (object) array(
     'message' => $message,
     'created' => $time,
@@ -704,9 +703,9 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
   );
   if ($message != $status->message || $type != $status->type || $recipient_id != $status->recipient || !$options['discard duplicates']) {
     $edit = FALSE;
-    //If a new status is submitted on one's own profile within
-    //FACEBOOK_STATUS_OVERRIDE_TIMER seconds of the old one, we assume the user
-    //didn't mean to post the first one.
+    // If a new status is submitted on one's own profile within
+    // FACEBOOK_STATUS_OVERRIDE_TIMER seconds of the old one,
+    // we assume the user didn't mean to post the first one.
     if ($time - $status->created < FACEBOOK_STATUS_OVERRIDE_TIMER && $type = 'user' && $sender->uid == $recipient_id && $options['timed override']) {
       $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
       db_query($sql, $message, $time, $status->sid);
@@ -714,15 +713,15 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
       $edit = TRUE;
     }
     else {
-      //Don't save blank messages unless to clear the user's own last status update.
-      //The only reason clearing the last status update would even be needed would be if the most recent status update was displayed by itself somewhere.
+      // Don't save blank messages unless to clear the user's own last status update.
+      // The only reason clearing the last status update would even be needed would be if the most recent status update was displayed by itself somewhere.
       if ($type != 'user' || $sender->uid != $recipient_id || !empty($message) || !$options['discard blank statuses']) {
         drupal_write_record('facebook_status', $object);
       }
     }
-    //Invokes hook_facebook_status_save($status, $context, $edit).
+    // Invokes hook_facebook_status_save($status, $context, $edit).
     module_invoke_all('facebook_status_save', $object, $context, $edit);
-    //Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
+    // Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
     if (module_exists('trigger') && !empty($message)) {
       $op = 'fbss_submitted_'. $type;
       if ($type == 'user') {
@@ -737,9 +736,9 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
   return $object;
 }
 
-//=================
-//HELPER FUNCTIONS.
-//=================
+//===================
+// HELPER FUNCTIONS.
+//===================
 
 /**
  * A saner sort function for use in uasort().
@@ -812,9 +811,9 @@ function _facebook_status_user_load_by_name($name) {
   return $accounts[$name];
 }
 
-//========================
-//STREAM TYPE DEFINITIONS.
-//========================
+//==========================
+// STREAM TYPE DEFINITIONS.
+//==========================
 
 /**
  * Implementation of hook_facebook_status_context_info().
@@ -852,9 +851,9 @@ function facebook_status_facebook_status_context_info() {
   );
 }
 
-//====================
-//TRIGGER INTEGRATION.
-//====================
+//======================
+// TRIGGER INTEGRATION.
+//======================
 
 /**
  * Implementation of hook_hook_info().
@@ -890,7 +889,7 @@ function facebook_status_hook_info() {
       );
     }
     else {
-      $info['facebook_status']['facebook_status']['fbss_submitted'. $type ] = array(
+      $info['facebook_status']['facebook_status']['fbss_submitted_'. $type ] = array(
         'runs when' => t('A user has posted a new status to a stream of type %type', array('%type' => $type)),
       );
     }
@@ -918,7 +917,7 @@ function facebook_status_facebook_status($op, $a1, $context = NULL) {
   $recipient = $context['handler']->load_recipient($status->recipient);
   $sender = _facebook_status_user_load($status->sender);
 
-  //Reduce the amount of recalculation we will need to do later.
+  // Reduce the amount of recalculation we will need to do later.
   $sender->facebook_status = $status;
   $sender->context = $context;
 
@@ -954,14 +953,14 @@ function facebook_status_token_list($type = 'all') {
       'recipient-name' => t('The safe name of the recipient of the status message.'),
       'recipient-name-raw' => t('The raw name of the recipient of the status message. WARNING: raw user input.'),
       'recipient-id' => t('The ID of the recipient of the status message.'),
-      'status-unformatted' => t('The new status, with HTML escaped but no filters or anything run over it.'),
-      'status-formatted' => t('The new status completely themed.'),
-      'status-raw' => t('The completely unfiltered status text. WARNING: raw user input.'),
+      'message-unformatted' => t('The new status text, with HTML escaped but no filters or anything run over it.'),
+      'message-formatted' => t('The new status text completely themed.'),
+      'message-raw' => t('The completely unfiltered status text. WARNING: raw user input.'),
       'status-themed' => t('The new status completely themed, including usernames and times.'),
       'status-id' => t('The Status ID.'),
       'status-edit' => t('Edit status link.'),
       'status-delete' => t('Delete status link.'),
-      'status-time' => t('The themed time the status was submitted.'),
+      'created' => t('The themed time the status was submitted.'),
     );
     if (module_exists('fbssc')) {
       $tokens['facebook_status']['status-comment-count'] = t('The number of comments on the status.');
@@ -978,9 +977,8 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
   if ($type != 'facebook_status' || empty($data)) {
     return;
   }
-  //@todo: Figure out whether this actually works.
-  $status = $data->facebook_status;
-  $context = $data->context;
+  $status = $data;
+  $context = facebook_status_determine_context($status->type);
 
   $message_formatted = _facebook_status_run_filter($status->message);
   if (variable_get('facebook_status_nl2br', 0)) {
@@ -989,13 +987,13 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
   $edit = '';
   $delete = '';
   if (facebook_status_user_access('edit', $status)) {
-    $edit = '<span class="facebook_status-edit-link facebook_status-action-link">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .'</span>';
+    $edit = '<span class="facebook-status-edit-link facebook-status-action-link">'. l(t('Edit'), 'statuses/'. $status->sid .'/edit') .'</span>';
   }
   if (facebook_status_user_access('delete', $status)) {
-    $delete = '<span class="facebook_status-delete-link facebook_status-action-link">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
+    $delete = '<span class="facebook-status-delete-link facebook-status-action-link">'.  l(t('Delete'), 'statuses/'. $status->sid .'/delete') .'</span>';
   }
   $sender = _facebook_status_user_load($status->sender);
-  $recipient = _facebook_status_user_load($status->recipient);
+  $recipient = $context['handler']->load_recipient($status->recipient);
   $values = array(
     'sender-themed' => theme('username', $sender),
     'sender-name' => check_plain($sender->name),
@@ -1007,23 +1005,23 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     'recipient-name' => check_plain($context['handler']->recipient_name($recipient)),
     'recipient-name-raw' => $context['handler']->recipient_name($recipient),
     'recipient-id' => $context['handler']->recipient_id($recipient),
-    'status-unformatted' => check_plain($status->message),
-    'status-formatted' => $message_formatted,
-    'status-raw' => $status->message,
+    'message-unformatted' => check_plain($status->message),
+    'message-formatted' => $message_formatted,
+    'message-raw' => $status->message,
     'status-themed' => theme('facebook_status_item', $status),
     'status-id' => $status->sid,
     'status-edit' => $edit,
     'status-delete' => $delete,
-    'status-comment-count' => (module_exists('fbssc')) ? fbssc_count_comments($status->sid) : 0,
-    'status-time' => format_date($status->status_time, 'small'),
+    'status-comment-count' => (module_exists('fbss_comments')) ? fbss_comments_count_comments($status->sid) : 0,
+    'created' => format_date($status->created, 'small'),
   );
-  $values += token_get_date_token_values($status->created, 'status-time-');
+  $values += token_get_date_token_values($status->created, 'created-');
   return $values;
 }
 
-//==================
-//VIEWS INTEGRATION.
-//==================
+//====================
+// VIEWS INTEGRATION.
+//====================
 
 /**
  * Implementation of hook_views_api().
@@ -1044,9 +1042,9 @@ function facebook_status_display_user_picture($account) {
   return theme('user_picture', $account);
 }
 
-//==========================
-//SMS FRAMEWORK INTEGRATION.
-//==========================
+//============================
+// SMS FRAMEWORK INTEGRATION.
+//============================
 
 /**
  * Implementation of hook_sms_incoming().
@@ -1063,9 +1061,9 @@ function facebook_status_sms_incoming($op, $number, $message, $options = NULL) {
   }
 }
 
-//==================================
-//VIEWS BULK OPERATIONS INTEGRATION.
-//==================================
+//====================================
+// VIEWS BULK OPERATIONS INTEGRATION.
+//====================================
 
 /**
  * Implementation of hook_views_bulk_operations_object_info().
@@ -1081,9 +1079,9 @@ function facebook_status_views_bulk_operations_object_info() {
   );
 }
 
-//===================
-//CTOOLS INTEGRATION.
-//===================
+//=====================
+// CTOOLS INTEGRATION.
+//=====================
 
 /**
  * Implementation of hook_ctools_plugin_directory().

@@ -136,7 +136,7 @@ function facebook_status_tags_views_data() {
 function facebook_status_tags_views_handlers() {
   return array(
     'info' => array(
-      'path' => drupal_get_path('module', 'facebook_status'),
+      'path' => drupal_get_path('module', 'facebook_status_tags') .'/views',
     ),
     'handlers' => array(
       'facebook_status_tags_views_handler_argument_has_this_tag' => array(
@@ -146,6 +146,9 @@ function facebook_status_tags_views_handlers() {
         'parent' => 'views_handler_argument_numeric',
       ),
       'facebook_status_tags_views_handler_field_all_terms' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_tags_views_handler_field_message' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_tags_views_handler_field_name' => array(

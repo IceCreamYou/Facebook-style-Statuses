@@ -61,7 +61,7 @@ function facebook_status_tags_install() {
   if (module_exists('taxonomy')) {
     $message .= ' '. st('You should now <a href="!vocab">create a vocabulary</a> for use with #hashtags and <a href="!fbss">set FBSST to use it</a>.',
       array('!vocab' => url('admin/content/taxonomy/add/vocabulary'),
-        '!fbss' => url('admin/settings/facebook_status/advanced'),
+        '!fbss' => url('admin/settings/facebook_status'),
       )
     );
   }

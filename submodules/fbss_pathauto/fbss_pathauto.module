@@ -48,17 +48,17 @@ function fbss_pathauto_pathauto($op) {
   }
   $patternitems = array();
   foreach (facebook_status_all_contexts() as $type => $context) {
-    $patternitems[$type] = t('Status messages to a @title stream.', array('@title' => $context['title']));
+    $patternitems[$type] = t('Status messages to a @title stream', array('@title' => $context['title']));
   }
-  //Special case for the user type.
+  // Special case for the user type.
   unset($patternitems['user']);
-  $patternitems['other'] = t('Status messages to other users.');
+  $patternitems['other'] = t('Status messages to other users');
   $patternitems['self'] = t('Own status updates');
   return (object) array(
     'module' => 'facebook_status',
     'token_type' => 'facebook_status',
     'groupheader' => t('Facebook-style Statuses settings'),
-    'patterndefault' => '', //No aliases should be generated
+    'patterndefault' => '', // No aliases should be generated
     'patterndescr' => t('Default path pattern (applies to all status types with blank patterns below)'),
     'placeholders' => $placeholders,
     'patternitems' => $patternitems,
@@ -72,16 +72,16 @@ function fbss_pathauto_pathauto($op) {
  * Inspired by the node implementation in pathauto_node.inc.
  */
 function fbss_pathauto_pathauto_bulkupdate() {
-  //Only generate aliases for types with patterns defined.
+  // Only generate aliases for types with patterns defined.
   $pattern_types = array();
   foreach (facebook_status_all_contexts() as $type => $context) {
     $pattern_types[$type] = $type;
   }
-  //Special case for the user type.
+  // Special case for the user type.
   unset($pattern_types['user']);
   $pattern_types['self'] = 'self';
   $pattern_types['other'] = 'other';
-  //Check for generic pattern.
+  // Check for generic pattern.
   if (!trim(variable_get('pathauto_facebook_status_pattern', ''))) {
     foreach ($pattern_types as $type) {
       if (!trim(variable_get('pathauto_facebook_status_'. $type .'_pattern', ''))) {
@@ -99,7 +99,7 @@ function fbss_pathauto_pathauto_bulkupdate() {
     $result = db_query_range($query, 0, variable_get('pathauto_max_bulk_update', 50));
     $placeholders = array();
     while ($status = db_fetch_object($result)) {
-      //pathauto.inc should already be included.
+      // pathauto.inc should already be included.
       $placeholders = pathauto_get_placeholders('facebook_status', $status);
       $source = 'statuses/'. $status->sid;
       $type = ($status->type == 'user' ? (($status->sender == $status->recipient) ? 'self' : 'other') : $status->type);

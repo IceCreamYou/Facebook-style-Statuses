@@ -21,7 +21,7 @@ function facebook_status_tags_views_default_views() {
   $view->disabled = !module_exists('taxonomy');
   $handler = $view->new_display('default', 'Tag Reference', 'default');
   $handler->override_option('fields', array(
-    'pid_extra' => array(
+    'user_contextual_pic' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -40,12 +40,12 @@ function facebook_status_tags_views_default_views() {
         'html' => 0,
       ),
       'exclude' => 1,
-      'id' => 'pid_extra',
+      'id' => 'user_contextual_pic',
       'table' => 'facebook_status',
-      'field' => 'pid_extra',
+      'field' => 'user_contextual_pic',
       'relationship' => 'none',
     ),
-    'status' => array(
+    'message' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -64,16 +64,16 @@ function facebook_status_tags_views_default_views() {
         'html' => 0,
       ),
       'exclude' => 1,
-      'id' => 'status',
+      'id' => 'message',
       'table' => 'facebook_status',
-      'field' => 'status',
+      'field' => 'message',
       'relationship' => 'none',
     ),
-    'status_time' => array(
+    'created' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] [status_time]',
+        'text' => '',
         'make_link' => 0,
         'path' => '',
         'alt' => '',
@@ -89,19 +89,47 @@ function facebook_status_tags_views_default_views() {
       ),
       'date_format' => 'time ago',
       'custom_date_format' => '1',
-      'exclude' => 0,
-      'id' => 'status_time',
+      'exclude' => 1,
+      'id' => 'created',
       'table' => 'facebook_status',
-      'field' => 'status_time',
+      'field' => 'created',
+      'relationship' => 'none',
+    ),
+    'nothing' => array(
+      'label' => '',
+      'alter' => array(
+        'text' => '<div>[user_contextual_pic] [message] [created]</div>',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 0,
+      'id' => 'nothing',
+      'table' => 'views',
+      'field' => 'nothing',
       'relationship' => 'none',
     ),
   ));
   $handler->override_option('sorts', array(
-    'status_time' => array(
+    'created' => array(
       'order' => 'DESC',
-      'id' => 'status_time',
+      'id' => 'created',
       'table' => 'facebook_status',
-      'field' => 'status_time',
+      'field' => 'created',
       'relationship' => 'none',
     ),
     'sid' => array(
@@ -166,36 +194,6 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_php' => '',
     ),
   ));
-  $handler->override_option('filters', array(
-    'sid_extra' => array(
-      'operator' => '=',
-      'value' => '0',
-      'group' => '0',
-      'exposed' => FALSE,
-      'expose' => array(
-        'operator' => FALSE,
-        'label' => '',
-      ),
-      'id' => 'sid_extra',
-      'table' => 'facebook_status',
-      'field' => 'sid_extra',
-      'relationship' => 'none',
-    ),
-    'pid_extra_3' => array(
-      'operator' => '=',
-      'value' => '0',
-      'group' => '0',
-      'exposed' => FALSE,
-      'expose' => array(
-        'operator' => FALSE,
-        'label' => '',
-      ),
-      'id' => 'pid_extra_3',
-      'table' => 'facebook_status',
-      'field' => 'pid_extra_3',
-      'relationship' => 'none',
-    ),
-  ));
   $handler->override_option('access', array(
     'type' => 'perm',
     'perm' => 'view all statuses',
@@ -210,19 +208,19 @@ function facebook_status_tags_views_default_views() {
     'sticky' => 0,
     'order' => 'asc',
     'columns' => array(
-      'pid_extra' => 'pid_extra',
-      'status' => 'status',
-      'status_time' => 'status_time',
+      'user_contextual_pic' => 'user_contextual_pic',
+      'message' => 'message',
+      'created' => 'created',
     ),
     'info' => array(
-      'pid_extra' => array(
+      'user_contextual_pic' => array(
         'separator' => '',
       ),
-      'status' => array(
+      'message' => array(
         'sortable' => 0,
         'separator' => '',
       ),
-      'status_time' => array(
+      'created' => array(
         'sortable' => 0,
         'separator' => '',
       ),
@@ -284,7 +282,7 @@ function facebook_status_tags_views_default_views() {
   $view->disabled = FALSE;
   $handler = $view->new_display('default', 'User Reference', 'default');
   $handler->override_option('fields', array(
-    'pid_extra' => array(
+    'user_contextual_pic' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -303,12 +301,12 @@ function facebook_status_tags_views_default_views() {
         'html' => 0,
       ),
       'exclude' => 1,
-      'id' => 'pid_extra',
+      'id' => 'user_contextual_pic',
       'table' => 'facebook_status',
-      'field' => 'pid_extra',
+      'field' => 'user_contextual_pic',
       'relationship' => 'none',
     ),
-    'status' => array(
+    'message' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -327,16 +325,16 @@ function facebook_status_tags_views_default_views() {
         'html' => 0,
       ),
       'exclude' => 1,
-      'id' => 'status',
+      'id' => 'message',
       'table' => 'facebook_status',
-      'field' => 'status',
+      'field' => 'message',
       'relationship' => 'none',
     ),
-    'status_time' => array(
+    'created' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 1,
-        'text' => '[pid_extra] [status] [status_time]',
+        'text' => '',
         'make_link' => 0,
         'path' => '',
         'alt' => '',
@@ -352,19 +350,47 @@ function facebook_status_tags_views_default_views() {
       ),
       'date_format' => 'time ago',
       'custom_date_format' => '1',
-      'exclude' => 0,
-      'id' => 'status_time',
+      'exclude' => 1,
+      'id' => 'created',
       'table' => 'facebook_status',
-      'field' => 'status_time',
+      'field' => 'created',
+      'relationship' => 'none',
+    ),
+    'nothing' => array(
+      'label' => '',
+      'alter' => array(
+        'text' => '<div>[user_contextual_pic] [message] [created]</div>',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 0,
+      'id' => 'nothing',
+      'table' => 'views',
+      'field' => 'nothing',
       'relationship' => 'none',
     ),
   ));
   $handler->override_option('sorts', array(
-    'status_time' => array(
+    'created' => array(
       'order' => 'DESC',
-      'id' => 'status_time',
+      'id' => 'created',
       'table' => 'facebook_status',
-      'field' => 'status_time',
+      'field' => 'created',
       'relationship' => 'none',
     ),
     'sid' => array(
@@ -423,59 +449,7 @@ function facebook_status_tags_views_default_views() {
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
       'validate_user_restrict_roles' => 0,
-      'validate_argument_php' => '//If this view is overridden and then FBSS is disabled, it can
-//cause a WSOD if these lines are not included here.
-if (!function_exists(\'_facebook_status_user_load_by_name\')) {
-  return;
-}
-
-if (is_numeric($argument)) {
-  return TRUE;
-}
-if (strpos($argument, \',\') !== FALSE) {
-  $names = explode(\',\', $argument);
-  $type = \',\';
-}
-else if (strpos($argument, \'+\') !== FALSE) {
-  $names = explode(\'+\', $argument);
-  $type = \'+\';
-}
-else {
-  $names = array($argument);
-  $type = \'\';
-}
-$uids = array();
-foreach ($names as $name) {
-  if (is_numeric($name)) {
-    $uids[] = $name;
-    continue;
-  }
-  $account = _facebook_status_user_load_by_name($name);
-  if ($account->uid) {
-    $uids[] = $account->uid;
-  }
-}
-if (!empty($uids)) {
-  $handler->argument = implode($type, $uids);
-  return TRUE;
-}
-return FALSE;',
-    ),
-  ));
-  $handler->override_option('filters', array(
-    'pid_extra_3' => array(
-      'operator' => '=',
-      'value' => '0',
-      'group' => '0',
-      'exposed' => FALSE,
-      'expose' => array(
-        'operator' => FALSE,
-        'label' => '',
-      ),
-      'id' => 'pid_extra_3',
-      'table' => 'facebook_status',
-      'field' => 'pid_extra_3',
-      'relationship' => 'none',
+      'validate_argument_php' => '',
     ),
   ));
   $handler->override_option('access', array(
@@ -494,20 +468,20 @@ return FALSE;',
     'sticky' => 0,
     'order' => 'asc',
     'columns' => array(
-      'name' => 'name',
-      'status' => 'status',
-      'status_time' => 'status_time',
+      'user_contextual_pic' => 'user_contextual_pic',
+      'message' => 'message',
+      'created' => 'created',
     ),
     'info' => array(
-      'name' => array(
+      'user_contextual_pic' => array(
         'sortable' => 0,
         'separator' => '',
       ),
-      'status' => array(
+      'message' => array(
         'sortable' => 0,
         'separator' => '',
       ),
-      'status_time' => array(
+      'created' => array(
         'sortable' => 0,
         'separator' => '',
       ),
@@ -584,70 +558,9 @@ return FALSE;',
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
       'validate_user_restrict_roles' => 0,
-      'validate_argument_php' => '//If this view is overridden and then FBSS is disabled, it can
-//cause a WSOD if these lines are not included here.
-if (!function_exists(\'_facebook_status_user_load\')) {
-  return;
-}
-
-//If the argument is not present, get it from the UID in the URL instead.
-if (arg(0) == \'user\' && !is_string($argument)) {
-  $account = _facebook_status_user_load(arg(1));
-  if ($account->uid) {
-    $handler->argument = $account->name;
-    return TRUE;
-  }
-}
-else if (is_string($argument)) {
-  $account = _facebook_status_user_load_by_name($argument);
-  if ($account->uid) {
-    return TRUE;
-  }
-}
-return FALSE;',
+      'validate_argument_php' => '',
     ),
   ));
-  if (module_exists('php')) {
-    $handler->override_option('footer', '<?php
-    /*
-      //If this view is overridden and then FBSS is disabled, it can
-      //cause a WSOD if these lines are not included here.
-      if (!function_exists(\'_facebook_status_user_load\')) {
-        echo t(\'Facebook-style Statuses has been disabled.\');
-        return;
-      }
-
-      //Adds a link to view your conversation with the user whose profile you are viewing.
-      global $user;
-      $account = _facebook_status_user_load(arg(1));
-      if ($account->uid && $account->uid != $user->uid) {
-        echo l(\'View mentions between you and \'. $account->name, \'statuses/conversation/\'. check_plain($account->name) .\',\'. check_plain($user->name));
-      }
-     */
-    ?>');
-    $handler->override_option('footer_format', '3');
-    $handler->override_option('footer_empty', 0);
-    $handler->override_option('empty', '<?php
-    //If this view is overridden and then FBSS is disabled, it can
-    //cause a WSOD if these lines are not included here.
-    if (!function_exists(\'_facebook_status_user_load\')) {
-      echo t(\'Facebook-style Statuses has been disabled.\');
-      return;
-    }
-
-    if (arg(0) == \'user\') {
-      $account = _facebook_status_user_load(arg(1));
-      global $user;
-      if ($user->uid == $account->uid) {
-        echo t(\'No one has mentioned you yet.\');
-      }
-      else {
-        echo t(\'No one has mentioned @name.\', array(\'@name\' => $account->name));
-      }
-    }
-    ?>');
-    $handler->override_option('empty_format', '3');
-  }
   $handler->override_option('items_per_page', 5);
   $handler->override_option('use_pager', '0');
   $handler->override_option('pager_element', 11);
