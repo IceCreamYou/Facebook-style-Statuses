@@ -656,9 +656,9 @@ function fbss_comments_views_default_views_alter(&$views) {
         $t = drupal_substr($t, 0, -6) . ' [comment-box]</div>';
       }
       else {
-        $t = "\n\n<div>[comment-box]</div>";
+        $t .= "\n\n<div>[comment-box]</div>";
       }
-      $view->display['default']->display_options['fields']['nothing']['alter']['text'] .= $t;
+      $view->display['default']->display_options['fields']['nothing']['alter']['text'] = $t;
     }
   }
 }
