@@ -56,7 +56,7 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
       }
       return t('!picture !user', array('!picture' => facebook_status_display_user_picture($sender), '!user' => theme('username', $sender)));
     }
-    else if ($type == 'user') {
+    elseif ($type == 'user') {
       $recipient = _facebook_status_user_load($recipient_id);
       if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
         $sender->imagecache_preset = $options['imagecache_preset'];

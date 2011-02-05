@@ -10,7 +10,7 @@
 }
 
 .facebook-status-chars {
-  margin-left: 0.25em;
+  margin-right: 0.5em;
 }
 
 .facebook-status-profile-category .profile {
@@ -31,6 +31,10 @@
 
 .facebook-status-faded {
   color: #999999;
+}
+
+.facebook-status-submit {
+  margin-top: 0;
 }
 
 /* Fix weird picture formatting from Garland and other themes. */

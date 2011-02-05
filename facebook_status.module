@@ -5,20 +5,19 @@
  * @file
  *   Creates context-sensitive social streams.
  * @todo
- *   - Make sure values can be computed in facebook_status_token_values()
- *   - Write update path
- *   - Fix that the statuses/share page currently can't show a view (it uses
- *     the old, no-longer-existent setting).
- *   - The facebook_status_views_handler_filter_participant filter doesn't work.
+ *   - Write update path (including for submodules)
  *   - CSS could use a little more tweaking.
- *   - Finish upgrading the other integrations that are now in submodules
+ *   - Finish upgrading the submodules
+ *     o Complete: facebook_status_tags, fbss_comments, fbss_flag
+ *     o Incomplete: fbss_activity, fbss_mollom, fbss_pathauto, fbss_rules, fbss_twitter, fbss_userpoints
  *   - Add a context configuration page that lets admin change the pages on
  *     which the context applies. Note that this also requires changing
  *     facebook_status_determine_context() to handle the case where no contexts
- *     apply.
- *   - The edit form might not submit correctly?
- *   - Rename fbssc to fbss_comments, and write its upgrade function
- *   - Make FBSST work with Views
+ *     apply. Additionally, let contexts modify this page to add extra settings.
+ *   - FBSSC's hook_facebook_status_render_components() needs to be replaced with a preprocess solution
+ *   - On user deletion, call API delete function instead of doing a direct query
+ *   - Allow having no character limit
+ *   - Don't accept numeric hashtags like #1
  */
 
 /**
@@ -352,13 +351,14 @@ function facebook_status_theme($existing, $type, $theme, $path) {
         'status' => NULL,
         'options' => array(),
       ),
-      'template' => 'facebook-status-item',
+      'template' => 'templates/facebook-status-item',
       'file' => 'includes/facebook_status.preprocess.inc',
     ),
     'facebook_status_form_display' => array(
       'arguments' => array(
         'recipient' => NULL,
         'type' => 'user',
+        'view' => NULL,
       ),
       'file' => 'includes/utility/facebook_status.form.inc',
     ),

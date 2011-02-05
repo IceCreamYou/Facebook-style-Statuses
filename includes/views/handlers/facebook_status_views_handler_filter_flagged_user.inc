@@ -21,6 +21,7 @@ class facebook_status_views_handler_filter_flagged_user extends views_handler_fi
     return $options;
   }
   function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
     $flags = flag_get_flags('user');
     $options = array();
     foreach ($flags as $flag) {

@@ -57,18 +57,29 @@ function facebook_status_tags_schema() {
  */
 function facebook_status_tags_install() {
   drupal_install_schema('facebook_status_tags');
-  $message = st('Facebook-style Statuses Tags has been successfully installed.');
+
   if (module_exists('taxonomy')) {
-    $message .= ' '. st('You should now <a href="!vocab">create a vocabulary</a> for use with #hashtags and <a href="!fbss">set FBSST to use it</a>.',
-      array('!vocab' => url('admin/content/taxonomy/add/vocabulary'),
-        '!fbss' => url('admin/settings/facebook_status'),
-      )
+    // Create a default vocabulary for use with hashtags.
+    $vocab = array(
+      'name' => st('Hashtags'),
+      'description' => st('Contains #hashtags used in Facebook-style Statuses.'),
+      'multiple' => '1',
+      'required' => '0',
+      'hierarchy' => '0',
+      'relations' => '0',
+      'tags' => '1',
+      'module' => 'facebook_status_tags',
+      'help' => '',
     );
+    taxonomy_save_vocabulary($vocab);
+    $vid = db_result(db_query("SELECT vid FROM {vocabulary} WHERE name = '%s'", st('Hashtags')));
+    variable_set('facebook_status_tags_vid', $vid);
   }
   else {
-    $message .= ' '. st('Enabling the Taxonomy module now is recommended. Doing so will allow you to process #hashtags in status updates.');
+    drupal_set_message(st('Facebook-style Statuses Tags only allows using #hashtags when the Taxonomy module is installed.'));
   }
-  drupal_set_message($message);
+
+  $message = st('Facebook-style Statuses Tags has been successfully installed.');
 }
 
 /**

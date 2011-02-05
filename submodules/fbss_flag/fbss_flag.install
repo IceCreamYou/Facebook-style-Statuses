@@ -2,7 +2,8 @@
 // $Id$
 
 /**
- * Installs the Facebook-style Statuses Flag module.
+ * @file
+ *   (Un)installs the Facebook-style Statuses Flag module.
  */
 
 /**

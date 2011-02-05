@@ -21,7 +21,7 @@
  */
 function hook_facebook_status_user_access_alter(&$allow, $op, $args) {
   global $user;
-  switch($op) {
+  switch ($op) {
     case 'add':
       $recipient = isset($args[0]) ? $args[0] : $user;
       $type = isset($args[1]) ? $args[1] : 'user';

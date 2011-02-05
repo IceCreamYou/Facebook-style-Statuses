@@ -37,7 +37,7 @@ function theme_facebook_status_form_display($context = NULL, $type = NULL, $view
     $type = $context['handler']->type();
   }
   // Neither $context nor $type is NULL, so $context is really $recipient.
-  else if (!empty($type)) {
+  elseif (!empty($type)) {
     $recipient = $context;
     $context = facebook_status_determine_context($type);
   }

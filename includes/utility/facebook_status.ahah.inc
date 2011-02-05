@@ -2,7 +2,8 @@
 // $Id$
 
 /**
- * Utility functions for handling the AHAH callback for the status update form.
+ * @file
+ *   Utility functions for handling the AHAH callback for the status update form.
  */
 
 /**

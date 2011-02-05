@@ -88,11 +88,10 @@ function facebook_status_announce_batch_finished($success, $results, $operations
   if ($success) {
     $count = count($results);
     if ($count < 50) {
-      drupal_set_message(t('Sent message to @count users: !list',
-        array(
-          '@count' => count($results),
-          '!list' => theme('item_list', $results),
-        )
+      drupal_set_message(format_plural(count($results),
+        'Sent message to 1 user: !list',
+        'Sent message to @count users: !list',
+        array('!list' => theme('item_list', $results))
       ));
     }
     else {

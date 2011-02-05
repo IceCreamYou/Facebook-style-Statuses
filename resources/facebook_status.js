@@ -154,9 +154,6 @@ Drupal.behaviors.facebookStatus = function (context) {
     var th = $(this);
     setTimeout(function() {
       var fbss_remaining = fbss_maxlen - th.val().length;
-      if (Drupal.settings.facebook_status.ttype == 'textfield' && fbss_remaining < 0) {
-        fbss_remaining = 0;
-      }
       fbss_print_remaining(fbss_remaining, $(this).parents('.facebook-status-update').find('.facebook-status-chars'));
     }, 10);
   });

@@ -86,19 +86,23 @@ function facebook_status_tags_block_validate($form, &$form_state) {
  * Implementation of hook_form_FORM_ID_alter().
  */
 function facebook_status_tags_form_facebook_status_admin_alter(&$form, &$form_state) {
-  if (module_exists('taxonomy') && variable_get('facebook_status_tags_vid', -1) == -1) {
-    drupal_set_message(
-      t('You have the Taxonomy and Facebook-style Statuses Tags modules enabled, but you have not set them up to work together!') .' '.
-      t('You must set a vocabulary for #hashtags below in order for the #hashtags feature to work.'),
-      'error');
+  if (module_exists('taxonomy')) {
+    if (variable_get('facebook_status_tags_vid', -1) == -1) {
+      drupal_set_message(
+        t('You have the Taxonomy and Facebook-style Statuses Tags modules enabled, but you have not set them up to work together!') .' '.
+        t('You must set a vocabulary for #hashtags below in order for the #hashtags feature to work.'),
+        'error');
+    }
     $options = array('-1' => t('None'));
     $vocabularies = taxonomy_get_vocabularies();
     foreach ($vocabularies as $vocabulary) {
-      $options[$vocabulary->vid] = check_plain($vocabulary->name);
+      if ($vocabulary->tags) {
+        $options[$vocabulary->vid] = check_plain($vocabulary->name);
+      }
     }
     if (count($options) < 2) {
       drupal_set_message(
-        t('You must <a href="!vocab">create a vocabulary</a> for use with #hashtags in order to take advantage of that feature.',
+        t('You must <a href="!vocab">create a free-tagging vocabulary</a> for use with #hashtags in order to take advantage of that feature.',
           array('!vocab' => url('admin/content/taxonomy/add/vocabulary'))),
         'error');
     }
@@ -475,6 +479,7 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
     $op = drupal_substr($word, 0, 1);
     $match = trim(drupal_substr($word, 1));
     if (($op == '@' || $op == '#') && $match) {
+      $link = '';
       if ($op == '@') {
         $account = _facebook_status_user_load_by_name($match);
         if ($account->uid) {
@@ -482,7 +487,7 @@ function _facebook_status_tags_filter($subject, $new = FALSE) {
           $items['@'][] = $account;
         }
       }
-      elseif (variable_get('facebook_status_tags_vid', -1) != -1) {
+      elseif (variable_get('facebook_status_tags_vid', -1) != -1 && !is_numeric($match)) {
         $term = _facebook_status_tags_get_term($match);
         // If the term does not exist, create it.
         if (empty($term)) {

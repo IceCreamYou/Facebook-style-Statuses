@@ -18,7 +18,7 @@ function facebook_status_admin($form_state) {
     '#size' => 3,
     '#maxlength' => 5,
     '#required' => TRUE,
-    '#weight' => -50,
+    '#weight' => -40,
   );
   $formats = filter_formats();
   $options = array('none' => t('None (HTML escaped)'));
@@ -31,7 +31,7 @@ function facebook_status_admin($form_state) {
     '#description' => '<strong>'. t('This input filter will run on all your statuses AND ACCESS TO IT IS NOT CHECKED, so make sure it is secure.') .'</strong>',
     '#default_value' => variable_get('facebook_status_filter', 'none'),
     '#options' => $options,
-    '#weight' => -20,
+    '#weight' => -30,
   );
   $form['facebook_status_repost'] = array(
     '#type' => 'textfield',
@@ -39,6 +39,21 @@ function facebook_status_admin($form_state) {
     '#description' => t('The format of the default message when users click a link to re-post a status.') .' '.
       t("@name will be replaced with the poster's name and @status will be replaced with the status text."),
     '#default_value' => variable_get('facebook_status_repost', 'Re: @name @status '),
+    '#weight' => -20,
+  );
+  $views = views_get_all_views();
+  $list = array('' => t('None'));
+  foreach ($views as $name => $view) {
+    if ($view->disabled == 0) {
+      $list[$name] = $name;
+    }
+  }
+  $form['facebook_status_share_view'] = array(
+    '#type' => 'select',
+    '#title' => t('Show a view under the status update form at the "Share status" page at /statuses/share'),
+    '#description' => t('The default facebook_status_stream view is recommended.'),
+    '#default_value' => variable_get('facebook_status_share_view', $list['facebook_status_stream']),
+    '#options' => $list,
     '#weight' => -10,
   );
   return system_settings_form($form);
@@ -66,7 +81,7 @@ function facebook_status_admin_advanced($form_state) {
     '#size' => 3,
     '#maxlength' => 3,
     '#required' => TRUE,
-    '#weight' => -80,
+    '#weight' => -70,
   );
   $form['facebook_status_nl2br'] = array(
     '#type' => 'checkbox',
@@ -75,7 +90,7 @@ function facebook_status_admin_advanced($form_state) {
       t('If you use an input filter to fix that, the status text will appear on a different line than the username and other information.') .' '.
       t('Enabling this setting allows line breaks to appear without the side-effect of the input filter.'),
     '#default_value' => variable_get('facebook_status_nl2br', 0),
-    '#weight' => -70,
+    '#weight' => -60,
   );
   $form['facebook_status_refresh'] = array(
     '#type' => 'checkbox',
@@ -85,7 +100,7 @@ function facebook_status_admin_advanced($form_state) {
       t('Obviously, the "Refresh" link will only appear when there is something that can be refreshed.') .' '.
       t('If you disable AHAH refreshing below or if you have no views attached to your status update forms, this setting is useless.'),
     '#default_value' => variable_get('facebook_status_refresh', 0),
-    '#weight' => -60,
+    '#weight' => -50,
   );
   $form['facebook_status_profile'] = array(
     '#type' => 'checkbox',
@@ -93,7 +108,7 @@ function facebook_status_admin_advanced($form_state) {
     '#description' => t('If enabled, the status update form and view will appear on default user profiles.') .' '.
       t('This setting should only matter if you have not overridden the default user profile.'),
     '#default_value' => variable_get('facebook_status_profile', 1),
-    '#weight' => -50,
+    '#weight' => -40,
   );
   $form['facebook_status_default_text'] = array(
     '#type' => 'textfield',
@@ -101,7 +116,7 @@ function facebook_status_admin_advanced($form_state) {
     '#description' => t('The text that appears by default in the status update box.') .' '.
       t('This will be automatically cleared when a user clicks in (or focuses on) the status update box.'),
     '#default_value' => variable_get('facebook_status_default_text', ''),
-    '#weight' => -40,
+    '#weight' => -30,
   );
   $form['facebook_status_reply_type'] = array(
     '#type' => 'select',
