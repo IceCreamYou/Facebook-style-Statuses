@@ -77,7 +77,7 @@ function fbss_comments_user($op, &$edit, &$account, $category = NULL) {
 /**
  * Implementation of hook_perm().
  */
-function fbssc_perm() {
+function fbss_comments_perm() {
   return array('delete all status comments',
                'delete own status comments',
                'delete comments on own statuses',
@@ -137,7 +137,7 @@ function fbss_comments_theme($existing, $type, $theme, $path) {
  *   permission to view the comment.
  */
 function theme_fbss_comments_item($comment, $classes = array(), $destination = '') {
-  if (!fbssc_can_view($comment)) {
+  if (!fbss_comments_can_view($comment)) {
       return FALSE;
   }
   array_unshift($classes, 'fbss-comments-comment');
@@ -156,18 +156,18 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
   elseif (strpos($q, 'fbss_comments/js/refresh') !== FALSE) {
     $q = '<front>';
   }
-  if (fbssc_can_edit($comment)) {
+  if (fbss_comments_can_edit($comment)) {
     $output .= '<span class="fbss-comments-edit-delete">'.
       l(t('Edit'), 'statuses/comment/'. $comment->cid .'/edit', array('query' => array('destination' => $q)))
       .'</span>';
   }
-  if (fbssc_can_delete($comment)) {
+  if (fbss_comments_can_delete($comment)) {
     $output .= '<span class="fbss-comments-edit-delete">'.
       l(t('Delete'), 'statuses/comment/'. $comment->cid .'/delete', array('query' => array('destination' => $q)))
       .'</span>';
   }
   $output .= '</div></div>';
-  // Invokes hook_fbssc_render_alter(&$output, $comment).
+  // Invokes hook_fbss_comments_render_alter(&$output, $comment).
   drupal_alter('fbss_comments_render', $output, $comment);
   return $output;
 }
@@ -257,7 +257,7 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
     $path = drupal_get_path('module', 'fbss_comments');
     drupal_add_js($path .'/fbss_comments.js');
     $output = '';
-    if ($delay_load_form && !fbssc_count_comments($sid)) {
+    if ($delay_load_form && !fbss_comments_count_comments($sid)) {
       $output = '<div class="fbss-comments-show-comment-form" id="fbss-comments-toggle-'. $sid .'">'.
         l(t('Comment'), 'statuses/'. $sid, array('attributes' => array('class' => 'fbss-comments-show-comment-form-link')))
         .'</div>';
@@ -420,7 +420,7 @@ function fbss_comments_can_edit($comment, $account = NULL) {
   // Do not set it to TRUE as this may override other modules' actions.
   drupal_alter('fbss_comments_can_edit', $allow, $comment, $account);
   // This is in two separate statements (instead of one big return statement)
-  // so that the SQL in _fbssc_get_thread_author() does not usually need to be run.
+  // so that the SQL in _fbss_comments_get_thread_author() does not usually need to be run.
   if ($allow && (user_access('edit all status comments', $account) ||
     (user_access('edit own status comments', $account) && $account->uid == $comment->uid)
   )) {
@@ -450,7 +450,7 @@ function fbss_comments_can_delete($comment, $account = NULL) {
   // Do not set it to TRUE as this may override other modules' actions.
   drupal_alter('fbss_comments_can_delete', $allow, $comment, $account);
   // This is in two separate statements (instead of one big return statement)
-  // so that the SQL in _fbssc_get_thread_author() does not usually need to be run.
+  // so that the SQL in _fbss_comments_get_thread_author() does not usually need to be run.
   if ($allow && (user_access('delete all status comments', $account) ||
     (user_access('delete own status comments', $account) && $account->uid == $comment->uid)
   )) {
@@ -588,16 +588,10 @@ function fbss_comments_facebook_status_delete($sid) {
 }
 
 /**
- * Implementation of hook_facebook_status_render_components().
+ * Implementation of hook_preprocess_facebook_status_item().
  */
-function fbss_comments_facebook_status_render_components($status) {
-  return array(
-    'comments' => array(
-      'type' => (arg(0) == 'statuses' && is_numeric(arg(1)) && !arg(2)) ? 'markup' : 'value',
-      'value' => theme('fbss_comments_form_display', $status->sid, FALSE, FALSE),
-      'weight' => 50,
-    ),
-  );
+function fbss_comments_preprocess_facebook_status_item(&$vars) {
+  $vars['comments'] = theme('fbss_comments_form_display', $status->sid, FALSE, FALSE);
 }
 
 /**

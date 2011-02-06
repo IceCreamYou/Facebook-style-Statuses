@@ -193,7 +193,7 @@ function fbss_comments_views_data_alter(&$data) {
 /**
  * Implementation of hook_views_handlers().
  */
-function fbssc_views_handlers() {
+function fbss_comments_views_handlers() {
   return array(
     'info' => array(
       'path' => drupal_get_path('module', 'fbss_comments'),

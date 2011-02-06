@@ -13,7 +13,6 @@
  *     which the context applies. Note that this also requires changing
  *     facebook_status_determine_context() to handle the case where no contexts
  *     apply. Additionally, let contexts modify this page to add extra settings.
- *   - FBSSC's hook_facebook_status_render_components() needs to be replaced with a preprocess solution
  *   - Allow having no character limit
  */
 

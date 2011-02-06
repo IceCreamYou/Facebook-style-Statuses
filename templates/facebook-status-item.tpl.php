@@ -27,6 +27,10 @@
  * - $status: The status object
  * - $context: The context array
  *
+ * If the Facebook-style Statuses Comments module is enabled, these variables
+ * are also available:
+ * - $comments: Comments on the relevant status plus the form to leave a comment
+ *
  * Other modules may add additional variables.
  */
 ?>
@@ -48,4 +52,7 @@
       <div class="facebook-status-links"><?php echo $links; ?></div>
     <?php endif; ?>
   </div>
+  <?php if (!empty($comments)): ?>
+    <div class="facebook-status-comments"><?php echo $comments; ?></div>
+  <?php endif; ?>
 </div>
