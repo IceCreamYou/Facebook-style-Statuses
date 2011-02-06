@@ -6,7 +6,6 @@
  *   Creates context-sensitive social streams.
  * @todo
  *   - Write update path (including for submodules)
- *   - CSS could use a little more tweaking.
  *   - Finish upgrading the submodules
  *     o Complete: facebook_status_tags, fbss_comments, fbss_flag
  *     o Incomplete: fbss_activity, fbss_mollom, fbss_pathauto, fbss_rules, fbss_twitter, fbss_userpoints
@@ -15,9 +14,7 @@
  *     facebook_status_determine_context() to handle the case where no contexts
  *     apply. Additionally, let contexts modify this page to add extra settings.
  *   - FBSSC's hook_facebook_status_render_components() needs to be replaced with a preprocess solution
- *   - On user deletion, call API delete function instead of doing a direct query
  *   - Allow having no character limit
- *   - Don't accept numeric hashtags like #1
  */
 
 /**
@@ -230,6 +227,14 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'delete') {
     // Remove abandoned statuses from the database on user account deletion.
     db_query("DELETE FROM {facebook_status} WHERE sender = %d OR (recipient = %d AND type = 'user')", $account->uid, $account->uid);
+    // NOTE: modules that integrate with FBSS should implement hook_user()
+    // themselves instead of relying on hook_facebook_status_delete().
+    // Administrators who use the interface to create actions that occur when a
+    // status is deleted should make sure that these actions also occur for a
+    // user's statuses when that user is deleted.
+    // When we upgrade to Drupal 7, we can switch to using the status delete
+    // API function instead of a direct database call by utilizing the Queue
+    // API.
   }
   elseif ($op == 'view' && variable_get('facebook_status_profile', 1)) {
     $value = theme('facebook_status_form_display', $account, 'user');

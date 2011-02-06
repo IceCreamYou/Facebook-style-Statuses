@@ -154,7 +154,7 @@ Drupal.behaviors.facebookStatus = function (context) {
     var th = $(this);
     setTimeout(function() {
       var fbss_remaining = fbss_maxlen - th.val().length;
-      fbss_print_remaining(fbss_remaining, $(this).parents('.facebook-status-update').find('.facebook-status-chars'));
+      fbss_print_remaining(fbss_remaining, th.parents('.facebook-status-update').find('.facebook-status-chars'));
     }, 10);
   });
 }
