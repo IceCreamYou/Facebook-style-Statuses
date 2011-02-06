@@ -13,7 +13,6 @@
  *     which the context applies. Note that this also requires changing
  *     facebook_status_determine_context() to handle the case where no contexts
  *     apply. Additionally, let contexts modify this page to add extra settings.
- *   - Allow having no character limit
  */
 
 /**

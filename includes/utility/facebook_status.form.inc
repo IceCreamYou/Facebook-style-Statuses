@@ -61,7 +61,7 @@ function theme_facebook_status_form_display($context = NULL, $type = NULL, $view
     if ($conversation) {
       $converse = ' facebook-status-conversation-form';
     }
-    $output .= '<div class="clear-block facebook-status-update facebook-status-update-main facebook-status-form-type-"'. $type . $self . $converse .'>'.
+    $output .= '<div class="clear-block facebook-status-update facebook-status-update-main facebook-status-form-type-'. $type . $self . $converse .'">'.
       drupal_get_form('facebook_status_box', $recipient, $type) .'</div>';
   }
   if ($conversation) {
@@ -229,8 +229,6 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
       '#weight' => 20,
     );
   }
-  //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
-  $form['#attributes'] = array('style' => 'margin-bottom: 0;');
   return $form;
 }
 

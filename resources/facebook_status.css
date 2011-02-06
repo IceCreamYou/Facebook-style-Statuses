@@ -12,6 +12,10 @@
   clear: none;
 }
 
+.facebook-status-update form#facebook-status-box {
+  margin-bottom: 0;
+}
+
 .facebook-status-edit,
 .facebook-status-delete,
 .facebook-status-respond,
