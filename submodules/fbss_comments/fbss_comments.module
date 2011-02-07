@@ -27,7 +27,7 @@
  */
 function fbss_comments_init() {
   if (strpos($_GET['q'], 'admin/build/views/edit') !== FALSE) {
-    $path = drupal_get_path('module', '_comments');
+    $path = drupal_get_path('module', 'fbss_comments');
     drupal_add_js($path .'/fbss_comments.js');
     drupal_add_css($path .'/fbss_comments.css');
   }
@@ -197,7 +197,7 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
   }
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_js($path .'/fbss_comments.js');
-  $output = '<div class="fbss_comments">';
+  $output = '<div class="fbss-comments">';
   if ($count > 3 && $delay_load) {
     $options = array('attributes' => array('class' => 'fbss-comments-show-comments-link fbss-comments-show-comments', 'id' => 'fbss-comments-toggle-'. $comments[0]->sid));
     if ($count > 9) {
@@ -223,7 +223,7 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
       $classes[] = 'fbss-comments-hide';
     }
     if (!$delay_load || $count < 10 || $key == $count - 1 || $key == $count - 2) {
-      $output .= theme('fbss-comments-item', $comment, $classes, $destination);
+      $output .= theme('fbss_comments_item', $comment, $classes, $destination);
     }
   }
   $output .= '</div>';
