@@ -87,7 +87,7 @@ function facebook_status_edit_submit($form, &$form_state) {
   drupal_set_message(t('Status has been successfully edited.'));
   //Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
   if (module_exists('trigger') && !empty($new_status)) {
-    $op = 'fbss_edited_'. $type;
+    $op = 'fbss_edited_'. $status_old->type;
     if ($status_old->type == 'user') {
       $op .= ($status_old->recipient == $status_old->sender ? '_self' : '_other');
     }

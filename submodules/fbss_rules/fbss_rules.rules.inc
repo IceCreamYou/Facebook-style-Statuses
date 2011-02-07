@@ -29,9 +29,9 @@ function fbss_rules_rules_event_info() {
       'label' => t('User saves a status'),
       'module' => 'Facebook-style Statuses',
       'arguments' => array(
-        'owner' => array('type' => 'user', 'label' => t('The user to whose profile the status was posted.')),
-        'poster' => array('type' => 'user', 'label' => t('The user who posted the status.')),
-        'status' => array('type' => 'facebook_status', 'label' => t('The status object.')),
+        'recipient' => array('type' => 'number', 'label' => t('The ID of the object to which the status was posted.')),
+        'sender' => array('type' => 'user', 'label' => t('The user who posted the status.')),
+        'status' => array('type' => 'facebook_status', 'label' => t('The status.')),
       ),
     ),
   );
@@ -49,11 +49,11 @@ function fbss_rules_rules_condition_info() {
       ),
       'module' => 'Facebook-style Statuses',
     ),
-    'facebook_status_can_post' => array(
-      'label' => t('User has permission to send a status-message'),
+    'fbss_rules_can_post' => array(
+      'label' => t('User has permission to send a status message'),
       'arguments' => array(
-        'owner' => array('type' => 'user', 'label' => t('Owner')),
-        'poster' => array('type' => 'user', 'label' => t('Poster')),
+        'recipient' => array('type' => 'number', 'label' => t('The ID of the object to which the status will be posted.')),
+        'sender' => array('type' => 'user', 'label' => t('Sender')),
       ),
       'module' => 'Facebook-style Statuses',
     ),
@@ -78,21 +78,51 @@ function fbss_rules_rules_condition_info() {
  * Checks if the status was posted to the user's own profile.
  */
 function fbss_rules_is_self($status) {
-  return $status->uid == $status->pid;
+  return $status->sender == $status->recipient && $status->type == 'user';
+}
+
+/**
+ * Builds the form for the fbss_rules_can_post condition.
+ */
+function fbss_rules_can_post_form($settings, &$form) {
+  $settings += array('type' => 'user');
+  $contexts = module_invoke_all('facebook_status_context_info');
+  $options = array('auto' => t('Automatically determined'));
+  foreach ($contexts as $key => $context) {
+    $options[$key] = $context['title'];
+  }
+  $form['settings']['type'] = array(
+    '#type' => 'select',
+    '#title' => t('Recipient type'),
+    '#default_value' => $settings['type'],
+    '#description' => t('The type of entity that onto whose stream the status update will be posted.'),
+    '#options' => $options,
+  );
+}
+
+/**
+ * Checks if the user is allowed to post a status.
+ */
+function fbss_rules_can_post($recipient, $sender, $settings) {
+  if ($settings['type'] == 'auto') {
+    $context = facebook_status_determine_context();
+    $settings['type'] = $context['handler']->type();
+  }
+  return facebook_status_user_access('add', $recipient, $settings['type'], $sender);
 }
 
 /**
  * Checks if the current user can edit the status.
  */
 function fbss_rules_rules_condition_can_edit($status) {
-  _facebook_status_can_edit($status);
+  facebook_status_user_access('edit', $status);
 }
 
 /**
  * Checks if the current user can delete the status.
  */
 function fbss_rules_rules_condition_can_delete($status) {
-  _facebook_status_can_edit($status, TRUE);
+  facebook_status_user_access('delete', $status);
 }
 
 /**
@@ -113,7 +143,7 @@ function fbss_rules_rules_action_info() {
       'label' => t('Edit a status'),
       'help' => t('Enter the Status ID of the status to edit and the text you wish to replace the status.'),
       'module' => 'Facebook-style Statuses',
-      'eval input' => array('sid', 'status'),
+      'eval input' => array('sid', 'message'),
     ),
     'fbss_rules_delete_action' => array(
       'label' => t('Delete a status'),
@@ -123,9 +153,9 @@ function fbss_rules_rules_action_info() {
     ),
     'fbss_rules_add_action' => array(
       'label' => t('Add a status'),
-      'help' => t('Enter the status text and the User ID or Username of the user to whose profile the status will be posted.'),
+      'help' => t('Enter the status text and the ID and type of the recipient to which the status will be posted.'),
       'module' => 'Facebook-style Statuses',
-      'eval input' => array('poster', 'uid', 'name', 'status'),
+      'eval input' => array('sender', 'recipient', 'type', 'message'),
     ),
   );
 }
@@ -154,17 +184,17 @@ function fbss_rules_load_action($settings) {
  * Builds the form for editing a status.
  */
 function fbss_rules_edit_action_form($settings, &$form) {
-  $settings += array('sid' => '', 'status' => '');
+  $settings += array('sid' => '', 'message' => '');
   $form['settings']['sid'] = array(
     '#type' => 'textfield',
     '#title' => t('Status ID'),
     '#default_value' => $settings['sid'],
     '#required' => TRUE,
   );
-  $form['settings']['status'] = array(
+  $form['settings']['message'] = array(
     '#type' => 'textarea',
-    '#title' => t('Status'),
-    '#default_value' => $settings['status'],
+    '#title' => t('Status message'),
+    '#default_value' => $settings['message'],
     '#rows' => 3,
   );
 }
@@ -174,28 +204,26 @@ function fbss_rules_edit_action_form($settings, &$form) {
  */
 function fbss_rules_edit_action($settings) {
   $status_old = facebook_status_load($settings['sid']);
-  $account = user_load(array('uid' => $status_old->uid));
-  $new_status = trim($settings['status']);
+  $context = facebook_status_determine_context($status_old->type);
+  $new_status = trim($settings['message']);
+  $time = time();
   global $user;
-  //If the user clears the status, set the time to zero so the new, blank status will not show up as new in lists.
-  $time = $status_old->status_time;
-  if ($new_status === '') {
-    $time = 0;
-  }
-  //Don't set a new status if the submitted status is exactly the same as the old one.
-  if ($new_status != $status_old->status && $account->uid) {
-    $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
+  // Pretend to have set a new status if the submitted status is exactly the same as the old one.
+  if ($new_status != $status_old->message) {
+    $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d";
     db_query($sql, $new_status, $time, $status_old->sid);
-    //Invokes hook_facebook_status_save($status_owner_object, &$status, $sid).
-    module_invoke_all('facebook_status_save', $account, $new_status, $status_old->sid);
+    // Invokes hook_facebook_status_save($status, $edit).
+    $status_old->message = $new_status;
+    $status_old->created = $time;
+    module_invoke_all('facebook_status_save', $status_old, $context, TRUE);
   }
-  //Trigger integration.
-  if (module_exists('trigger')) {
-    module_invoke_all('facebook_status', 'fbss_edited', $status_old->sid);
-  }
-  //Rules integration.
-  if (module_exists('rules')) {
-    rules_invoke_event('facebook_status_edit', $status_old->sid);
+  // Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
+  if (module_exists('trigger') && !empty($new_status)) {
+    $op = 'fbss_edited_'. $status_old->type;
+    if ($status_old->type == 'user') {
+      $op .= ($status_old->recipient == $status_old->sender ? '_self' : '_other');
+    }
+    module_invoke_all('facebook_status', $op, $status_old, $context);
   }
 }
 
@@ -223,28 +251,28 @@ function fbss_rules_delete_action($settings) {
  * Builds the form for adding a status.
  */
 function fbss_rules_add_action_form($settings, &$form) {
-  $settings += array('poster' => '', 'uid' => '', 'name' => '', 'status' => '');
-  $form['settings']['poster'] = array(
+  $settings += array('sender' => '', 'recipient' => '', 'type' => '', 'message' => '');
+  $form['settings']['sender'] = array(
     '#type' => 'textfield',
-    '#title' => t('Poster username'),
+    '#title' => t('Sender username'),
     '#autocomplete_path' => 'user/autocomplete',
     '#description' => t('If you leave this blank, the current user will be assumed.'),
-    '#default_value' => $settings['poster'],
+    '#default_value' => $settings['sender'],
   );
-  $form['settings']['uid'] = array(
+  $form['settings']['recipient'] = array(
     '#type' => 'textfield',
-    '#title' => t('Owner user ID'),
-    '#default_value' => $settings['uid'],
+    '#title' => t('Recipient ID'),
+    '#default_value' => $settings['recipient'],
   );
-  $form['settings']['name'] = array(
+  $form['settings']['type'] = array(
     '#type' => 'textfield',
-    '#title' => t('Owner username'),
-    '#default_value' => $settings['name'],
+    '#title' => t('Recipient type'),
+    '#default_value' => $settings['type'],
   );
-  $form['settings']['status'] = array(
+  $form['settings']['message'] = array(
     '#type' => 'textarea',
-    '#title' => t('Status'),
-    '#default_value' => $settings['status'],
+    '#title' => t('Status message'),
+    '#default_value' => $settings['message'],
     '#rows' => 3,
   );
 }
@@ -253,8 +281,8 @@ function fbss_rules_add_action_form($settings, &$form) {
  * Validates the form for adding a status.
  */
 function fbss_rules_add_action_validate($form, $form_state) {
-  if (!$form_state['values']['settings']['uid'] && !$form_state['values']['settings']['name']) {
-    form_set_error('settings][uid', t('You must enter either a User ID or Username (or both).'));
+  if (!$form_state['values']['settings']['recipient'] || !$form_state['values']['settings']['type']) {
+    form_set_error('settings][recipient', t('You must enter an object ID and its type.'));
   }
 }
 
@@ -262,24 +290,12 @@ function fbss_rules_add_action_validate($form, $form_state) {
  * Adds a status.
  */
 function fbss_rules_add_action($settings) {
-  $status = $settings['status'];
-  $from = user_load(array('name' => $settings['poster']));
-  if (!$from->uid) {
-    $from = FALSE;
-  }
-  if ($settings['uid'] && $settings['name']) {
-    $to = user_load(array('uid' => $settings['uid'], 'name' => $settings['name']));
-  }
-  elseif ($settings['uid']) {
-    $to = user_load(array('uid' => $settings['uid']));
-  }
-  elseif ($settings['name']) {
-    $to = user_load(array('name' => $settings['name']));
-  }
-  else {
-    $to = FALSE;
-  }
-  _facebook_status_save_status($to, $from, $status);
+  $type = $settings['type'];
+  $context = facebook_status_determine_context($type);
+  $recipient = $context['handler']->load_recipient($settings['recipient']);
+  $message = $settings['message'];
+  $sender = _facebook_status_user_load($settings['sender']);
+  facebook_status_save_status($recipient, $type, $message, $sender);
 }
 
 /**
@@ -304,7 +320,10 @@ function fbss_rules_rules_data_type_info() {
 class rules_data_type_facebook_status extends rules_data_type {
   function save() {
     $status = &$this->get();
-    _facebook_status_save_status(user_load(array('uid' => $status->uid)), user_load(array('uid' => $status->pid)), $status->status);
+    $context = facebook_status_determine_context($status->type);
+    $recipient = $context['handler']->load_recipient($status->recipient);
+    $sender = _facebook_status_user_load($status->sender);
+    facebook_status_save_status($recipient, $status->type, $status->message, $sender);
     return TRUE;
   }
   function load($sid) {

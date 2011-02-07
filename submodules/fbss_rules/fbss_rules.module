@@ -4,8 +4,6 @@
 /**
  * @file
  *   Integrates Rules with Facebook-style Statuses.
- * @todo
- *   Not updated for 3.x
  */
 
 /**
