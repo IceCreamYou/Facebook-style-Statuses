@@ -27,7 +27,7 @@ function fbss_pathauto_facebook_status_save($status, $context, $edit = FALSE) {
   else {
     $type = $context['type'];
   }
-  pathauto_create_alias('facebook_status', $op, $placeholders, $src, $type);
+  pathauto_create_alias('fbss_pathauto', $op, $placeholders, $src, $type);
 }
 
 /**
@@ -55,7 +55,7 @@ function fbss_pathauto_pathauto($op) {
   $patternitems['other'] = t('Status messages to other users');
   $patternitems['self'] = t('Own status updates');
   return (object) array(
-    'module' => 'facebook_status',
+    'module' => 'fbss_pathauto',
     'token_type' => 'facebook_status',
     'groupheader' => t('Facebook-style Statuses settings'),
     'patterndefault' => '', // No aliases should be generated
@@ -82,9 +82,9 @@ function fbss_pathauto_pathauto_bulkupdate() {
   $pattern_types['self'] = 'self';
   $pattern_types['other'] = 'other';
   // Check for generic pattern.
-  if (!trim(variable_get('pathauto_facebook_status_pattern', ''))) {
+  if (!trim(variable_get('pathauto_fbss_pathauto_pattern', ''))) {
     foreach ($pattern_types as $type) {
-      if (!trim(variable_get('pathauto_facebook_status_'. $type .'_pattern', ''))) {
+      if (!trim(variable_get('pathauto_fbss_pathauto_'. $type .'_pattern', ''))) {
         unset($pattern_types[$type]);
       }
     }
@@ -104,7 +104,7 @@ function fbss_pathauto_pathauto_bulkupdate() {
       $source = 'statuses/'. $status->sid;
       $type = ($status->type == 'user' ? (($status->sender == $status->recipient) ? 'self' : 'other') : $status->type);
       if (in_array($type, $pattern_types)) {
-        if (pathauto_create_alias('facebook_status', 'bulkupdate', $placeholders, $source, $type)) {
+        if (pathauto_create_alias('fbss_pathauto', 'bulkupdate', $placeholders, $source, $type)) {
           $count++;
         }
       }
