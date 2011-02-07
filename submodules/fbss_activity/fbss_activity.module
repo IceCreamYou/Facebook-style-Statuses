@@ -23,27 +23,37 @@ function fbss_activity_facebook_status_delete($sid) {
 /**
  * Implementation of hook_activity_info().
  */
-function fbss_activity_activity_info() {
+function facebook_status_activity_info() {
   $info = new stdClass();
   $info->api = 2;
   $info->name = 'facebook_status';
   $info->object_type = 'facebook_status';
   $info->eid_field = 'sid';
-  $info->objects = array('Owner' => 'facebook_status', 'Poster' => 'poster');
-  $info->hooks = array('facebook_status' => array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other'));
-  $info->realms = array('facebook_status_poster' => 'Facebook-style Statuses Poster', 'facebook_status_owner' => 'Facebook-style Statuses Owner');
+  $info->objects = array('Recipient' => 'facebook_status', 'Sender' => 'sender');
+  $hooks = array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other');
+  foreach (facebook_status_all_contexts() as $type => $details) {
+    if ($type == 'user') {
+      $hooks[] = 'fbss_submitted_user_self';
+      $hooks[] = 'fbss_submitted_user_other';
+    }
+    else {
+      $hooks[] = 'fbss_submitted_'. $type;
+    }
+  }
+  $info->hooks = array('facebook_status' => $hooks);
+  $info->realms = array('facebook_status_sender' => 'Facebook-style Statuses Sender', 'facebook_status_recipient' => 'Facebook-style Statuses Recipient');
   return $info;
 }
 
 /**
  * Implementation of hook_activity_grants().
  */
-function fbss_activity_activity_grants($activity) {
+function facebook_status_activity_grants($activity) {
   $realms = array();
   if ($activity->type == 'facebook_status') {
-    $realms['facebook_status_owner'] = array($activity->uid);
-    $result = db_fetch_object(db_query("SELECT pid FROM {facebook_status} WHERE sid = %d", $activity->eid));
-    $realms['facebook_status_poster'] = array($result->pid);
+    $realms['facebook_status_sender'] = array($activity->uid);
+    $result = db_fetch_object(db_query("SELECT recipient FROM {facebook_status} WHERE sid = %d", $activity->eid));
+    $realms['facebook_status_recipient'] = array($result->recipient);
   }
   return $realms;
 }
@@ -51,22 +61,9 @@ function fbss_activity_activity_grants($activity) {
 /**
  * Implementation of hook_activity_access_grants().
  */
-function fbss_activity_activity_access_grants($account) {
+function facebook_status_activity_access_grants($account) {
   return array(
-    'facebook_status_owner' => array($account->uid),
-    'facebook_status_poster' => array($account->uid),
+    'facebook_status_sender' => array($account->uid),
+    'facebook_status_recipient' => array($account->uid),
   );
-}
-
-/**
- * Implementation of hook_form_FORM_ID_alter().
- */
-function fbss_activity_form_activity_form_alter(&$form, &$form_state) {
-  if ($form_state['storage']['values']['triggers']['hook'] == 'facebook_status') {
-    if ($form_state['storage']['values']['operations']['operation'] == 'fbss_submitted') {
-      foreach (activity_enabled_languages() as $id => $language) {
-        unset($form["{$id}_fieldset"]['poster-pattern-'. $id]);
-      }
-    }
-  }
 }
