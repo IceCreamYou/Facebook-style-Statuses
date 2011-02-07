@@ -7,13 +7,9 @@
  * @todo
  *   - Write update path (including for submodules)
  *   - Finish upgrading the submodules
- *     o Complete: facebook_status_tags, fbss_comments, fbss_flag
- *     o Incomplete: fbss_activity, fbss_mollom, fbss_pathauto, fbss_rules, fbss_twitter, fbss_userpoints
- *   - fbss_comments is upgraded, but doesn't actually work: comments don't appear
- *   - Add a context configuration page that lets admin change the pages on
- *     which the context applies. Note that this also requires changing
- *     facebook_status_determine_context() to handle the case where no contexts
- *     apply. Additionally, let contexts modify this page to add extra settings.
+ *     o Complete: facebook_status_tags, fbss_comments, fbss_flag, fbss_activity, fbss_mollom, fbss_pathauto, fbss_rules
+ *     o Incomplete: fbss_twitter, fbss_userpoints
+ *   - Other nice-to-have things listed at http://drupal.org/node/576278#comment-4054178
  */
 
 /**
