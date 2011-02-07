@@ -6,9 +6,7 @@
  *   Creates context-sensitive social streams.
  * @todo
  *   - Write update path (including for submodules)
- *   - Finish upgrading the submodules
- *     o Complete: facebook_status_tags, fbss_comments, fbss_flag, fbss_activity, fbss_mollom, fbss_pathauto, fbss_rules
- *     o Incomplete: fbss_twitter, fbss_userpoints
+ *   - Finish upgrading fbss_twitter
  *   - Other nice-to-have things listed at http://drupal.org/node/576278#comment-4054178
  */
 

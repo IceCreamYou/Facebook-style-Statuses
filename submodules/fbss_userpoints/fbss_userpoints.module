@@ -4,8 +4,6 @@
 /**
  * @file
  *   Integrates Userpoints with Facebook-style Statuses.
- * @todo
- *   Not updated for 3.x.
  */
 
 /**
@@ -26,7 +24,7 @@ function fbss_userpoints_userpoints($op, $params = array()) {
     );
     $form['facebook_status']['facebook_status_userpoints_other'] = array(
       '#type' => 'textfield',
-      '#title' => t("Userpoints for posting a message on another user's profile"),
+      '#title' => t("Userpoints for posting a status message to another entity"),
       '#default_value' => variable_get('facebook_status_userpoints_other', 0),
     );
     $form['facebook_status']['facebook_status_userpoints_max'] = array(
@@ -61,53 +59,62 @@ function _fbss_userpoints_validate($form, &$form_state) {
  * Implementation of hook_facebook_status_save().
  */
 function fbss_userpoints_facebook_status_save($status, $context, $edit) {
+  $sender = _facebook_status_user_load($status->sender);
+  $recipient = $context['handler']->load_recipient($status->recipient);
   $points_today = db_result(db_query("SELECT SUM(points) FROM {userpoints_txn}
     WHERE uid = %d AND time_stamp > %d
       AND (operation = 'facebook_status add own' OR operation = 'facebook_status add other')
       AND expired = 0 AND status = 0",
-    $poster->uid, time() - 86400));
+    $sender->uid, time() - 86400));
   if (variable_get('facebook_status_userpoints_max', 5) && $points_today > variable_get('facebook_status_userpoints_max', 5)) {
     return;
   }
   $params = array(
-    'uid' => $poster->uid,
+    'uid' => $sender->uid,
     'reference' => $sid,
-    //Unknown purpose.
+    // Unknown purpose.
     //'entity_id' => $sid,
     //'entity_type' => 'facebook_status',
   );
-  if ($poster->uid == $owner->uid) {
-    $params['description'] = t('!user posted a new status.', array('!user' => theme('username', $poster)));
+  if ($status->sender == $status->recipient && $status->type == 'user') {
+    $params['description'] = t('!user posted a new status.', array('!user' => theme('username', $sender)));
     $params['points'] = variable_get('facebook_status_userpoints_own', 0);
     $params['operation'] = 'facebook_status add own';
   }
-  elseif ($poster->uid != $owner->uid) {
-    $params['description'] = t('!poster wrote a message to !owner', array('!poster' => theme('username', $poster), '!owner' => theme('username', $owner)));
+  elseif ($status->type == 'user') {
+    $params['description'] = t('!sender wrote a message to !recipient',
+      array('!sender' => theme('username', $sender), '!recipient' => $context['handler']->recipient_link($recipient)));
+    $params['points'] = variable_get('facebook_status_userpoints_other', 0);
+    $params['operation'] = 'facebook_status add other';
+  }
+  else {
+    $params['description'] = t('!sender wrote a message at !recipient',
+      array('!sender' => theme('username', $sender), '!recipient' => $context['handler']->recipient_link($recipient)));
     $params['points'] = variable_get('facebook_status_userpoints_other', 0);
     $params['operation'] = 'facebook_status add other';
   }
   userpoints_userpointsapi($params);
 }
- 
+
 /**
  * Implementation of hook_facebook_status_delete().
  */
 function fbss_userpoints_facebook_status_delete($sid) {
   $status = facebook_status_load($sid);
-  $poster = user_load(array('uid' => $status->pid));
+  $sender = _facebook_status_user_load(array('uid' => $status->sender));
   global $user;
-  $result = db_fetch_object(db_query("SELECT points FROM {userpoints_txn} WHERE operation LIKE 'facebook_status add%%' AND reference = %d AND uid = %d", $sid, $poster->uid));
+  $result = db_fetch_object(db_query("SELECT points FROM {userpoints_txn} WHERE operation LIKE 'facebook_status add%%' AND reference = %d AND uid = %d", $sid, $sender->uid));
   $params = array(
-    'uid' => $poster->uid,
+    'uid' => $sender->uid,
     'points' => 0 - $result->points,
     'operation' => 'facebook_status delete',
   );
-  if ($user->uid == $poster->uid) {
+  if ($user->uid == $sender->uid) {
     $params['description'] = t('!user deleted a status message.', array('!user' => theme('username', $user)));
   }
-  elseif ($user->uid != $poster->uid) {
-    $params['description'] = t('!user deleted a message by !poster',
-      array('!user' => theme('username', $user), '!poster' => theme('username', $poster)));
+  else {
+    $params['description'] = t('!user deleted a message by !sender',
+      array('!user' => theme('username', $user), '!sender' => theme('username', $sender)));
   }
   userpoints_userpointsapi($params);
 }
