@@ -4,8 +4,6 @@
 /**
  * @file
  *   Integrates Mollom with Facebook-style Statuses.
- * @todo
- *   Not updated for 3.x
  */
 
 /**
@@ -16,13 +14,21 @@ function fbss_mollom_mollom_form_list() {
     'facebook_status_box' => array(
       'title' => t('Facebook-style Statuses update status form'),
       'entity' => 'facebook_status',
-      'report access' => array('edit all statuses'),
+      'report access' => array(
+        'post status messages to other streams',
+        'update and view own stream',
+      ),
       'report delete callback' => 'facebook_status_delete_status',
     ),
     'facebook_status_edit' => array(
       'title' => t('Facebook-style Statuses edit status form'),
       'entity' => 'facebook_status',
-      'report access' => array('edit all statuses'),
+      'report access' => array(
+        'delete all statuses',
+        'delete own statuses',
+        'delete status messages on own profile',
+        'delete status messages on own nodes',
+      ),
       'report delete callback' => 'facebook_status_delete_status',
     ),
   );
@@ -36,7 +42,11 @@ function fbss_mollom_mollom_form_info($form_id) {
     return array(
       'title' => t('Facebook-style Statuses update status form'),
       'mode' => MOLLOM_MODE_ANALYSIS,
-      'bypass access' => array('edit all statuses'),
+      'bypass access' => array(
+        'delete all statuses',
+        'edit all statuses',
+        'send messages to all users at once',
+      ),
       'elements' => array('fbss-status' => t('Status box')),
       'mapping' => array(
         'post_title' => 'fbss-status',
@@ -47,7 +57,11 @@ function fbss_mollom_mollom_form_info($form_id) {
     return array(
       'title' => t('Facebook-style Statuses edit status form'),
       'mode' => MOLLOM_MODE_ANALYSIS,
-      'bypass access' => array('edit all statuses'),
+      'bypass access' => array(
+        'delete all statuses',
+        'edit all statuses',
+        'send messages to all users at once',
+      ),
       'entity' => 'facebook_status',
       'elements' => array('fbss-status' => t('Status box')),
       'mapping' => array(
