@@ -28,19 +28,20 @@ class facebook_status_views_plugin_row_rss extends views_plugin_row {
       return;
     }
     $sender = _facebook_status_user_load($status->sender);
-    $recipient = _facebook_status_user_load($status->recipient);
+    $context = facebook_status_determine_context($status->type);
+    $recipient = $context['handler']->load_recipient($status->recipient);
     $message = _facebook_status_run_filter($status->message);
     if (variable_get('facebook_status_nl2br', 0)) {
       $message = nl2br($message);
     }
     $args = array(
       '@sender' => (module_exists('realname') && !empty($sender->realname)) ? $sender->realname : $sender->name,
-      '@recipient' => (module_exists('realname') && !empty($recipient->realname)) ? $recipient->realname : $recipient->name,
+      '@recipient' => $context['handler']->recipient_name($recipient),
       '!message' => filter_xss($status->message, array()),
     );
 
     $item = new stdClass();
-    $item->title = ($sender->uid == $recipient->uid) ? t('@sender: !message', $args) : t('@sender &raquo; @recipient: !message', $args);
+    $item->title = ($sender->uid == $status->recipient && $status->type == 'user') ? t('@sender: !message', $args) : t('@sender &raquo; @recipient: !message', $args);
     $item->link = url("statuses/$status->sid", array('absolute' => TRUE));
     $item->sid = $status->sid;
     $item->description = $message;
