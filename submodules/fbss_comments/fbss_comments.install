@@ -47,7 +47,6 @@ function fbss_comments_schema() {
       ),
     ),
     'indexes' => array(
-      'cid' => array('cid'),
       'sid' => array('sid'),
       'uid' => array('uid'),
       'created' => array('created'),
@@ -55,6 +54,24 @@ function fbss_comments_schema() {
     'primary key' => array('cid'),
   );
   return $schema;
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function fbss_comments_update_6300() {
+  /**
+   * This function should only ever get run manually. It transfers data from
+   * the old fbssc module to the new fbss_comments module.
+   */
+  $ret = array();
+  $ret[] = update_sql("
+    INSERT INTO {fbss_comments} (cid, sid, uid, created, comment)
+    SELECT old.cid, old.sid, old.uid, old.comment_time, old.comment
+    FROM {fbssc} as old
+    ORDER BY old.cid ASC
+  ");
+  return $ret;
 }
 
 /**

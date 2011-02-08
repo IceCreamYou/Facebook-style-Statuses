@@ -61,6 +61,15 @@ function facebook_status_schema() {
     ),
     'primary key' => array('sid'),
   );
+  $schema += _facebook_status_contexts_schema();
+  return $schema;
+}
+
+/**
+ * Specifies the schema for the contexts table.
+ */
+function _facebook_status_contexts_schema() {
+  $schema = array();
   $schema['facebook_status_contexts'] = array(
     'description' => 'Stores stream context configurations.',
     'fields' => array(
@@ -108,17 +117,15 @@ function facebook_status_install() {
 
 /**
  * Implementation of hook_update_N().
- *
+ */
 function facebook_status_update_6300() {
-  //Remove old variables.
-  variable_del('facebook_status_default_text');
+  // Remove old variables.
   variable_del('facebook_status_profile_view');
   variable_del('facebook_status_special_user');
   variable_del('facebook_status_hide_status');
   variable_del('facebook_status_flag_update');
   variable_del('facebook_status_flood_user');
   variable_del('facebook_status_hide_blank');
-  variable_del('facebook_status_share_view');
   variable_del('facebook_status_size_long');
   variable_del('facebook_status_default');
   variable_del('facebook_status_exclude');
@@ -127,15 +134,59 @@ function facebook_status_update_6300() {
   variable_del('facebook_status_size');
   variable_del('facebook_status_type');
 
-  //@todo: Update DB schema.
-  //Rename uid to recipient
-  //Add sender, fill with recipient
-  //Add type, fill with 'user'
-  //Rename status_time to created
-  //Rename status to message
-  //Replace indices
-  //Add new {facebook_status_contexts} table
-  
+  // Drop current indexes.
+  db_drop_index($ret, 'facebook_status', 'uid');
+  db_drop_index($ret, 'facebook_status', 'pid');
+  db_drop_index($ret, 'facebook_status', 'status_time');
+
+  // Rename fields and add 'type'.
+  db_change_field($ret, 'facebook_status', 'uid', 'recipient', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The ID of the entity that received the status message.',
+  ));
+  db_change_field($ret, 'facebook_status', 'pid', 'sender', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The User ID of the user who created the status message.',
+  ));
+  db_change_field($ret, 'facebook_status', 'status_time', 'created', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The time the status message was saved.',
+  ));
+  db_change_field($ret, 'facebook_status', 'status', 'message', array(
+    'type' => 'text',
+    'not null' => TRUE,
+    'description' => 'The status message.',
+  ));
+  db_add_field($ret, 'facebook_status', 'type', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The stream context type.',
+  ));
+
+  // Add indexes again.
+  db_add_index($ret, 'facebook_status', 'recipient', array('recipient'));
+  db_add_index($ret, 'facebook_status', 'sender', array('sender'));
+  db_add_index($ret, 'facebook_status', 'created', array('created'));
+  db_add_index($ret, 'facebook_status', 'type', array('type'));
+
+  // Update the type field in existing records.
+  $ret[] = update_sql("UPDATE {facebook_status} SET type = 'user'");
+
+  // Create the contexts table.
+  db_create_table($ret, 'facebook_status_contexts', _facebook_status_contexts_schema());
+
+  return $ret;
 }
 
 /**
