@@ -13,7 +13,7 @@ function facebook_status_tags_views_default_views() {
   $view = new view;
   $view->name = 'facebook_status_tags';
   $view->description = 'Facebook-style Statuses Tags';
-  $view->tag = 'facebook_status';
+  $view->tag = 'Facebook-style Statuses';
   $view->view_php = '';
   $view->base_table = 'facebook_status';
   $view->is_cacheable = FALSE;
@@ -268,7 +268,7 @@ function facebook_status_tags_views_default_views() {
   $view = new view;
   $view->name = 'facebook_status_mentions';
   $view->description = 'Facebook-style Statuses Mentions';
-  $view->tag = 'facebook_status';
+  $view->tag = 'Facebook-style Statuses';
   $view->view_php = '';
   $view->base_table = 'facebook_status';
   $view->is_cacheable = FALSE;
