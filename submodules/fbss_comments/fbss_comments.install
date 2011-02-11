@@ -57,28 +57,23 @@ function fbss_comments_schema() {
 }
 
 /**
- * Implementation of hook_update_N().
- */
-function fbss_comments_update_6300() {
-  /**
-   * This function should only ever get run manually. It transfers data from
-   * the old fbssc module to the new fbss_comments module.
-   */
-  $ret = array();
-  $ret[] = update_sql("
-    INSERT INTO {fbss_comments} (cid, sid, uid, created, comment)
-    SELECT old.cid, old.sid, old.uid, old.comment_time, old.comment
-    FROM {fbssc} as old
-    ORDER BY old.cid ASC
-  ");
-  return $ret;
-}
-
-/**
  * Implementation of hook_install().
  */
 function fbss_comments_install() {
+  if (module_exists('fbssc')) {
+    module_disable(array('fbssc'));
+  }
   drupal_install_schema('fbss_comments');
+  if (db_table_exists('fbssc')) {
+    db_query("
+      INSERT INTO {fbss_comments} (cid, sid, uid, created, comment)
+      SELECT old.cid, old.sid, old.uid, old.comment_time, old.comment
+      FROM {fbssc} as old
+      ORDER BY old.cid ASC
+    ");
+    drupal_uninstall_module('fbssc');
+    drupal_set_message(st('Upgraded the Facebook-style Statuses Comments module.'));
+  }
 }
 
 /**

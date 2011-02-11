@@ -134,6 +134,8 @@ function facebook_status_update_6300() {
   variable_del('facebook_status_size');
   variable_del('facebook_status_type');
 
+  $ret = array();
+
   // Drop current indexes.
   db_drop_index($ret, 'facebook_status', 'uid');
   db_drop_index($ret, 'facebook_status', 'pid');
@@ -184,7 +186,16 @@ function facebook_status_update_6300() {
   $ret[] = update_sql("UPDATE {facebook_status} SET type = 'user'");
 
   // Create the contexts table.
-  db_create_table($ret, 'facebook_status_contexts', _facebook_status_contexts_schema());
+  if (!db_table_exists('facebook_status_contexts')) {
+    $schema = _facebook_status_contexts_schema();
+    db_create_table($ret, 'facebook_status_contexts', $schema['facebook_status_contexts']);
+  }
+
+  // If the legacy fbssc module exists, upgrade it to the fbss_comments module.
+  if (module_exists('fbssc') && !module_exists('fbss_comments')) {
+    module_disable(array('fbssc'));
+    drupal_install_modules(array('fbss_comments'));
+  }
 
   return $ret;
 }
