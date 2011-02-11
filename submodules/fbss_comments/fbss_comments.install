@@ -72,7 +72,9 @@ function fbss_comments_install() {
       ORDER BY old.cid ASC
     ");
     drupal_uninstall_module('fbssc');
-    drupal_set_message(st('Upgraded the Facebook-style Statuses Comments module.'));
+    drupal_set_message(st('The Facebook-style Statuses Comments module has been upgraded.') .' '.
+      st('You should remove the "fbssc" folder from your modules directory to ensure you do not confuse it with the new version, which is part of the main Facebook-style Statuses package.')
+    );
   }
 }
 
