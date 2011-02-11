@@ -168,8 +168,6 @@ function facebook_status_tags_views_default_views() {
       'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
-        '3' => 0,
-        '4' => 0,
       ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
@@ -177,16 +175,12 @@ function facebook_status_tags_views_default_views() {
       'default_argument_user' => 0,
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
-        'og' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
-        '1' => 1,
-        '4' => 0,
-        '3' => 0,
-        '2' => 0,
+        variable_get('facebook_status_tags_vid', -1) .'' => variable_get('facebook_status_tags_vid', -1),
       ),
       'validate_argument_type' => 'name',
       'validate_argument_transform' => 0,
@@ -426,8 +420,6 @@ function facebook_status_tags_views_default_views() {
       'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
-        '3' => 0,
-        '4' => 0,
       ),
       'relationship' => 'none',
       'default_options_div_prefix' => '',
@@ -435,16 +427,12 @@ function facebook_status_tags_views_default_views() {
       'default_argument_user' => 0,
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
-        'og' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
-        '4' => 0,
         '1' => 0,
-        '3' => 0,
-        '2' => 0,
       ),
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
@@ -532,8 +520,6 @@ function facebook_status_tags_views_default_views() {
       'validate_user_argument_type' => 'uid',
       'validate_user_roles' => array(
         '2' => 0,
-        '3' => 0,
-        '4' => 0,
       ),
       'override' => array(
         'button' => 'Use default',
@@ -544,16 +530,12 @@ function facebook_status_tags_views_default_views() {
       'default_argument_user' => 0,
       'default_argument_php' => 'return $GLOBALS[\'user\']->name; //The current user',
       'validate_argument_node_type' => array(
-        'og' => 0,
         'page' => 0,
       ),
       'validate_argument_node_access' => 0,
       'validate_argument_nid_type' => 'nid',
       'validate_argument_vocabulary' => array(
-        '4' => 0,
         '1' => 0,
-        '3' => 0,
-        '2' => 0,
       ),
       'validate_argument_type' => 'tid',
       'validate_argument_transform' => 0,
