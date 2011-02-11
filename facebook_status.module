@@ -929,9 +929,9 @@ function facebook_status_facebook_status($op, $a1, $context = NULL) {
   actions_do(array_keys($aids), $sender, $activity_context);
 }
 
-//==================
-//TOKEN INTEGRATION.
-//==================
+//====================
+// TOKEN INTEGRATION.
+//====================
 
 /**
  * Implementation of hook_token_list().
@@ -958,10 +958,10 @@ function facebook_status_token_list($type = 'all') {
       'status-delete' => t('Delete status link.'),
       'created' => t('The themed time the status was submitted.'),
     );
-    if (module_exists('fbssc')) {
+    if (module_exists('fbss_comments')) {
       $tokens['facebook_status']['status-comment-count'] = t('The number of comments on the status.');
     }
-    $tokens['facebook_status'] += token_get_date_token_info(t('The status created'), 'status-time-');
+    $tokens['facebook_status'] += token_get_date_token_info(t('The status created'), 'created-');
     return $tokens;
   }
 }

@@ -191,6 +191,54 @@ function facebook_status_update_6300() {
     db_create_table($ret, 'facebook_status_contexts', $schema['facebook_status_contexts']);
   }
 
+  // Update tokens used in Pathauto.
+  $old = array(
+    '[owner]',
+    '[owner-name]',
+    '[owner-name-raw]',
+    '[owner-id]',
+    '[poster]',
+    '[poster-name]',
+    '[poster-name-raw]',
+    '[poster-id]',
+    '[status-unformatted]',
+    '[status-formatted]',
+    '[status-raw]',
+    '[status-themed]',
+    '[status-id]',
+    '[status-edit]',
+    '[status-delete]',
+    '[status-time]',
+  );
+  $new = array(
+    '[sender-themed]',
+    '[sender-name]',
+    '[sender-name-raw]',
+    '[sender-uid]',
+    '[recipient-link]',
+    '[recipient-name]',
+    '[recipient-name-raw]',
+    '[recipient-id]',
+    '[message-unformatted]',
+    '[message-formatted]',
+    '[message-raw]',
+    '[status-themed]',
+    '[status-id]',
+    '[status-edit]',
+    '[status-delete]',
+    '[created]',
+  );
+  $result = db_query("SELECT name FROM {variable} WHERE name LIKE 'pathauto\\_facebook\\_status\\_%%'");
+  while ($variable = db_fetch_object($result)) { 
+    $name = $variable->name;
+    if ($value = variable_get($name, NULL)) {
+      $value = str_replace($old, $new, $value);
+      variable_del($name);
+      $name = str_replace('facebook_status', 'fbss_pathauto', $name);
+      variable_set($name, $value);
+    }
+  }
+
   // If the legacy fbssc module exists, upgrade it to the fbss_comments module.
   if (module_exists('fbssc') && !module_exists('fbss_comments')) {
     module_disable(array('fbssc'));
