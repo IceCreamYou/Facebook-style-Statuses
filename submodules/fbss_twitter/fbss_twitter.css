@@ -1,6 +1,6 @@
 /* $Id$ */
 
-#facebook-status-box #edit-twitter-wrapper {
+.facebook-status-update #edit-twitter-wrapper {
   clear: none;
   margin: 0;
 }

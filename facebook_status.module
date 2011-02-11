@@ -5,9 +5,7 @@
  * @file
  *   Creates context-sensitive social streams.
  * @todo
- *   - Write update path (including for submodules)
- *   - Finish upgrading fbss_twitter
- *   - Other nice-to-have things listed at http://drupal.org/node/576278#comment-4054178
+ *   Listed at http://drupal.org/node/576278#comment-4054178
  */
 
 /**
