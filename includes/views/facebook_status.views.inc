@@ -273,7 +273,7 @@ function facebook_status_views_data() {
     ),
   );
 
-  //Declares the status text column.
+  // Declares the status text column.
   $data['facebook_status']['message'] = array(
     'title' => t('Status message'),
     'help' => t('The text of the status update.'),

@@ -81,6 +81,19 @@ function facebook_status_admin_advanced($form_state) {
     '#size' => 3,
     '#maxlength' => 3,
     '#required' => TRUE,
+    '#weight' => -80,
+  );
+  $form['facebook_status_hide_length'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Show "Read more" after'),
+    '#field_suffix' => t('characters'),
+    '#description' => t('If a status message is longer than this number of characters and the viewing user has JavaScript enabled, the message will be truncated to this length and a "Read more" link will be appended.') .' '.
+      t('When clicked, the "Read more" link will reveal the rest of the status message.') .' '.
+      t('Must be a positive integer less than the maximum status message length, or zero to ignore this option.'),
+    '#default_value' => variable_get('facebook_status_hide_length', 0),
+    '#size' => 3,
+    '#maxlength' => 5,
+    '#required' => TRUE,
     '#weight' => -70,
   );
   $form['facebook_status_nl2br'] = array(
@@ -145,6 +158,11 @@ function facebook_status_admin_advanced_validate($form, &$form_state) {
   $size = $form_state['values']['facebook_status_box_rows'];
   if (!is_numeric($size) || $size < 1 || $size != round($size)) {
     form_set_error('facebook_status_box_rows', t('The number of rows of the status update box must be a positive integer.'));
+  }
+  $length = $form_state['values']['facebook_status_hide_length'];
+  if (!is_numeric($length) || $length < 0 || ($length >= variable_get('facebook_status_length', 140) && variable_get('facebook_status_length', 140) != 0) || $length != round($length)) {
+    form_set_error('facebook_status_hide_length',
+      t('The "Read more after" option requires that the number of characters specified is a positive integer less than the maximum status message length, or zero to ignore this option.'));
   }
 }
 

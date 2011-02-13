@@ -12,6 +12,7 @@ Drupal.behaviors.facebookStatus = function (context) {
   var $facebook_status_field = ctxt.find('.facebook-status-text:first');
   var facebook_status_original_value = $facebook_status_field.val();
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
+  var fbss_hidelen = parseInt(Drupal.settings.facebook_status.hideLength);
   var refreshIDs = Drupal.settings.facebook_status.refreshIDs;
   if ($.fn.autogrow && $facebook_status_field) {
     // jQuery Autogrow plugin integration.
@@ -36,6 +37,32 @@ Drupal.behaviors.facebookStatus = function (context) {
         fbss_print_remaining(fbss_maxlen, $(this).parent().next());
       }
       $(this).removeClass('facebook-status-faded');
+    });
+  }
+  // Truncate long status messages.
+  if (fbss_hidelen > 0) {
+    ctxt.find('.facebook-status-content').each(function() {
+      var th = $(this);
+      var oldMsgText = th.html();
+      var oldMsgLen = oldMsgText.length;
+      if (oldMsgLen > fbss_hidelen) {
+        var newMsgText =
+          oldMsgText.substring(0, fbss_hidelen - 1) +
+          '<span class="facebook-status-hellip">&hellip;&nbsp;</span><a class="facebook-status-readmore-toggle active">' +
+          Drupal.t('Read more') +
+          '</a><span class="facebook-status-readmore">' +
+          oldMsgText.substring(fbss_hidelen - 1) +
+          '</span>';
+        th.html(newMsgText);
+        th.find('.facebook-status-readmore').hide();
+        th.find('.facebook-status-readmore-toggle').click(function(e) {
+          e.preventDefault();
+          var pa = $(this).parents('.facebook-status-content');
+          $(this).hide();
+          pa.find('.facebook-status-hellip').hide();
+          pa.find('.facebook-status-readmore').show();
+        });
+      }
     });
   }
   // Fix bad redirect destinations.

@@ -15,6 +15,6 @@ class facebook_status_views_handler_field_message extends views_handler_field {
     if (variable_get('facebook_status_nl2br', 0)) {
       $message = nl2br($message);
     }
-    return $message;
+    return '<span class="facebook-status-content">'. $message .'</span>';
   }
 }

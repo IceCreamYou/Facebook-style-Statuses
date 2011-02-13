@@ -15,6 +15,6 @@ class facebook_status_tags_views_handler_field_message extends views_handler_fie
     if (variable_get('facebook_status_nl2br', 0)) {
       $message = nl2br($message);
     }
-    return facebook_status_tags_process_message($message);
+    return '<span class="facebook-status-content">'. facebook_status_tags_process_message($message) .'</span>';
   }
 }

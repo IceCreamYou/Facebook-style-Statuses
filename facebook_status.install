@@ -254,6 +254,7 @@ function facebook_status_update_6300() {
 function facebook_status_uninstall() {
   drupal_uninstall_schema('facebook_status');
   variable_del('facebook_status_default_text');
+  variable_del('facebook_status_hide_length');
   variable_del('facebook_status_block_view');
   variable_del('facebook_status_reply_type');
   variable_del('facebook_status_share_view');

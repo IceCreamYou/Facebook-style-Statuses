@@ -255,7 +255,7 @@ function facebook_status_user($op, &$edit, &$account, $category = NULL) {
  * Implementation of hook_init().
  */
 function facebook_status_init() {
-  //Don't clear the default text on first focus if the default text was manually set in the URL.
+  // Don't clear the default text on first focus if the default text was manually set in the URL.
   $undefault = isset($_GET['status-text']);
   if (isset($_GET['sid']) && is_numeric($_GET['sid'])) {
     $rs = facebook_status_load($_GET['sid']);
@@ -272,6 +272,7 @@ function facebook_status_init() {
       (arg(0) == 'statuses' && is_numeric(arg(1)) && arg(2) == 'edit')
     ),
     'maxlength' => variable_get('facebook_status_length', 140),
+    'hideLength' => variable_get('facebook_status_hide_length', 0),
     'refreshLink' => (bool) variable_get('facebook_status_refresh', 0)
   )), 'setting');
 }
