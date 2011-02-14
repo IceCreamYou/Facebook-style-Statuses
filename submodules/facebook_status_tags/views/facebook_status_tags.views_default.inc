@@ -72,7 +72,7 @@ function facebook_status_tags_views_default_views() {
     'created' => array(
       'label' => '',
       'alter' => array(
-        'alter_text' => 1,
+        'alter_text' => 0,
         'text' => '',
         'make_link' => 0,
         'path' => '',
@@ -87,7 +87,7 @@ function facebook_status_tags_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'date_format' => 'time ago',
+      'date_format' => 'themed',
       'custom_date_format' => '1',
       'exclude' => 1,
       'id' => 'created',
@@ -155,7 +155,7 @@ function facebook_status_tags_views_default_views() {
       'validate_fail' => 'not found',
       'glossary' => 0,
       'limit' => '0',
-      'case' => 'ucfirst',
+      'case' => 'none',
       'path_case' => 'none',
       'transform_dash' => 1,
       'facebook_status_tags_type' => array(
@@ -327,7 +327,7 @@ function facebook_status_tags_views_default_views() {
     'created' => array(
       'label' => '',
       'alter' => array(
-        'alter_text' => 1,
+        'alter_text' => 0,
         'text' => '',
         'make_link' => 0,
         'path' => '',
@@ -342,7 +342,7 @@ function facebook_status_tags_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'date_format' => 'time ago',
+      'date_format' => 'themed',
       'custom_date_format' => '1',
       'exclude' => 1,
       'id' => 'created',
@@ -406,8 +406,8 @@ function facebook_status_tags_views_default_views() {
       'breadcrumb' => '',
       'default_argument_type' => 'current_user',
       'default_argument' => '',
-      'validate_type' => 'php',
-      'validate_fail' => 'empty',
+      'validate_type' => 'user',
+      'validate_fail' => 'not found',
       'break_phrase' => 1,
       'not' => 0,
       'facebook_status_tags_type' => array(
