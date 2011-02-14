@@ -245,6 +245,64 @@ function facebook_status_update_6300() {
     drupal_install_modules(array('fbss_comments'));
   }
 
+  $modules_to_install = array();
+  // If the Activity integration was in use in the 2.x branch, enable the fbss_activity submodule.
+  if (module_exists('activity') && !module_exists('fbss_activity')) {
+    $count = db_result(db_query("SELECT COUNT(*) FROM {activity} WHERE type = 'facebook_status'"));
+    if ($count > 0) {
+      $modules_to_install[] = 'fbss_activity';
+    }
+  }
+
+  // If the Flag integration was in use in the 2.x branch, enable the fbss_flag submodule.
+  if (module_exists('flag') && !module_exists('fbss_flag')) {
+    $count = db_result(db_query("SELECT COUNT(*) FROM {flags} WHERE content_type = 'facebook_status'"));
+    if ($count > 0) {
+      $modules_to_install[] = 'fbss_flag';
+    }
+  }
+
+  // If the Mollom integration was in use in the 2.x branch, enable the fbss_mollom submodule.
+  if (module_exists('mollom') && db_table_exists('mollom_form') && !module_exists('fbss_mollom')) {
+    $count = db_result(db_query("SELECT COUNT(*) FROM {mollom_form} WHERE module = 'facebook_status'"));
+    if ($count > 0) {
+      $modules_to_install[] = 'fbss_mollom';
+    }
+  }
+
+  // If the Pathauto integration was in use in the 2.x branch, enable the fbss_pathauto submodule.
+  if (module_exists('pathauto') && !module_exists('fbss_pathauto')) {
+    // We check variables named with "fbss_pathauto" instead of "facebook_status" because we already converted them above.
+    $count = db_result(db_query("SELECT COUNT(*) FROM {variable} WHERE name LIKE 'pathauto\\_fbss\\_pathauto\\_%%'"));
+    if ($count > 0) {
+      $modules_to_install[] = 'fbss_pathauto';
+    }
+  }
+
+  // If the Rules integration was in use in the 2.x branch, enable the fbss_rules submodule.
+  if (module_exists('rules') && !module_exists('fbss_rules')) {
+    $count = (int) db_result(db_query("SELECT COUNT(*) FROM {rules_rules} WHERE name LIKE 'facebook\\_status%%'"));
+    $count += (int) db_result(db_query("SELECT COUNT(*) FROM {rules_sets} WHERE name LIKE 'facebook\\_status%%'"));
+    if ($count > 0) {
+      $modules_to_install[] = 'fbss_rules';
+    }
+  }
+
+  // There is no good way to detect whether the Twitter integration was in use in the 2.x branch.
+  // However, since it would have been available by default, let's just enable it.
+  if (module_exists('twitter') && module_exists('oauth') && !module_exists('fbss_twitter')) {
+    $modules_to_install[] = 'fbss_twitter';
+  }
+
+  // If the Userpoints integration was in use in the 2.x branch, enable the fbss_userpoints submodule.
+  if (module_exists('userpoints') && !module_exists('fbss_userpoints')) {
+    $count = db_result(db_query("SELECT COUNT(*) FROM {userpoints_txn} WHERE operation LIKE 'facebook\\_status%%'"));
+    if ($count > 0) {
+      $modules_to_install[] = 'fbss_userpoints';
+    }
+  }
+
+  drupal_install_modules($modules_to_install);
   return $ret;
 }
 

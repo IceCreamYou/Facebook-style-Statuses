@@ -865,12 +865,6 @@ function facebook_status_hook_info() {
         'fbss_edited' => array(
           'runs when' => t('A status has been edited'),
         ),
-        'fbss_submitted' => array(
-          'runs when' => t('A user has updated their status'),
-        ),
-        'fbss_submitted_other' => array(
-          'runs when' => t('A user has posted a status message to another stream'),
-        ),
       ),
     ),
   );

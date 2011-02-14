@@ -30,7 +30,7 @@ function facebook_status_activity_info() {
   $info->object_type = 'facebook_status';
   $info->eid_field = 'sid';
   $info->objects = array('Recipient' => 'facebook_status', 'Sender' => 'sender');
-  $hooks = array('fbss_deleted', 'fbss_edited', 'fbss_submitted', 'fbss_submitted_other');
+  $hooks = array('fbss_deleted', 'fbss_edited');
   foreach (facebook_status_all_contexts() as $type => $details) {
     if ($type == 'user') {
       $hooks[] = 'fbss_submitted_user_self';
