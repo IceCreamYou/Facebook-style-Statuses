@@ -153,7 +153,7 @@ class facebook_status_user_context extends facebook_status_context {
     return user_load(0);
   }
   function recipient_link($recipient) {
-    theme('username', $recipient);
+    return theme('username', $recipient);
   }
   function access_add($recipient, $sender) {
     return ($sender->uid == $recipient->uid && user_access('update and view own stream', $sender)) ||
