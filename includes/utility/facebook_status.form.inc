@@ -255,14 +255,16 @@ function facebook_status_box_submit($form, &$form_state) {
   $recipient = $context['handler']->load_recipient($rid);
   $new_status = trim($form_state['values']['fbss-status']);
   $default = $form_state['values']['sdefault'];
-  //Don't save the status if it wasn't changed from the default.
+  $form_state['facebook_status'] = array();
+  // Don't save the status if it wasn't changed from the default.
   if ($new_status != $default) {
-    $message = facebook_status_save_status($recipient, $type, $new_status);
+    $new_status_obj = facebook_status_save_status($recipient, $type, $new_status);
+    if (isset($new_status_obj->sid)) {
+      $form_state['facebook_status']['sid'] = $new_status_obj->sid;
+    }
   }
-  $form_state['facebook_status'] = array(
-    'type' => $type,
-    'recipient' => $rid,
-  );
+  $form_state['facebook_status']['type'] = $type;
+  $form_state['facebook_status']['recipient'] = $rid;
   $form_state['rebuild'] = TRUE;
   if (!variable_get('facebook_status_ahah', 1)) {
     $form_state['redirect'] = array($_GET['q']);
