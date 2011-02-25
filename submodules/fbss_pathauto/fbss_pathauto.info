@@ -1,4 +1,3 @@
-; $Id$
 name = Facebook-style Statuses Pathauto
 description = "Integrates Pathauto with Facebook-style Statuses."
 package = Facebook-style Statuses

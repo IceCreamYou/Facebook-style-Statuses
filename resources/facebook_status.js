@@ -1,4 +1,3 @@
-// $Id$
 var allowClickRefresh = true;
 Drupal.behaviors.facebookStatus = function (context) {
   var initialLoad = false;

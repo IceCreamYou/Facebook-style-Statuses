@@ -1,4 +1,3 @@
-// $Id$
 
 The Facebook-style Statuses module allows posting messages to "streams"
 attached to various entities, just like Facebook's "walls."

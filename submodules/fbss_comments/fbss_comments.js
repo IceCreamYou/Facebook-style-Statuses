@@ -1,4 +1,3 @@
-// $Id$
 Drupal.behaviors.fbss_comments = function (context) {
   $('.fbss-comments-show-comment-form').one('click', function() {
     $(this).hide();

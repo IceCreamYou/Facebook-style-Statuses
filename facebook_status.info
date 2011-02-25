@@ -1,4 +1,3 @@
-; $Id$
 name = Facebook-style Statuses
 description = "Creates context-sensitive social streams."
 package = Facebook-style Statuses

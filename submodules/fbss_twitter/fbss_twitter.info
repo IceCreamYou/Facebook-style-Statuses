@@ -1,4 +1,3 @@
-; $Id$
 name = Facebook-style Statuses Twitter
 description = Integrates Twitter with Facebook-style Statuses.
 package = Facebook-style Statuses

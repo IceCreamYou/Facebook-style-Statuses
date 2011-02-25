@@ -1,4 +1,3 @@
-; $Id$
 name = Facebook-style Statuses Mollom
 description = "Integrates Mollom with Facebook-style Statuses."
 package = Facebook-style Statuses
