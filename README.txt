@@ -1,4 +1,3 @@
-// $Id$
 
 The Facebook-style Statuses module provides users with a short textual "status"
 that they can use to express themselves. Comprehensive settings, APIs, theming,

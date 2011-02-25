@@ -1,5 +1,4 @@
 <?php
-// $Id$
 //facebook_status.install
 function facebook_status_install() {
   $result = array();
