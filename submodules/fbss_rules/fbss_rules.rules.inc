@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 /**
  * @file
@@ -22,15 +23,15 @@ function fbss_rules_rules_event_info() {
       'module' => 'Facebook-style Statuses',
       'arguments' => array(
         'status' => array('type' => 'facebook_status', 'label' => t('The status.')),
+        //'context' => array('type' => 'value', 'label' => t('The status context.')),
       ),
     ),
     'facebook_status_save' => array(
       'label' => t('User saves a status'),
       'module' => 'Facebook-style Statuses',
       'arguments' => array(
-        'recipient' => array('type' => 'number', 'label' => t('The ID of the object to which the status was posted.')),
-        'sender' => array('type' => 'user', 'label' => t('The user who posted the status.')),
         'status' => array('type' => 'facebook_status', 'label' => t('The status.')),
+        //'context' => array('type' => 'value', 'label' => t('The status context.')),
       ),
     ),
   );
