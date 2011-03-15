@@ -1,10 +1,12 @@
 <?php
+// $Id$
 
 /**
  * @file
  *   Creates context-sensitive social streams.
  * @todo
  *   Listed at http://drupal.org/node/576278#comment-4054178
+ *   Also, the "share" link might not work correctly
  */
 
 /**
@@ -703,7 +705,7 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
     // FACEBOOK_STATUS_OVERRIDE_TIMER seconds of the old one,
     // we assume the user didn't mean to post the first one.
     if ($time - $status->created < FACEBOOK_STATUS_OVERRIDE_TIMER && $type = 'user' && $sender->uid == $recipient_id && $options['timed override']) {
-      $sql = "UPDATE {facebook_status} SET status = '%s', status_time = %d WHERE sid = %d ORDER BY sid DESC";
+      $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d ORDER BY sid DESC";
       db_query($sql, $message, $time, $status->sid);
       $object->sid = $status->sid;
       $edit = TRUE;
