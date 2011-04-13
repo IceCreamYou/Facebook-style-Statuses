@@ -64,36 +64,6 @@ Drupal.behaviors.facebookStatus = function (context) {
       }
     });
   }
-  // Fix bad redirect destinations.
-  ctxt.find('.facebook-status-edit a, .facebook-status-delete a, a.facebook-status-respond, a.facebook-status-repost').each(function() {
-    var loc = $(this).attr('href').split('?'), base = loc[0], query = '';
-    if (loc[1]) {
-      var search = window.location.search;
-      if (search.indexOf('?q=') == 0) {
-        search = search.substring(3);
-      }
-      // window.location.href doesn't work for sites not in the webroot with weird server configurations.
-      var destination = escape(window.location.pathname.substring(Drupal.settings.basePath.length) + search);
-      var q = loc[1].split('&');
-      for (var i = 0; i < q.length; i++) {
-        var item = q[i].split('='), param = item[0];
-        if (i == 0) {
-          query += '?';
-        }
-        else {
-          query += '&';
-        }
-        query += param +'=';
-        if (param == 'destination') {
-          query += destination;
-        }
-        else if (item[1]) {
-          query += item[1];
-        }
-      }
-      $(this).attr('href', base + query);
-    }
-  });
   // React when a status is submitted.
   ctxt.find('#facebook-status-replace').bind('ahah_success', function(context) {
     if ($(context.target).html() != $(this).html()) {
