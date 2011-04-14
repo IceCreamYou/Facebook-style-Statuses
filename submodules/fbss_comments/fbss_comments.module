@@ -527,11 +527,12 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
   $form['status-comment'] = array(
     '#type' => 'textarea',
     '#rows' => 1,
-    '#required' => TRUE,
+    '#attributes' => array('class' => 'fbss-comments-textarea'),
   );
   $form['save'] = array(
     '#type' => 'submit',
     '#value' => t('Comment'),
+    '#attributes' => array('class' => 'fbss-comments-submit'),
     '#ahah' => array(
       'path' => 'fbss_comments/js/refresh',
       'wrapper' => 'fbss-comments-replace-'. $sid,
@@ -556,7 +557,10 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
 function fbss_comments_box_submit($form, &$form_state) {
   $form_state['fbss_comments']['q'] = $form['#qu'];
   $form_state['fbss_comments']['sid'] = $form['#sid'];
-  fbss_comments_save_comment($form['#sid'], $form_state['values']['status-comment']);
+  // Don't save empty comments, but fail silently instead of using the default "required" handling.
+  if (!empty($form_state['values']['status-comment'])) {
+    fbss_comments_save_comment($form['#sid'], $form_state['values']['status-comment']);
+  }
   $form_state['rebuild'] = TRUE;
 }
 
