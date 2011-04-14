@@ -602,6 +602,9 @@ function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
       );
       drupal_write_record('facebook_status_tags', $array);
       $old_matches[] = $account->uid;
+      if (module_exists('rules')) {
+        rules_invoke_event('facebook_status_tags_user_was_tagged', $status, $account);
+      }
     }
   }
   

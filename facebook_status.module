@@ -7,6 +7,7 @@
  * @todo
  *   Listed at http://drupal.org/node/576278#comment-4054178
  *   Also, the "share" link might not work correctly
+ *   Should the Hashtags vocabulary be deleted when the module is uninstalled?
  */
 
 /**

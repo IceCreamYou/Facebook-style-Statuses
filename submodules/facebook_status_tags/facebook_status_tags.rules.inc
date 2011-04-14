@@ -6,6 +6,22 @@
  */
 
 /**
+ * Implementation of hook_rules_event_info().
+ */
+function facebook_status_tags_rules_event_info() {
+  return array(
+    'facebook_status_tags_user_was_tagged' => array(
+      'label' => t('User was tagged in a status'),
+      'module' => 'Facebook-style Statuses',
+      'arguments' => array(
+        'status' => array('type' => 'facebook_status', 'label' => t('The status.')),
+        'account' => array('type' => 'user', 'label' => t('The user who was tagged in the status.')),
+      ),
+    ),
+  );
+}
+
+/**
  * Implementation of hook_rules_condition_info().
  */
 function facebook_status_tags_rules_condition_info() {
