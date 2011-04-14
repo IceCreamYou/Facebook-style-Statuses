@@ -506,6 +506,22 @@ function _fbss_comments_get_thread_author($sid) {
   return db_result(db_query("SELECT sender FROM {facebook_status} WHERE sid = %d", $sid));
 }
 
+/**
+ * Adds the Autogrow jQuery extension.
+ */
+function _fbss_comments_use_autogrow() {
+  if (module_exists('libraries')) {
+    drupal_add_js(libraries_get_path('autogrow') .'/jquery.autogrow.js');
+    return;
+  }
+  if (file_exists('sites/all/libraries/jquery.autogrow.js')) {
+    drupal_add_js('sites/all/libraries/jquery.autogrow.js');
+  }
+  elseif (file_exists('libraries/jquery.autogrow.js')) {
+    drupal_add_js('libraries/jquery.autogrow.js');
+  }
+}
+
 //=================
 // FORM FUNCTIONS.
 //=================
@@ -526,6 +542,7 @@ function _fbss_comments_get_thread_author($sid) {
 function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_css($path .'/fbss_comments.css');
+  _fbss_comments_use_autogrow();
   $form = array();
   if (!isset($form_state['fbss_comments']['q'])) {
     $form['#qu'] = $_GET['q'];
@@ -545,6 +562,7 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
     '#type' => 'textarea',
     '#rows' => 1,
     '#attributes' => array('class' => 'fbss-comments-textarea'),
+    '#resizable' => FALSE,
   );
   $form['save'] = array(
     '#type' => 'submit',

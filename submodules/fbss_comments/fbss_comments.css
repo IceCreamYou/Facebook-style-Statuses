@@ -55,6 +55,11 @@
   display: none;
 }
 
+.fbss-comments-textarea {
+  width: 100%;
+  /* line-height: 1em; */
+}
+
 /* The "Comment" link. */
 .fbss-comments-show-comment-form {
   display: inline;

@@ -28,4 +28,8 @@ Drupal.behaviors.fbss_comments = function (context) {
       }
     }, 10);
   });
+  if ($.fn.autogrow) {
+    // jQuery Autogrow plugin integration.
+    // $('.fbss-comments-textarea').autogrow({expandTolerance: 2});
+  }
 }
