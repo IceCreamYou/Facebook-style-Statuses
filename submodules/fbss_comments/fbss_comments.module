@@ -85,6 +85,7 @@ function fbss_comments_perm() {
                'edit comments on own statuses',
                'post status comment',
                'view all status comments',
+               'view own status comments',
   );
 }
 
@@ -264,7 +265,7 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
     $path = drupal_get_path('module', 'fbss_comments');
     drupal_add_js($path .'/fbss_comments.js');
     $output = '';
-    if ($delay_load_form && !fbss_comments_count_comments($sid)) {
+    if ($delay_load_form && !fbss_comments_count_comments($sid, TRUE)) {
       $output = '<div class="fbss-comments-show-comment-form" id="fbss-comments-toggle-'. $sid .'">'.
         l(t('Comment'), 'statuses/'. $sid, array('attributes' => array('class' => 'fbss-comments-show-comment-form-link')))
         .'</div>';
@@ -276,7 +277,7 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
     $path = drupal_get_path('module', 'fbss_comments');
     drupal_add_js($path .'/fbss_comments.js');
     drupal_add_css($path .'/fbss_comments.css');
-    return theme('fbss_comments_items', fbss_comments_get_comments($sid), $delay_load_comments, $_GET['q']);
+    return theme('fbss_comments_items', fbss_comments_get_comments($sid, TRUE), $delay_load_comments, $_GET['q']);
   }
 }
 
@@ -304,14 +305,19 @@ function fbss_comments_load($cid) {
  *
  * @param $sid
  *   The Status ID of the thread for which to retrieve comments.
+ * @param $filter_view_access
+ *   If TRUE, only comments which the user has permission to view will be
+ *   returned. Otherwise, all relevant comments will be returned.
  * @return
  *   An array of comment objects for the relative thread.
  */
-function fbss_comments_get_comments($sid) {
+function fbss_comments_get_comments($sid, $filter_view_access = FALSE) {
   $result = db_query("SELECT * FROM {fbss_comments} WHERE sid = %d ORDER BY created ASC, cid ASC", $sid);
   $results = array();
   while ($comment = db_fetch_object($result)) {
-    $results[] = $comment;
+    if (!$filter_view_access || fbss_comments_can_view($comment)) {
+      $results[] = $comment;
+    }
   }
   return $results;
 }
@@ -347,8 +353,19 @@ function fbss_comments_delete_comment($cid) {
 
 /**
  * Counts the number of comments on a status.
+ *
+ * @param $sid
+ *   The ID of the status whose comments should be counted.
+ * @param $filter_view_access
+ *   If TRUE, the count will be of comments that the current user has
+ *   permission to view. Otherwise, will count all relevant comments.
+ * @return
+ *   The number of comments on the specified status.
  */
-function fbss_comments_count_comments($sid) {
+function fbss_comments_count_comments($sid, $filter_view_access = FALSE) {
+  if ($filter_view_access) {
+    return db_result(db_query("SELECT COUNT(cid) FROM {fbss_comments} WHERE sid = %d AND uid = %d", $sid, $GLOBALS['user']->uid));
+  }
   return db_result(db_query("SELECT COUNT(cid) FROM {fbss_comments} WHERE sid = %d", $sid));
 }
 
@@ -388,7 +405,7 @@ function fbss_comments_can_view($comment, $account = NULL) {
   // Only change $allow if you need it to be FALSE.
   // Do not set it to TRUE as this may override other modules' actions.
   drupal_alter('fbss_comments_can_view', $allow, $comment, $account);
-  return $allow && user_access('view all status comments', $account);
+  return $allow && (user_access('view all status comments', $account) || (user_access('view own status comments') && $comment->uid == $account->uid));
 }
 
 /**
@@ -516,7 +533,7 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
   else {
     $form['#qu'] = $form_state['fbss_comments']['q'];
   }
-  $comments = fbss_comments_get_comments($sid);
+  $comments = fbss_comments_get_comments($sid, TRUE);
   $form['before'] = array('#value' => '<div id="fbss-comments-replace-'. $sid .'">');
   $form['comments'] = array('#value' => theme('fbss_comments_items', $comments, $delay_load, $form['#qu']));
   if (count($comments)) {
