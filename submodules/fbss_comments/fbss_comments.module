@@ -266,9 +266,9 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
     drupal_add_js($path .'/fbss_comments.js');
     $output = '';
     if ($delay_load_form && !fbss_comments_count_comments($sid, TRUE)) {
-      $output = '<div class="fbss-comments-show-comment-form" id="fbss-comments-toggle-'. $sid .'">'.
+      $output = '<span class="fbss-comments-show-comment-form" id="fbss-comments-toggle-'. $sid .'">'.
         l(t('Comment'), 'statuses/'. $sid, array('attributes' => array('class' => 'fbss-comments-show-comment-form-link')))
-        .'</div>';
+        .'</span>';
         return $output .'<div class="fbss-comments-hide fbss-comments-form">'. drupal_get_form('fbss_comments_box', $sid, $delay_load_comments) .'</div>';
     }
     return '<div class="fbss-comments-form">'. drupal_get_form('fbss_comments_box', $sid, $delay_load_comments) .'</div>';
