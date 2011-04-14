@@ -204,6 +204,7 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
     }
     $output .= l(t('Show all @count comments', array('@count' => $count)), 'statuses/'. $comments[0]->sid, $options);
   }
+  $rendered = 0;
   foreach ($comments as $key => $comment) {
     $classes = array();
     if ($key == 0) {
@@ -222,11 +223,17 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
       $classes[] = 'fbss-comments-hide';
     }
     if (!$delay_load || $count < 10 || $key == $count - 1 || $key == $count - 2) {
-      $output .= theme('fbss_comments_item', $comment, $classes, $destination);
+      $result = theme('fbss_comments_item', $comment, $classes, $destination);
+      if (!empty($result)) {
+        $output .= $result;
+        $rendered++;
+      }
     }
   }
   $output .= '</div>';
-  return $output;
+  if ($rendered > 0) {
+    return $output;
+  }
 }
 
 /**
