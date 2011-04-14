@@ -249,7 +249,8 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
  *   thread page. If FALSE the "comment" link (with the comment form hidden)
  *   will be used instead of just showing the comment form.
  * @return
- *   Themed HTML for the status form.
+ *   The themed HTML for the status form, or if the user does not have
+ *   permission to post a comment, then the list of comments.
  */
 function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_load_comments = TRUE) {
   if (fbss_comments_can_post(facebook_status_load($sid))) {
@@ -263,6 +264,12 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
         return $output .'<div class="fbss-comments-hide fbss-comments-form">'. drupal_get_form('fbss_comments_box', $sid, $delay_load_comments) .'</div>';
     }
     return '<div class="fbss-comments-form">'. drupal_get_form('fbss_comments_box', $sid, $delay_load_comments) .'</div>';
+  }
+  else if (user_access('view all status comments')) {
+    $path = drupal_get_path('module', 'fbss_comments');
+    drupal_add_js($path .'/fbss_comments.js');
+    drupal_add_css($path .'/fbss_comments.css');
+    return theme('fbss_comments_items', fbss_comments_get_comments($sid), $delay_load_comments, $_GET['q']);
   }
 }
 
