@@ -22,6 +22,9 @@ class facebook_status_views_handler_field_delete extends views_handler_field {
     $status->type = $values->{$this->aliases['type']};
     $status->sid = $values->{$this->field_alias};
     if (facebook_status_user_access('delete', $status)) {
+      if (module_exists('modalframe')) {
+        modalframe_parent_js();
+      }
       drupal_add_css(drupal_get_path('module', 'facebook_status') .'/resources/facebook_status.css');
       $q = $_GET['q'];
       if ($q == 'facebook_status/js') {

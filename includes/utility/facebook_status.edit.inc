@@ -14,6 +14,9 @@ function facebook_status_edit(&$form_state, $status) {
   $path = drupal_get_path('module', 'facebook_status') .'/resources';
   drupal_add_js($path .'/facebook_status.js');
   drupal_add_css($path .'/facebook_status.css');
+  if (module_exists('modalframe')) {
+    modalframe_child_js();
+  }
   $intro = _facebook_status_get_edit_intro($status, $context);
   $self = '';
   if ($type == 'user' && $status->sender == $status->recipient) {
@@ -49,7 +52,7 @@ function facebook_status_edit(&$form_state, $status) {
     '#suffix' => '</div>',
     '#weight' => -25,
   );
-  //@todo: This is bad. It should be in the CSS but that doesn't seem to be working.
+  // @todo: This is bad. It should be in the CSS but that doesn't seem to be working.
   $form['#attributes'] = array('style' => 'margin-bottom: 0;');
   return $form;
 }
@@ -92,12 +95,19 @@ function facebook_status_edit_submit($form, &$form_state) {
     }
     module_invoke_all('facebook_status', $op, $status_old, $context);
   }
+  // Modal Frame integration.
+  if (module_exists('modalframe')) {
+    modalframe_close_dialog();
+  }
 }
 
 /**
  * The delete status confirmation form.
  */
 function _facebook_status_delete(&$form_state, $status) {
+  if (module_exists('modalframe')) {
+    modalframe_child_js();
+  }
   $form['infotext'] = array('#value' => '<p>'. t('Are you sure you want to permanently delete the status %status?', array('%status' => $status->message)) .'</p>');
   $form['confirm'] = array(
     '#type' => 'submit',
@@ -129,6 +139,9 @@ function _facebook_status_delete_confirm($form, &$form_state) {
   else {
     $form_state['redirect'] = ($status->type == 'user' ? 'user' : '<front>');
   }
+  if (module_exists('modalframe')) {
+    modalframe_close_dialog();
+  }
 }
 
 /**
@@ -141,6 +154,9 @@ function _facebook_status_delete_cancel($form, &$form_state) {
   }
   else {
     $form_state['redirect'] = ($status->type == 'user' ? 'user' : '<front>');
+  }
+  if (module_exists('modalframe')) {
+    modalframe_close_dialog();
   }
 }
 

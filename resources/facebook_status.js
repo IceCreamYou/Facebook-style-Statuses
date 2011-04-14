@@ -1,4 +1,5 @@
-var allowClickRefresh = true;
+var fbss_allowClickRefresh = true;
+var fbss_refreshIDs;
 Drupal.behaviors.facebookStatus = function (context) {
   var initialLoad = false;
   // Drupal passes document as context on page load.
@@ -12,7 +13,9 @@ Drupal.behaviors.facebookStatus = function (context) {
   var facebook_status_original_value = $facebook_status_field.val();
   var fbss_maxlen = Drupal.settings.facebook_status.maxlength;
   var fbss_hidelen = parseInt(Drupal.settings.facebook_status.hideLength);
-  var refreshIDs = Drupal.settings.facebook_status.refreshIDs;
+  if (fbss_refreshIDs == undefined) {
+    fbss_refreshIDs = Drupal.settings.facebook_status.refreshIDs;
+  }
   if ($.fn.autogrow && $facebook_status_field) {
     // jQuery Autogrow plugin integration.
     $facebook_status_field.autogrow({expandTolerance: 2});
@@ -64,60 +67,24 @@ Drupal.behaviors.facebookStatus = function (context) {
       }
     });
   }
+  // Modal Frame integration.
+  if (Drupal.modalFrame) {
+    ctxt.find('.facebook-status-edit a, .facebook-status-delete a').click(function(event) {
+      event.preventDefault();
+      Drupal.modalFrame.open({url: $(this).attr('href'), onSubmit: fbss_refresh});
+    });
+  }
   // React when a status is submitted.
   ctxt.find('#facebook-status-replace').bind('ahah_success', function(context) {
     if ($(context.target).html() != $(this).html()) {
       return;
     }
-    if (Drupal.heartbeat) {
-      Drupal.heartbeat.pollMessages();
-    }
-    // Refresh elements by re-loading the current page and replacing the old version with the updated version.
-    var loaded = {};
-    if (refreshIDs && refreshIDs != undefined) {
-      var loaded2 = {};
-      $.each(refreshIDs, function(i, val) {
-        if (val && val != undefined) {
-          if ($.trim(val) && loaded2[val] !== true) {
-            loaded2[val] = true;
-            var element = $(val);
-            element.before('<div class="fbss-remove-me ahah-progress ahah-progress-throbber" style="display: block; clear: both; float: none;"><div class="throbber">&nbsp;</div></div>');
-          }
-        }
-      });
-      // IE will cache the result unless we add an identifier (in this case, the time).
-      $.get(window.location.pathname +"?ts="+ (new Date()).getTime(), function(data, textStatus) {
-        // From load() in jQuery source. We already have the scripts we need.
-        var new_data = data.replace(/<script(.|\s)*?\/script>/g, "");
-        // From ahah.js. Apparently Safari crashes with just $().
-        var new_content = $('<div></div>').html(new_data);
-        if (textStatus != 'error' && new_content) {
-          // Replace relevant content in the viewport with the updated version.
-          $.each(refreshIDs, function(i, val) {
-            if (val && val != undefined) {
-              if ($.trim(val) != '' && loaded[val] !== true) {
-                var element = $(val);
-                var insert = new_content.find(val);
-                if (insert.get() != element.get()) {
-                  element.replaceWith(insert);
-                  Drupal.attachBehaviors(insert);
-                }
-                loaded[val] = true;
-              }
-            }
-          });
-        }
-        $('.fbss-remove-me').remove();
-      });
-    }
-    else {
-      $('.fbss-remove-me').remove();
-    }
+    fbss_refresh();
   });
   // On document load, add a refresh link where applicable.
-  if (initialLoad && refreshIDs && Drupal.settings.facebook_status.refreshLink) {
+  if (initialLoad && fbss_refreshIDs && Drupal.settings.facebook_status.refreshLink) {
     var loaded = {};
-    $.each(refreshIDs, function(i, val) {
+    $.each(fbss_refreshIDs, function(i, val) {
       if (val && val != undefined) {
         if ($.trim(val) && loaded[val] !== true) {
           loaded[val] = true;
@@ -131,11 +98,11 @@ Drupal.behaviors.facebookStatus = function (context) {
   }
   // Refresh views appropriately.
   ctxt.find('.facebook-status-refresh-link a').click(function() {
-    if (allowClickRefresh) {
-      allowClickRefresh = false;
-      setTimeout('allowRefresh()', 2000);
+    if (fbss_allowClickRefresh) {
+      fbss_allowClickRefresh = false;
+      setTimeout('fbss_allowRefresh()', 2000);
       $(this).after('<div class="fbss-remove-me ahah-progress ahah-progress-throbber"><div class="throbber">&nbsp;</div></div>');
-      $('#facebook-status-replace').trigger('ahah_success', {target: '#facebook-status-replace'});
+      fbss_refresh();
     }
     return false;
   });
@@ -173,7 +140,54 @@ function fbss_print_remaining(fbss_remaining, where) {
     }
   }
 }
-//Disallow refreshing too often or double-clicking the Refresh link.
-function allowRefresh() {
-  allowClickRefresh = !allowClickRefresh;
+// Disallow refreshing too often or double-clicking the Refresh link.
+function fbss_allowRefresh() {
+  fbss_allowClickRefresh = !fbss_allowClickRefresh;
+}
+// Refresh parts of the page.
+function fbss_refresh() {
+  if (Drupal.heartbeat) {
+    Drupal.heartbeat.pollMessages();
+  }
+  // Refresh elements by re-loading the current page and replacing the old version with the updated version.
+  var loaded = {};
+  if (fbss_refreshIDs && fbss_refreshIDs != undefined) {
+    var loaded2 = {};
+    $.each(fbss_refreshIDs, function(i, val) {
+      if (val && val != undefined) {
+        if ($.trim(val) && loaded2[val] !== true) {
+          loaded2[val] = true;
+          var element = $(val);
+          element.before('<div class="fbss-remove-me ahah-progress ahah-progress-throbber" style="display: block; clear: both; float: none;"><div class="throbber">&nbsp;</div></div>');
+        }
+      }
+    });
+    // IE will cache the result unless we add an identifier (in this case, the time).
+    $.get(window.location.pathname +"?ts="+ (new Date()).getTime(), function(data, textStatus) {
+      // From load() in jQuery source. We already have the scripts we need.
+      var new_data = data.replace(/<script(.|\s)*?\/script>/g, "");
+      // From ahah.js. Apparently Safari crashes with just $().
+      var new_content = $('<div></div>').html(new_data);
+      if (textStatus != 'error' && new_content) {
+        // Replace relevant content in the viewport with the updated version.
+        $.each(fbss_refreshIDs, function(i, val) {
+          if (val && val != undefined) {
+            if ($.trim(val) != '' && loaded[val] !== true) {
+              var element = $(val);
+              var insert = new_content.find(val);
+              if (insert.get() != element.get()) {
+                element.replaceWith(insert);
+                Drupal.attachBehaviors(insert);
+              }
+              loaded[val] = true;
+            }
+          }
+        });
+      }
+      $('.fbss-remove-me').remove();
+    });
+  }
+  else {
+    $('.fbss-remove-me').remove();
+  }
 }
