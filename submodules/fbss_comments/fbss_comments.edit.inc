@@ -32,7 +32,7 @@ function fbss_comments_edit($form_state, $comment) {
  */
 function fbss_comments_edit_submit($form, &$form_state) {
   db_query("UPDATE {fbss_comments} SET comment = '%s' WHERE cid = %d", $form_state['values']['status-comment-edit'], $form['#cid']);
-  $c = fbssc_load($form['#cid']);
+  $c = fbss_comments_load($form['#cid']);
   module_invoke_all('fbss_comments_after_save', $c, TRUE);
   if ($_GET['destination'] && $_GET['destinaton'] != 'fbss_comments/js/refresh') {
     $form_state['redirect'] = $_GET['destination'];
