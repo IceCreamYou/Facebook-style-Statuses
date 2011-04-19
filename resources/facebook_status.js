@@ -162,8 +162,14 @@ function fbss_refresh() {
         }
       }
     });
+    var location = window.location.pathname +'?';
+    // Build the relative URL with query parameters.
+    var query = window.location.search.substring(1);
+    if (query.trim() != "") {
+      location += query +'&';
+    }
     // IE will cache the result unless we add an identifier (in this case, the time).
-    $.get(window.location.pathname +"?ts="+ (new Date()).getTime(), function(data, textStatus) {
+    $.get(location +"ts="+ (new Date()).getTime(), function(data, textStatus) {
       // From load() in jQuery source. We already have the scripts we need.
       var new_data = data.replace(/<script(.|\s)*?\/script>/g, "");
       // From ahah.js. Apparently Safari crashes with just $().
