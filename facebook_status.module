@@ -7,7 +7,6 @@
  * @todo
  *   Listed at http://drupal.org/node/576278#comment-4054178
  *   Also, the "share" link might not work correctly
- *   Should the Hashtags vocabulary be deleted when the module is uninstalled?
  *   See the comment at the top of fbss_comments.module
  */
 
