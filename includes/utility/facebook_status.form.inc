@@ -75,7 +75,7 @@ function theme_facebook_status_form_display($context = NULL, $type = NULL, $view
       $selectors[] = '.view-id-facebook_status_conversation';
     }
   }
-  elseif (!empty($view)) {
+  elseif (!empty($view) && facebook_status_user_access('view_stream', $recipient, $type, $user)) {
     $output .= views_embed_view($view, 'default', $context['handler']->recipient_id($recipient), $type);
     $selectors[] = '.view-id-'. $view;
   }
