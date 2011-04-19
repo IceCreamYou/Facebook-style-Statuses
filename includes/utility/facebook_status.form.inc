@@ -150,9 +150,9 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
         if (preg_match('/.+\b.+/', $sender->name)) {
           $name = '['. $name .']';
         }
-        $default = $name;
+        $default = $name .' ';
       }
-      $intro = t('In response to !status', array('!status' => theme('facebook_status_item', $status, array('links' => FALSE))));
+      $intro = t('In response to !status', array('!status' => facebook_status_show($status, array('links' => FALSE, 'extras' => FALSE))));
     }
   }
 

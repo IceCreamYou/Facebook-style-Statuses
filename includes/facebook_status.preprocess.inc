@@ -37,12 +37,12 @@ function template_preprocess_facebook_status_item(&$vars) {
   else {
     $vars['created'] = theme('facebook_status_time', $status->created);
     if ($status->type == 'user') {
-      if ($status->sender != $status->recipient || strpos($status->message, '@') === 0 || strpos($status->message, '[@') === 0) {
-        $vars['meta'] = t('To @recipient', array('@recipient' => $vars['recipient_name']));
+      if ($status->sender != $status->recipient) {
+        $vars['meta'] = t('to !recipient', array('!recipient' => $vars['recipient_link']));
       }
     }
     elseif (!empty($vars['recipient_name'])) {
-      $vars['meta'] = t('Posted on %entity', array('%entity' => $vars['recipient_name']));
+      $vars['meta'] = t('on !entity', array('!entity' => $vars['recipient_link']));
     }
     if ($options['links']) {
       $vars['links'] = !empty($status->links) ? theme('links', $node->links, array('class' => 'links inline')) : '';
@@ -62,6 +62,7 @@ function _facebook_status_show($status, $options) {
     'links' => TRUE,
     'page' => FALSE,
     'cacheable' => FALSE,
+    'extras' => TRUE,
   );
   if ($links) {
     $status->links = module_invoke_all('link', 'facebook_status', $status);

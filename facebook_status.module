@@ -386,6 +386,8 @@ function facebook_status_theme($existing, $type, $theme, $path) {
  *   - links: Whether to show links with the status
  *   - page: Whether the status is being shown on a page by itself
  *   - cacheable: Whether the themed text will be stored
+ *   - extras: Whether to show extra information (like comments and
+ *     attachments) if applicable
  * @return
  *   HTML representing a status.
  */

@@ -643,7 +643,9 @@ function fbss_comments_facebook_status_delete($sid) {
  * Implementation of hook_preprocess_facebook_status_item().
  */
 function fbss_comments_preprocess_facebook_status_item(&$vars) {
-  $vars['comments'] = theme('fbss_comments_form_display', $status->sid, FALSE, FALSE);
+  if ($vars['options']['extras']) {
+    $vars['comments'] = theme('fbss_comments_form_display', $status->sid, FALSE, FALSE);
+  }
 }
 
 /**
