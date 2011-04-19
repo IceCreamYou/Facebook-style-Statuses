@@ -152,7 +152,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
         }
         $default = $name .' ';
       }
-      $intro = t('In response to !status', array('!status' => facebook_status_show($status, array('links' => FALSE, 'extras' => FALSE))));
+      $intro = t('In response to: !status', array('!status' => facebook_status_show($status, array('links' => FALSE, 'extras' => FALSE))));
     }
   }
 

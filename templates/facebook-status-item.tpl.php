@@ -37,7 +37,7 @@
   <?php if ($sender_picture): ?>
     <div class="facebook-status-sender-picture"><?php echo $sender_picture; ?></div>
   <?php endif; ?>
-  <span class="facebook-status-sender"><?php echo $sender_name; ?></span>
+  <span class="facebook-status-sender"><?php echo $sender_link; ?></span>
   <?php if ($type == 'user' && !$self): ?>
     &raquo; <span class="facebook-status-recipient"><?php echo $recipient_link; ?></span>
   <?php endif; ?>

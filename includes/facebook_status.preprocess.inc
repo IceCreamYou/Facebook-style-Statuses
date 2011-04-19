@@ -64,7 +64,7 @@ function _facebook_status_show($status, $options) {
     'cacheable' => FALSE,
     'extras' => TRUE,
   );
-  if ($links) {
+  if ($options['links']) {
     $status->links = module_invoke_all('link', 'facebook_status', $status);
     drupal_alter('facebook_status_link', $status->links, $status);
   }
