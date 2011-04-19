@@ -306,6 +306,16 @@ function facebook_status_update_6300() {
 }
 
 /**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6301() {
+  $text = variable_get('facebook_status_repost', 'Re: @name @message ');
+  $text = str_replace('@status', '@message', $text);
+  variable_set('facebook_status_repost', $text);
+  return array();
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function facebook_status_uninstall() {

@@ -64,14 +64,13 @@ function theme_facebook_status_form_display($context = NULL, $type = NULL, $view
       drupal_get_form('facebook_status_box', $recipient, $type) .'</div>';
   }
   if ($conversation) {
-    $args = explode(',', $arg);
+    $args = explode(',', arg(2));
     $count = count($args);
     if (($count === 1 && $args[0] != $user->uid) || ($count === 2 && is_numeric($args[1])) && is_numeric($args[0])) {
       if (count($args) === 1) {
         $args[1] = $user->uid;
       }
-      $arg = implode(',', $args);
-      $output .= views_embed_view('facebook_status_conversation', 'default', $arg, $arg);
+      $output .= views_embed_view('facebook_status_conversation', 'default', $args[0], $args[1]);
       $selectors[] = '.view-id-facebook_status_conversation';
     }
   }
@@ -117,27 +116,27 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
   $default = variable_get('facebook_status_default_text', '');
   $intro = '';
   if (arg(0) == 'statuses' && arg(1) == 'share') {
-    //This page is autofocused. We don't want default text there since the user would have to manually remove it.
+    // This page is autofocused. We don't want default text there since the user would have to manually remove it.
     $default = '';
   }
   if (isset($_GET['s']) && arg(0) == 'statuses' && arg(1) == 'share') {
-    //Other modules might use "s," so only accept it on the share-status page.
+    // Other modules might use "s," so only accept it on the share-status page.
     $default = $_GET['s'];
   }
   elseif (isset($_GET['share-status'])) {
     $default = $_GET['share-status'];
   }
-  //@todo: Replace with a "true" re-posting system.
+  // @todo: Replace with a "true" re-posting system.
   if (isset($_GET['sid']) && is_numeric($_GET['sid'])) {
     $rs = facebook_status_load($_GET['sid']);
-    $sender = user_load(array('uid' => $rs->sender));
-    if ($sender->uid != $user->uid && $rs->status) {
+    $sender = _facebook_status_user_load($rs->sender);
+    if ($sender->uid != $user->uid && $rs->message) {
       $name = '@'. $sender->name;
-      //Properly reference tags with word-break characters in them.
+      // Properly reference tags with word-break characters in them.
       if (preg_match('/.+\b.+/', $sender->name)) {
         $name = '['. $name .']';
       }
-      $default = str_replace(array('@name', '@status'), array($name, $rs->status), variable_get('facebook_status_repost', 'Re: @name @status '));
+      $default = str_replace(array('@name', '@message'), array($name, $rs->message), variable_get('facebook_status_repost', 'Re: @name @message '));
       $intro = '';
     }
   }
@@ -147,7 +146,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
       $sender = user_load(array('uid' => $status->sender));
       if ($sender->uid != $user->uid) {
         $name = '@'. $sender->name;
-        //Properly reference tags with word-break characters in them.
+        // Properly reference tags with word-break characters in them.
         if (preg_match('/.+\b.+/', $sender->name)) {
           $name = '['. $name .']';
         }
@@ -162,7 +161,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
   drupal_add_js($path .'/facebook_status_ahah.js', 'module', 'footer');
   drupal_add_css($path .'/facebook_status.css');
   $form = array('#cache' => TRUE);
-  //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
+  // Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['opendiv'] = array(
     '#value' => '<div id="facebook-status-replace">',
     '#weight' => -50,
@@ -207,7 +206,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
     '#value' => $default,
     '#weight' => -10,
   );
-  //Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
+  // Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['closediv'] = array(
     '#value' => '</div>',
     '#weight' => -1,

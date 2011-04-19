@@ -36,8 +36,8 @@ function facebook_status_admin($form_state) {
     '#type' => 'textfield',
     '#title' => t('Re-post format'),
     '#description' => t('The format of the default message when users click a link to re-post a status.') .' '.
-      t("@name will be replaced with the poster's name and @status will be replaced with the status text."),
-    '#default_value' => variable_get('facebook_status_repost', 'Re: @name @status '),
+      t("@name will be replaced with the poster's name and @message will be replaced with the status text."),
+    '#default_value' => variable_get('facebook_status_repost', 'Re: @name @message '),
     '#weight' => -20,
   );
   $views = views_get_all_views();
