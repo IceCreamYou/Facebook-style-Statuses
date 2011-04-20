@@ -181,9 +181,17 @@ function fbss_refresh() {
             if ($.trim(val) != '' && loaded[val] !== true) {
               var element = $(val);
               var insert = new_content.find(val);
-              if (insert.get() != element.get()) {
-                element.replaceWith(insert);
-                Drupal.attachBehaviors(insert);
+              // If a refreshID is found multiple times on the same page, replace each one sequentially.
+              if (insert.length && insert.length > 0 && element.length && element.length >= insert.length) {
+                $.each(insert, function(j, v) {
+                  v = $(v);
+                  var el = $(element[j]);
+                  // Don't bother replacing anything if the replacement region hasn't changed.
+                  if (v.get() != el.get()) {
+                    el.replaceWith(v);
+                    Drupal.attachBehaviors(v);
+                  }
+                });
               }
               loaded[val] = true;
             }
