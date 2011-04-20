@@ -133,14 +133,32 @@ class facebook_status_user_context extends facebook_status_context {
     return 'user';
   }
   function is_applicable() {
-    //The user context is the "base" context; if everything else fails, we fall back to updating the user's own status.
+    // The user context is the "base" context; if everything else fails, we fall back to updating the user's own status.
     return TRUE;
   }
   function find_recipient() {
+    global $user;
+    // On the conversation page, the active user is actually the *other* user.
+    if (arg(0) == 'statuses' && arg(1) == 'conversation') {
+      $args = explode(',', arg(2));
+      $count = count($args);
+      if ($count === 1) {
+        return is_numeric($args[0]) ? _facebook_status_user_load($args[0]) : $user;
+      }
+      else if ($count == 2) {
+        if ($args[0] == $user->uid) {
+          return is_numeric($args[1]) ? _facebook_status_user_load($args[1]) : $user;
+        }
+        else if ($args[1] == $user->uid) {
+          return is_numeric($args[0]) ? _facebook_status_user_load($args[0]) : $user;
+        }
+      }
+      return $user;
+    }
     return arg(0) == 'user' && is_numeric(arg(1)) ? /*menu_get_object('user')*/ _facebook_status_user_load(arg(1)) : $GLOBALS['user'];
   }
   function load_recipient($id) {
-    //FBSS has its own user_load() with extra caching for efficiency.
+    // FBSS has its own user_load() with extra caching for efficiency.
     return _facebook_status_user_load($id);
   }
   function load_random_recipient() {
