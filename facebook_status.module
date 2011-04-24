@@ -470,17 +470,23 @@ function facebook_status_user_access($op) {
  *
  * @param $senders
  *   A user ID of the sender of status updates, or an array of User IDs for
- *   users whose profile was posted on. If empty, all users are considered.
+ *   users who posted statuses. If empty, all users are considered.
  * @param $recipients
- *   An array of User IDs for users who posted statuses. If empty,
- *   all users are considered.
+ *   An ID of the recipient of status updates, or an array of IDs for
+ *   recipients of status updates. If empty, all users are considered.
  * @param $total
  *   The maximum number of statuses to return. If zero, all relevant statuses
  *   are returned.
  * @return
- *   An array of status objects.
+ *   An array of status objects matching the relevant criteria.
  */
 function facebook_status_get_statuses($senders = array(), $recipients = array(), $type = NULL, $total = 0) {
+  if (is_numeric($senders)) {
+    $senders = array($senders);
+  }
+  if (is_numeric($recipients)) {
+    $recipients = array($recipients);
+  }
   $statuses = array();
   $args = array_merge(array($type), $senders, $recipients);
   $query = "SELECT * FROM {facebook_status} WHERE created <> 0 AND type = '%s'";
@@ -491,7 +497,7 @@ function facebook_status_get_statuses($senders = array(), $recipients = array(),
     $query .= " AND recipient IN (". db_placeholders($recipients) .")";
   }
   $query .= " ORDER BY created DESC, sid DESC";
-  $result = ($total > 0 ? $fn($query, $args, 0, $total) : $fn($query, $args));
+  $result = ($total > 0 ? db_query_range($query, $args, 0, $total) : db_query($query, $args));
   while ($status = db_fetch_object($result)) {
     $statuses[] = $status;
   }
