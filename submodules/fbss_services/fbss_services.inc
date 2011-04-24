@@ -75,19 +75,23 @@ function _fbss_services_access($action) {
  *   parameter containing the fully qualified URI to this resource.
  */
 function fbss_services_create($recipient_id, $type, $message) {
-    $context = facebook_status_determine_context($type);
-    if (empty($context)) {
-      return services_error('Invalid context stream type', 406);
-    }
-    $recipient = $context['handler']->load_recipient($recipient_id);
-    if (empty($recipient)) {
-      return services_error('Recipient not found', 404);
-    }
-    $status = facebook_status_save_status($recipient, $type, $message);
-    if ($uri = services_resource_uri(array('status', $status->sid))) {
-      $status->uri = $uri;
-    }
-    return $status;
+  $maxlen = variable_get('facebook_status_length', 140);
+  if (drupal_strlen($message) > $maxlen && $maxlen != 0) {
+    return services_error('The status must be no longer than '. $maxlen .' characters', 406);
+  }
+  $context = facebook_status_determine_context($type);
+  if (empty($context)) {
+    return services_error('Invalid context stream type', 406);
+  }
+  $recipient = $context['handler']->load_recipient($recipient_id);
+  if (empty($recipient)) {
+    return services_error('Recipient not found', 404);
+  }
+  $status = facebook_status_save_status($recipient, $type, $message);
+  if ($uri = services_resource_uri(array('status', $status->sid))) {
+    $status->uri = $uri;
+  }
+  return $status;
 }
 
 /**
@@ -119,6 +123,10 @@ function fbss_services_retrieve($sid) {
  *   parameter containing the fully qualified URI to this resource.
  */
 function fbss_services_update($sid, $message) {
+  $maxlen = variable_get('facebook_status_length', 140);
+  if (drupal_strlen($message) > $maxlen && $maxlen != 0) {
+    return services_error('The status must be no longer than '. $maxlen .' characters', 406);
+  }
   $status_old = facebook_status_load($sid);
   if (empty($status_old)) {
     return services_error('Status sid '. $sid .' not found', 404);
