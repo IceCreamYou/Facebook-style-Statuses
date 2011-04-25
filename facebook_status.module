@@ -301,7 +301,7 @@ function facebook_status_link($type, $status) {
   // If not self update by current user (because if it is a self update by the current user, there is no need for a response)
   if ($status->type != 'user' || $status->recipient != $status->sender || $status->sender != $user->uid) {
     // If permission to respond
-    if (facebook_status_user_access('add', facebook_status_user_load($status->sender), 'user', $user)) {
+    if (facebook_status_user_access('add', _facebook_status_user_load($status->sender), 'user', $user)) {
       // If to current user (not a self update)
       if ($status->type == 'user' && $status->recipient == $user->uid) {
         $title = t('reply');
