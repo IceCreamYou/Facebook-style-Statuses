@@ -6,6 +6,23 @@
  */
 
 /**
+ * Implementation of hook_menu().
+ */
+function fbss_twitter_menu() {
+  $items = array();
+  $items['admin/settings/facebook_status/twitter'] = array(
+    'title' => 'Twitter',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fbss_twitter_admin'),
+    'access arguments' => array('administer Facebook-style Statuses settings'),
+    'description' => 'Allows administrators to adjust Twitter integration settings for Facebook-style Statuses.',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'fbss_twitter.admin.inc',
+  );
+  return $items;
+}
+
+/**
  * Implementation of hook_form_FORM_ID_alter().
  */
 function fbss_twitter_form_facebook_status_box_alter(&$form, &$form_state) {
@@ -80,6 +97,7 @@ function fbss_twitter_form_twitter_account_list_form_alter(&$form, &$form_state)
       );
     }
     $form_state['#account'] = $account;
+    $form_state['#options_count'] = count($options);
     $form['fbss_twitter_account'] = array(
       '#type' => 'select',
       '#title' => t('Choose an account to which status updates can be posted'),
@@ -98,45 +116,22 @@ function fbss_twitter_form_twitter_account_list_form_alter(&$form, &$form_state)
 function fbss_twitter_twitter_submit($form, &$form_state) {
   $account = $form_state['#account'];
   if (!empty($account)) {
+    $twitter_account = $form_state['values']['fbss_twitter_account'];
+    // If we just added the first Twitter account, set it as the one to use with FBSS.
+    if ($twitter_account == 0 && $form_state['#options_count'] === 1 && variable_get('fbss_twitter_select_account', 0)) {
+      $result = db_query("SELECT screen_name FROM {twitter_account} WHERE uid = %d", arg(1));
+      $options = array();
+      while ($option = db_fetch_array($result)) {
+        $options[$option['screen_name']] = $option['screen_name'];
+      }
+      if (count($options) === 1) {
+        $twitter_account = array_pop($options);
+      }
+    }
     user_save($account, array(
-      'fbss_twitter' => $form_state['values']['fbss_twitter_account'],
+      'fbss_twitter' => $twitter_account,
       'fbss_twitter_default' => $form_state['values']['fbss_twitter_default'],
     ), 'twitter');
-  }
-}
-
-/**
- * Implementation of hook_form_FORM_ID_alter().
- * @todo: Make this its own page
- */
-function fbss_twitter_form_facebook_status_admin_alter(&$form, &$form_state) {
-  $form['fbss_twitter_default'] = array(
-    '#type' => 'radios',
-    '#title' => t('Default Twitter option'),
-    '#default_value' => variable_get('fbss_twitter_default', 'off'),
-    '#required' => TRUE,
-    '#options' => array(
-      'on' => t('Always enabled by default'),
-      'off' => t('Always disabled by default'),
-      'on-user' => t('Let the user choose (enabled is default)'),
-      'off-user' => t('Let the user choose (disabled is default)'),
-      'disallow' => t('Do not allow posting to Twitter at all'),
-    ),
-    '#weight' => -70,
-  );
-  $form['#validate'][] = 'fbss_twitter_settings_validate';
-}
-
-/**
- * Validate function for the Facebook-style Statuses settings form alter.
- */
-function fbss_twitter_settings_validate(&$form, &$form_state) {
-  if ($form_state['values']['facebook_status_length'] > 140 && variable_get('fbss_twitter_default', 'off') != 'disallow') {
-    drupal_set_message(t('The maximum number of characters allowed in a status is set to a number above 140, and users can post status updates to Twitter.') .' '.
-      t('These settings could allow users to attempt to post messages to Twitter which are too long for Twitter to handle.') .' '.
-      t('In this situation, Facebook-style Statuses will attempt to truncate the tweet and include a link to view the full message on your site.') .' '.
-      t('Occasionally it is not possible to get a link to the status message, in which case the tweet will simply be shortened to 140 characters by Twitter.'),
-      'warning');
   }
 }
 

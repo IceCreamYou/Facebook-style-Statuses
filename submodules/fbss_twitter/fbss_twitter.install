@@ -9,5 +9,6 @@
  * Implementation of hook_uninstall().
  */
 function fbss_twitter_uninstall() {
+  variable_del('fbss_twitter_select_account');
   variable_del('fbss_twitter_default');
 }
