@@ -14,6 +14,16 @@ function fbss_flag_facebook_status_delete($sid) {
 }
 
 /**
+ * Implementation of hook_views_api().
+ */
+function fbss_flag_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'fbss_flag') .'/views',
+  );
+}
+
+/**
  * Implementation of hook_flag_definitions().
  */
 function fbss_flag_flag_definitions() {
