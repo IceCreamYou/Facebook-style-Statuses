@@ -114,13 +114,10 @@ Drupal.behaviors.facebookStatus = function (context) {
     }
   });
   // Count remaining characters.
-  ctxt.find('.facebook-status-text').keypress(function(fbss_key) {
-    var th = $(this);
-    var thCC = th.parents('.facebook-status-update').find('.facebook-status-chars');
-    setTimeout(function() {
-      var fbss_remaining = fbss_maxlen - th.val().length;
-      fbss_print_remaining(fbss_remaining, thCC);
-    }, 10);
+  ctxt.find('.facebook-status-text').bind('keydown keyup', function(fbss_key) {
+    var thCC = $(this).parents('.facebook-status-update').find('.facebook-status-chars');
+    var fbss_remaining = fbss_maxlen - $(this).val().length;
+    fbss_print_remaining(fbss_remaining, thCC);
   });
 }
 // Change remaining character count.
