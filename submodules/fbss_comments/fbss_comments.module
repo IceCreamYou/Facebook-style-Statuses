@@ -41,8 +41,8 @@ function fbss_comments_menu() {
     'title' => 'Edit status comment',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fbss_comments_edit', 2),
-    'access callback' => 'fbss_comments_can_edit',
-    'access arguments' => array(2),
+    'access callback' => 'fbss_comments_can',
+    'access arguments' => array('edit', 2),
     'type' => MENU_CALLBACK,
     'file' => 'fbss_comments.edit.inc',
   );
@@ -50,8 +50,8 @@ function fbss_comments_menu() {
     'title' => 'Delete status comment',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('fbss_comments_delete', 2),
-    'access callback' => 'fbss_comments_can_delete',
-    'access arguments' => array(2),
+    'access callback' => 'fbss_comments_can',
+    'access arguments' => array('delete', 2),
     'type' => MENU_CALLBACK,
     'file' => 'fbss_comments.edit.inc',
   );
@@ -137,7 +137,7 @@ function fbss_comments_theme($existing, $type, $theme, $path) {
  *   permission to view the comment.
  */
 function theme_fbss_comments_item($comment, $classes = array(), $destination = '') {
-  if (!fbss_comments_can_view($comment)) {
+  if (!fbss_comments_can('view', $comment)) {
       return FALSE;
   }
   array_unshift($classes, 'fbss-comments-comment');
@@ -156,19 +156,17 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
   elseif (strpos($q, 'fbss_comments/js/refresh') !== FALSE) {
     $q = '<front>';
   }
-  if (fbss_comments_can_edit($comment)) {
+  if (fbss_comments_can('edit', $comment)) {
     $output .= '<span class="fbss-comments-edit-delete">'.
       l(t('Edit'), 'statuses/comment/'. $comment->cid .'/edit', array('query' => array('destination' => $q)))
       .'</span>';
   }
-  if (fbss_comments_can_delete($comment)) {
+  if (fbss_comments_can('delete', $comment)) {
     $output .= '<span class="fbss-comments-edit-delete">'.
       l(t('Delete'), 'statuses/comment/'. $comment->cid .'/delete', array('query' => array('destination' => $q)))
       .'</span>';
   }
   $output .= '</div></div>';
-  // Invokes hook_fbss_comments_render_alter(&$output, $comment).
-  drupal_alter('fbss_comments_render', $output, $comment);
   return $output;
 }
 
@@ -261,7 +259,7 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
  *   permission to post a comment, then the list of comments.
  */
 function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_load_comments = TRUE) {
-  if (fbss_comments_can_post(facebook_status_load($sid))) {
+  if (fbss_comments_can('post', facebook_status_load($sid))) {
     $path = drupal_get_path('module', 'fbss_comments');
     drupal_add_js($path .'/fbss_comments.js');
     $output = '';
@@ -315,7 +313,7 @@ function fbss_comments_get_comments($sid, $filter_view_access = FALSE) {
   $result = db_query("SELECT * FROM {fbss_comments} WHERE sid = %d ORDER BY created ASC, cid ASC", $sid);
   $results = array();
   while ($comment = db_fetch_object($result)) {
-    if (!$filter_view_access || fbss_comments_can_view($comment)) {
+    if (!$filter_view_access || fbss_comments_can('view', $comment)) {
       $results[] = $comment;
     }
   }
@@ -347,8 +345,8 @@ function fbss_comments_save_comment($sid, $comment, $uid = NULL) {
  *   The comment ID.
  */
 function fbss_comments_delete_comment($cid) {
-  db_query("DELETE FROM {fbss_comments} WHERE cid = %d", $cid);
   module_invoke_all('fbss_comments_delete', $cid);
+  db_query("DELETE FROM {fbss_comments} WHERE cid = %d", $cid);
 }
 
 /**
@@ -389,23 +387,44 @@ function fbss_comments_has_commented($sid, $uid = NULL) {
 }
 
 /**
- * Determines whether a user can view the relevant status.
+ * Determines whether a user has permission to take an action on a comment.
  *
+ * @param $op
+ *   The action to take. One of view, post, edit, delete.
  * @param $comment
  *   The comment object.
  * @param $account
  *   The $user object of the user whose access will be checked. Defaults to the
  *   current user.
+ * @return
+ *   TRUE if the user can take the specified action; FALSE otherwise.
  */
-function fbss_comments_can_view($comment, $account = NULL) {
+function fbss_comments_can($op, $comment, $account = NULL) {
   if (empty($account)) {
     $account = $GLOBALS['user'];
   }
+  $result = call_user_func('_fbss_comments_can_'. $op, $comment, $account);
   $allow = TRUE;
-  // Only change $allow if you need it to be FALSE.
-  // Do not set it to TRUE as this may override other modules' actions.
-  drupal_alter('fbss_comments_can_view', $allow, $comment, $account);
-  return $allow && (user_access('view all status comments', $account) || (user_access('view own status comments') && $comment->uid == $account->uid));
+  drupal_alter('fbss_comments_has_permission', $allow, $op, $comment, $account);
+  return $allow && $result;
+}
+
+//===================
+// HELPER FUNCTIONS.
+//===================
+
+/**
+ * Determines whether a user can view the relevant status.
+ *
+ * @param $comment
+ *   The comment object.
+ * @param $account
+ *   The $user object of the user whose access will be checked.
+ * @return
+ *   TRUE if the user can view the comment; FALSE otherwise.
+ */
+function _fbss_comments_can_view($comment, $account) {
+  return user_access('view all status comments', $account) || (user_access('view own status comments') && $comment->uid == $account->uid);
 }
 
 /**
@@ -414,20 +433,12 @@ function fbss_comments_can_view($comment, $account = NULL) {
  * @param $status
  *   The status object.
  * @param $account
- *   The $user object of the user whose access will be checked. Defaults to the
- *   current user.
+ *   The $user object of the user whose access will be checked.
  * @return
  *   TRUE if the user can post the comment; FALSE otherwise.
  */
-function fbss_comments_can_post($status, $account = NULL) {
-  if (empty($account)) {
-    $account = $GLOBALS['user'];
-  }
-  $allow = TRUE;
-  // Only change $allow if you need it to be FALSE.
-  // Do not set it to TRUE as this may override other modules' actions.
-  drupal_alter('fbss_comments_can_post', $allow, $status, $account);
-  return $allow && user_access('post status comment', $account);
+function _fbss_comments_can_post($status, $account = NULL) {
+  return user_access('post status comment', $account);
 }
 
 /**
@@ -436,28 +447,17 @@ function fbss_comments_can_post($status, $account = NULL) {
  * @param $comment
  *   The comment object.
  * @param $account
- *   The $user object of the user whose access will be checked. Defaults to the
- *   current user.
+ *   The $user object of the user whose access will be checked.
  * @return
  *   TRUE if the user can edit the comment; FALSE otherwise.
  */
-function fbss_comments_can_edit($comment, $account = NULL) {
-  if (empty($account)) {
-    $account = $GLOBALS['user'];
-  }
-  $allow = TRUE;
-  // Only change $allow if you need it to be FALSE.
-  // Do not set it to TRUE as this may override other modules' actions.
-  drupal_alter('fbss_comments_can_edit', $allow, $comment, $account);
+function _fbss_comments_can_edit($comment, $account = NULL) {
   // This is in two separate statements (instead of one big return statement)
   // so that the SQL in _fbss_comments_get_thread_author() does not usually need to be run.
-  if ($allow && (user_access('edit all status comments', $account) ||
-    (user_access('edit own status comments', $account) && $account->uid == $comment->uid)
-  )) {
+  if (user_access('edit all status comments', $account) || (user_access('edit own status comments', $account) && $account->uid == $comment->uid)) {
     return TRUE;
   }
-  return $allow && user_access('edit comments on own statuses', $account)
-    && $account->uid == _fbss_comments_get_thread_author($comment->sid);
+  return user_access('edit comments on own statuses', $account) && $account->uid == _fbss_comments_get_thread_author($comment->sid);
 }
 
 /**
@@ -466,33 +466,18 @@ function fbss_comments_can_edit($comment, $account = NULL) {
  * @param $comment
  *   The comment object.
  * @param $account
- *   The $user object of the user whose access will be checked. Defaults to the
- *   current user.
+ *   The $user object of the user whose access will be checked.
  * @return
  *   TRUE if the user can delete the comment; FALSE otherwise.
  */
-function fbss_comments_can_delete($comment, $account = NULL) {
-  if (empty($account)) {
-    $account = $GLOBALS['user'];
-  }
-  $allow = TRUE;
-  // Only change $allow if you need it to be FALSE.
-  // Do not set it to TRUE as this may override other modules' actions.
-  drupal_alter('fbss_comments_can_delete', $allow, $comment, $account);
+function _fbss_comments_can_delete($comment, $account = NULL) {
   // This is in two separate statements (instead of one big return statement)
   // so that the SQL in _fbss_comments_get_thread_author() does not usually need to be run.
-  if ($allow && (user_access('delete all status comments', $account) ||
-    (user_access('delete own status comments', $account) && $account->uid == $comment->uid)
-  )) {
+  if (user_access('delete all status comments', $account) || (user_access('delete own status comments', $account) && $account->uid == $comment->uid)) {
     return TRUE;
   }
-  return $allow && user_access('delete comments on own statuses', $account)
-    && $account->uid == _fbss_comments_get_thread_author($comment->sid);
+  return user_access('delete comments on own statuses', $account) && $account->uid == _fbss_comments_get_thread_author($comment->sid);
 }
-
-//===================
-// HELPER FUNCTIONS.
-//===================
 
 /**
  * Determines the author of a status.

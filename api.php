@@ -46,13 +46,33 @@ function hook_facebook_status_user_access_alter(&$allow, $op, $args) {
  *   - discard blank statuses: Whether blank status messages will be discarded.
  * @see facebook_status_save_status()
  */
-function hook_facebook_status_save_options($options) {
+function hook_facebook_status_save_options_alter(&$options) {
   //If we allow saving attachments with statuses, then we could have different
   //attachments with the same message, so we need to allow saving statuses with
   //duplicate messages.
   if (module_exists('fbsmp')) {
     $options['discard duplicates'] = FALSE;
   }
+}
+
+/**
+ * Alter the refresh selectors.
+ *
+ * Refresh selectors are DOM paths that specify regions of the page that should
+ * be automatically refreshed via AHAH when a status is submitted.
+ *
+ * @param $selectors
+ *   An array of DOM paths.
+ * @param $recipient
+ *   The entity which would receive a status message if one were posted on the
+ *   current page.
+ * @param
+ *   The type of recipient.
+ * @see theme_facebook_status_form_display()
+ * @see hook_facebook_status_refresh_selectors()
+ */
+function hook_facebook_status_refresh_selectors_alter(&$selectors, $recipient, $type) {
+  $selectors[] = '.view-facebook_status-all';
 }
 
 /**
@@ -167,11 +187,33 @@ function hook_facebook_status_save($status, $context, $edit) {
  * @return
  *   An array of DOM selector expressions.
  * @see theme_facebook_status_form_display()
+ * @see hook_facebook_status_refresh_selectors_alter()
  */
 function hook_facebook_status_refresh_selectors($recipient, $type) {
   //Automatically update all instances of the view that is displayed for this context.
   $context = facebook_status_determine_context($type);
   return array('.view-id-'. $context['view']);
+}
+
+/**
+ * Add items to the AHAH-refreshed form.
+ *
+ * Anything on the old form that needs to remain on the new form needs to be
+ * moved.
+ *
+ * @param $new_form
+ *   The FAPI array representing the form that will replace the existing one
+ *   via AHAH.
+ * @param $old_form
+ *   The FAPI array representing the form that will be replaced via AHAH.
+ * @see facebook_status_save_js()
+ */
+function hook_facebook_status_form_ahah_alter(&$new_form, $old_form) {
+  $new_form['slider']      = $form['slider'];
+  $new_form['fbss-status'] = $form['fbss-status'];
+  $new_form['chars']       = $form['chars'];
+  $new_form['fbss-submit'] = $form['fbss-submit'];
+  $new_form['sdefault']    = $form['sdefault'];
 }
 
 /**
@@ -186,4 +228,5 @@ function hook_facebook_status_refresh_selectors($recipient, $type) {
  *   A structured array which will be run through drupal_render() to produce
  *   links that will be displayed with themed statuses.
  * @see facebook_status_link()
+ * @see _facebook_status_show()
  */

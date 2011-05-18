@@ -114,7 +114,6 @@ function facebook_status_list_activity_actions($hook, $op, $max_age) {
     }
   }
 
-  drupal_alter('facebook_status_list_activity_actions', $actions);
   return $actions;
 }
 

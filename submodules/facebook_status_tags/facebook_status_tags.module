@@ -424,7 +424,7 @@ function facebook_status_tags_popular($type = 'term', $count = 5, $time = 'all',
  *
  * @param $message
  *   The message to process.
- * @param
+ * @return
  *   The message text with @mentions and #hashtags replaced.
  */
 function facebook_status_tags_process_message($message) {
