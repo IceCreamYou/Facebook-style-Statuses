@@ -692,8 +692,8 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
     'timed override' => TRUE,
     'discard blank statuses' => TRUE,
   );
-  // Calls hook_facebook_status_save_options_alter(&$options).
-  drupal_alter('facebook_status_save_options', $options);
+  // Calls hook_facebook_status_save_options_alter(&$options, $edit).
+  drupal_alter('facebook_status_save_options', $options, FALSE);
   // Pretend to have set a new status if the submitted status is exactly the same as the old one.
   $status = _facebook_status_get_status_fast($sender->uid);
   // The status object to be saved.
@@ -716,16 +716,17 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
       $edit = TRUE;
     }
     else {
-      // Don't save blank messages unless to clear the user's own last status update.
-      // The only reason clearing the last status update would even be needed would be if the most recent status update was displayed by itself somewhere.
+      // Avoid saving blank statuses except on a user's own profile if this is explicitly allowed.
       if ($type != 'user' || $sender->uid != $recipient_id || !empty($message) || !$options['discard blank statuses']) {
         drupal_write_record('facebook_status', $object);
       }
     }
-    // Invokes hook_facebook_status_save($status, $context, $edit).
-    module_invoke_all('facebook_status_save', $object, $context, $edit);
-    // Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
-    if (module_exists('trigger') && !empty($message)) {
+    // Invokes hook_facebook_status_save($status, $context, $edit, $options).
+    module_invoke_all('facebook_status_save', $object, $context, $edit, $options);
+    // Trigger integration.
+    // Don't call if the status is blank because usually nothing interesting is happening.
+    // Also don't call if there is an attachment (from the FBSMP module) because there is a separate trigger for that.
+    if (module_exists('trigger') && !empty($message) && empty($options['has attachment'])) {
       $op = 'fbss_submitted_'. $type;
       if ($type == 'user') {
         $op .= ($recipient_id == $sender->uid ? '_self' : '_other');
@@ -737,6 +738,59 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
     $object->sid = $status->sid;
   }
   return $object;
+}
+
+/**
+ * Update a status.
+ *
+ * @param $status
+ *   The status object to be edited.
+ * @param $new_message
+ *   The new text of the status.
+ * @param $options
+ *   An array of options that affects what behaviors this function uses. These
+ *   are the defaults, used if no option is specified for the relevant keys:
+ *   array(
+ *     'discard duplicates' => TRUE,
+ *     'timed override' => TRUE,
+ *     'discard blank statuses' => TRUE,
+ *   );
+ *   These options have little meaning if the status is being edited, but other
+ *   modules are free to add their own options that should be respected here.
+ */
+function facebook_status_edit_status($status, $new_message, $options = array()) {
+  $context = facebook_status_determine_context($status->type);
+  $new_message = trim($new_message);
+  // Merge in defaults.
+  $options += array(
+    'discard duplicates' => TRUE,
+    'timed override' => TRUE,
+    'discard blank statuses' => TRUE,
+  );
+  // Calls hook_facebook_status_save_options_alter(&$options, $edit).
+  drupal_alter('facebook_status_save_options', $options, TRUE);
+  $time = time();
+  global $user;
+  // Pretend to have set a new status if the submitted status is exactly the same as the old one.
+  if ($new_message != $status->message) {
+    $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d";
+    db_query($sql, $new_message, $time, $status->sid);
+    // Invokes hook_facebook_status_save($status, $edit).
+    $status->message = $new_message;
+    $status->created = $time;
+    module_invoke_all('facebook_status_save', $status, $context, TRUE, $options);
+  }
+  // Trigger integration.
+  // Don't call if the status is blank because usually nothing interesting is happening.
+  // Also don't call if there is an attachment (from the FBSMP module) because there is a separate trigger for that.
+  if (module_exists('trigger') && !empty($new_message) && empty($options['has attachment'])) {
+    $op = 'fbss_edited_'. $status->type;
+    if ($status->type == 'user') {
+      $op .= ($status->recipient == $status->sender ? '_self' : '_other');
+    }
+    module_invoke_all('facebook_status', $op, $status, $context, $options);
+  }
+  return $status;
 }
 
 //===================
@@ -868,24 +922,26 @@ function facebook_status_hook_info() {
         'fbss_deleted' => array(
           'runs when' => t('A status has been deleted'),
         ),
-        'fbss_edited' => array(
-          'runs when' => t('A status has been edited'),
+        'fbss_edited_user_self' => array(
+          'runs when' => t('A user has edited their own status'),
         ),
-      ),
-    ),
-  );
-  foreach (facebook_status_all_contexts() as $type => $details) {
-    if ($type == 'user') {
-      $info['facebook_status']['facebook_status'] += array(
+        'fbss_edited_user_other' => array(
+          'runs when' => t('A user has edited a status message to another user'),
+        ),
         'fbss_submitted_user_self' => array(
           'runs when' => t('A user has updated their own status'),
         ),
         'fbss_submitted_user_other' => array(
           'runs when' => t('A user has posted a status message to another user'),
         ),
+      ),
+    ),
+  );
+  foreach (facebook_status_all_contexts() as $type => $details) {
+    if ($type != 'user') {
+      $info['facebook_status']['facebook_status']['fbss_edited_'. $type ] = array(
+        'runs when' => t('A user has edited a status message to a stream of type %type', array('%type' => $type)),
       );
-    }
-    else {
       $info['facebook_status']['facebook_status']['fbss_submitted_'. $type ] = array(
         'runs when' => t('A user has posted a new status to a stream of type %type', array('%type' => $type)),
       );
@@ -900,11 +956,11 @@ function facebook_status_hook_info() {
  * Implementation of hook_trigger_name().
  */
 function facebook_status_facebook_status($op, $a1, $context = NULL) {
-  if (!in_array($op, array('fbss_deleted', 'fbss_edited')) && strpos($op, 'fbss_submitted') !== 0) {
+  if ($op != 'fbss_deleted' && strpos($op, 'fbss_submitted') !== 0 && strpos($op, 'fbss_edited') !== 0) {
     return;
   }
   $aids = _trigger_get_hook_aids('facebook_status', $op);
-  if ($op == 'fbss_deleted' || $op == 'fbss_edited') {
+  if ($op == 'fbss_deleted' || strpos($op, 'fbss_edited') === 0) {
     $status = facebook_status_load($a1);
   }
   elseif (strpos($op, 'fbss_submitted') === 0) {

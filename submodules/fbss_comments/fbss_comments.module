@@ -13,7 +13,6 @@
  *       + popups api
  *       + sms framework
  *       + views bulk operations
- *   - Document API and add README.txt.
  *   - Turn the comment theme functions into templates.
  */
 

@@ -71,6 +71,13 @@ function fbss_rules_rules_condition_info() {
       ),
       'module' => 'Facebook-style Statuses',
     ),
+    'fbss_rules_rules_condition_is_type' => array(
+      'label' => t('Status recipient is a certain type'),
+      'arguments' => array(
+        'status' => array('type' => 'facebook_status', 'label' => t('The status')),
+      ),
+      'module' => 'Facebook-style Statuses',
+    ),
   );
 }
 
@@ -95,7 +102,7 @@ function fbss_rules_can_post_form($settings, &$form) {
     '#type' => 'select',
     '#title' => t('Recipient type'),
     '#default_value' => $settings['type'],
-    '#description' => t('The type of entity that onto whose stream the status update will be posted.'),
+    '#description' => t('The type of entity onto whose stream the status update will be posted.'),
     '#options' => $options,
   );
 }
@@ -109,6 +116,35 @@ function fbss_rules_can_post($recipient, $sender, $settings) {
     $settings['type'] = $context['handler']->type();
   }
   return facebook_status_user_access('add', $recipient, $settings['type'], $sender);
+}
+
+/**
+ * Builds the form for the fbss_rules_rules_condition_is_type condition.
+ */
+function fbss_rules_rules_condition_is_type_form($settings, &$form) {
+  $settings += array('types' => array());
+  $contexts = module_invoke_all('facebook_status_context_info');
+  $options = array();
+  foreach ($contexts as $key => $context) {
+    $options[$key] = $context['title'];
+  }
+  $form['settings']['types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Recipient type'),
+    '#default_value' => $settings['types'],
+    '#description' => t('The types of recipients allowed for this condition to be true.'),
+    '#options' => $options,
+  );
+}
+
+/**
+ * Checks if the status recipient is one of a specified type.
+ */
+function fbss_rules_rules_condition_is_type($status, $settings) {
+  if (empty($settings['types'])) {
+    return FALSE;
+  }
+  return !empty($settings['types'][$status->type]);
 }
 
 /**
@@ -203,28 +239,7 @@ function fbss_rules_edit_action_form($settings, &$form) {
  * Edits a status.
  */
 function fbss_rules_edit_action($settings) {
-  $status_old = facebook_status_load($settings['sid']);
-  $context = facebook_status_determine_context($status_old->type);
-  $new_status = trim($settings['message']);
-  $time = time();
-  global $user;
-  // Pretend to have set a new status if the submitted status is exactly the same as the old one.
-  if ($new_status != $status_old->message) {
-    $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d";
-    db_query($sql, $new_status, $time, $status_old->sid);
-    // Invokes hook_facebook_status_save($status, $edit).
-    $status_old->message = $new_status;
-    $status_old->created = $time;
-    module_invoke_all('facebook_status_save', $status_old, $context, TRUE);
-  }
-  // Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
-  if (module_exists('trigger') && !empty($new_status)) {
-    $op = 'fbss_edited_'. $status_old->type;
-    if ($status_old->type == 'user') {
-      $op .= ($status_old->recipient == $status_old->sender ? '_self' : '_other');
-    }
-    module_invoke_all('facebook_status', $op, $status_old, $context);
-  }
+  facebook_status_edit_status(facebook_status_load($settings['sid']), $settings['message']);
 }
 
 /**

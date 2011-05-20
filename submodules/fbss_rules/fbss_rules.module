@@ -15,11 +15,13 @@ function fbss_rules_facebook_status_delete($sid) {
 /**
  * Implementation of hook_facebook_status_save().
  */
-function fbss_rules_facebook_status_save($status, $context, $edit) {
-  if ($edit) {
-    rules_invoke_event('facebook_status_edit', $status/*, $context*/);
-  }
-  else {
-    rules_invoke_event('facebook_status_save', $status/*, $context*/);
+function fbss_rules_facebook_status_save($status, $context, $edit, $options) {
+  if (empty($options['has attachment'])) {
+    if ($edit) {
+      rules_invoke_event('facebook_status_edit', $status/*, $context*/);
+    }
+    else {
+      rules_invoke_event('facebook_status_save', $status/*, $context*/);
+    }
   }
 }

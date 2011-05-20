@@ -33,13 +33,10 @@ function facebook_status_activity_info() {
   $info->object_type = 'facebook_status';
   $info->eid_field = 'sid';
   $info->objects = array('Recipient' => 'facebook_status', 'Sender' => 'sender');
-  $hooks = array('fbss_deleted', 'fbss_edited');
+  $hooks = array('fbss_deleted', 'fbss_edited_user_self', 'fbss_edited_user_other', 'fbss_submitted_user_self', 'fbss_submitted_user_other');
   foreach (facebook_status_all_contexts() as $type => $details) {
-    if ($type == 'user') {
-      $hooks[] = 'fbss_submitted_user_self';
-      $hooks[] = 'fbss_submitted_user_other';
-    }
-    else {
+    if ($type != 'user') {
+      $hooks[] = 'fbss_edited_'. $type;
       $hooks[] = 'fbss_submitted_'. $type;
     }
   }
@@ -145,4 +142,20 @@ function facebook_status_load_activity_context($hook, $op, $id) {
   }
 
   return $activity_context;
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ * Activity 2.
+*/
+function facebook_status_form_activity_form_alter(&$form, &$form_state) {
+  if ($form_state['storage']['values']['triggers']['hook'] == 'facebook_status') {
+    $op = $form_state['storage']['values']['operations']['operation'];
+    // Remove the "Recipient" field unless this is for a user posting a message to another user.
+    if ($op != 'fbss_submitted_user_other' && $op != 'fbss_edited_user_other') {
+      foreach (activity_enabled_languages() as $id => $language) {
+        unset($form[$id .'_fieldset']['facebook_status-pattern-'. $id]);
+      }
+    }
+  }
 }

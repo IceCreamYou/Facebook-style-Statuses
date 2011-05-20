@@ -44,9 +44,11 @@ function hook_facebook_status_user_access_alter(&$allow, $op, $args) {
  *   - timed override: Whether a status update will be overwritten if a new one
  *     is submitted within FACEBOOK_STATUS_OVERRIDE_TIMER seconds.
  *   - discard blank statuses: Whether blank status messages will be discarded.
+ * @param $edit
+ *   TRUE if the status is being edited; FALSE if it is being created.
  * @see facebook_status_save_status()
  */
-function hook_facebook_status_save_options_alter(&$options) {
+function hook_facebook_status_save_options_alter(&$options, $edit) {
   //If we allow saving attachments with statuses, then we could have different
   //attachments with the same message, so we need to allow saving statuses with
   //duplicate messages.
@@ -163,10 +165,17 @@ function hook_facebook_status_delete($sid) {
  *   TRUE if the incoming status was just edited; FALSE if the status is
  *   entirely new. Note that editing can mean either saving the edit form or
  *   overwriting a previous status by timed override.
+ * @param $options
+ *   An associative array containing:
+ *   - discard duplicates: Whether a new status containing exactly the same
+ *     message as the previous status will be saved or discarded.
+ *   - timed override: Whether a status update will be overwritten if a new one
+ *     is submitted within FACEBOOK_STATUS_OVERRIDE_TIMER seconds.
+ *   - discard blank statuses: Whether blank status messages will be discarded.
  * @see facebook_status_save_status()
  * @see facebook_status_edit_submit()
  */
-function hook_facebook_status_save($status, $context, $edit) {
+function hook_facebook_status_save($status, $context, $edit, $options) {
   if ($edit) {
     drupal_set_message(t('The status message has been saved.'));
   }

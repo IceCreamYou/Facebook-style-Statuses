@@ -57,7 +57,12 @@ function _fbss_userpoints_validate($form, &$form_state) {
 /**
  * Implementation of hook_facebook_status_save().
  */
-function fbss_userpoints_facebook_status_save($status, $context, $edit) {
+function fbss_userpoints_facebook_status_save($status, $context, $edit, $options) {
+  // If the FBSMP module is enabled and there is an attachment on this status,
+  // FBSMP will take care of handling userpoints.
+  if (!empty($options['has attachment'])) {
+    return;
+  }
   $sender = _facebook_status_user_load($status->sender);
   $recipient = $context['handler']->load_recipient($status->recipient);
   $points_today = db_result(db_query("SELECT SUM(points) FROM {userpoints_txn}

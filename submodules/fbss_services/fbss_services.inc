@@ -127,34 +127,15 @@ function fbss_services_update($sid, $message) {
   if (drupal_strlen($message) > $maxlen && $maxlen != 0) {
     return services_error('The status must be no longer than '. $maxlen .' characters', 406);
   }
-  $status_old = facebook_status_load($sid);
-  if (empty($status_old)) {
+  $status = facebook_status_load($sid);
+  if (empty($status)) {
     return services_error('Status sid '. $sid .' not found', 404);
   }
-  $context = facebook_status_determine_context($status_old->type);
-  $time = time();
-  global $user;
-  // Pretend to have set a new status if the submitted status is exactly the same as the old one.
-  if ($message != $status_old->message) {
-    $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d";
-    db_query($sql, $message, $time, $sid);
-    // Invokes hook_facebook_status_save($status, $edit).
-    $status_old->message = $message;
-    $status_old->created = $time;
-    module_invoke_all('facebook_status_save', $status_old, $context, TRUE);
-  }
-  // Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
-  if (module_exists('trigger') && !empty($message)) {
-    $op = 'fbss_edited_'. $status_old->type;
-    if ($status_old->type == 'user') {
-      $op .= ($status_old->recipient == $status_old->sender ? '_self' : '_other');
-    }
-    module_invoke_all('facebook_status', $op, $status_old, $context);
-  }
+  $status = facebook_status_edit_status($status, $message);
   if ($uri = services_resource_uri(array('status', $sid))) {
-    $status_old->uri = $uri;
+    $status->uri = $uri;
   }
-  return $status_old;
+  return $status;
 }
 
 /**

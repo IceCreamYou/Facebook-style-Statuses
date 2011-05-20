@@ -71,30 +71,9 @@ function facebook_status_edit_validate($form, &$form_state) {
  * Submit function for the status update form.
  */
 function facebook_status_edit_submit($form, &$form_state) {
-  $status_old = facebook_status_load($form_state['values']['sid']);
-  $context = facebook_status_determine_context($status_old->type);
-  $new_status = trim($form_state['values']['fbss-status']);
-  $time = time();
-  global $user;
-  // Pretend to have set a new status if the submitted status is exactly the same as the old one.
-  if ($new_status != $status_old->message) {
-    $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d";
-    db_query($sql, $new_status, $time, $status_old->sid);
-    // Invokes hook_facebook_status_save($status, $edit).
-    $status_old->message = $new_status;
-    $status_old->created = $time;
-    module_invoke_all('facebook_status_save', $status_old, $context, TRUE);
-  }
+  facebook_status_edit_status(facebook_status_load($form_state['values']['sid']), $form_state['values']['fbss-status']);
   $form_state['redirect'] = empty($_GET['destination']) ? array('statuses/share') : array($_GET['destination']);
   drupal_set_message(t('Status has been successfully edited.'));
-  // Trigger integration. Don't call if the status is blank because usually nothing interesting is happening.
-  if (module_exists('trigger') && !empty($new_status)) {
-    $op = 'fbss_edited_'. $status_old->type;
-    if ($status_old->type == 'user') {
-      $op .= ($status_old->recipient == $status_old->sender ? '_self' : '_other');
-    }
-    module_invoke_all('facebook_status', $op, $status_old, $context);
-  }
   // Modal Frame integration.
   if (module_exists('modalframe')) {
     modalframe_close_dialog();
