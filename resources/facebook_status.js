@@ -162,7 +162,7 @@ function fbss_refresh() {
     var location = window.location.pathname +'?';
     // Build the relative URL with query parameters.
     var query = window.location.search.substring(1);
-    if (query.trim() != "") {
+    if ($.trim(query) != "") {
       location += query +'&';
     }
     // IE will cache the result unless we add an identifier (in this case, the time).
