@@ -98,6 +98,18 @@ function _facebook_status_contexts_schema() {
         'not null' => TRUE,
         'description' => 'Additional DOM selectors representing sections of the page that should be automatically refreshed via AJAX when a status is saved.',
       ),
+      'visibility' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => -1,
+        'size' => 'tiny',
+        'description' => 'Flag to indicate how to apply contexts on pages. (-1 = Use module default settings, 0 = Show on all pages except listed pages, 1 = Show only on listed pages, 2 = Use custom PHP code to determine visibility)',
+      ),
+      'pages' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Contains either a list of paths on which to include/exclude the context or PHP code, depending on "visibility" setting.',
+      ),
     ),
     'indexes' => array(
       'weight' => array('weight'),
@@ -313,6 +325,26 @@ function facebook_status_update_6301() {
   $text = str_replace('@status', '@message', $text);
   variable_set('facebook_status_repost', $text);
   return array();
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function facebook_status_update_6302() {
+  $ret = array();
+  db_add_field($ret, 'facebook_status_contexts', 'visibility', array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => -1,
+    'size' => 'tiny',
+    'description' => 'Flag to indicate how to apply contexts on pages. (-1 = Use module default settings, 0 = Show on all pages except listed pages, 1 = Show only on listed pages, 2 = Use custom PHP code to determine visibility)',
+  ));
+  db_add_field($ret, 'facebook_status_contexts', 'pages', array(
+    'type' => 'text',
+    'not null' => TRUE,
+    'description' => 'Contains either a list of paths on which to include/exclude the context or PHP code, depending on "visibility" setting.',
+  ));
+  return $ret;
 }
 
 /**

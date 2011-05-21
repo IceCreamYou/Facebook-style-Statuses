@@ -114,6 +114,14 @@ function hook_facebook_status_link_alter(&$links, $status) {
  *     new status of the relevant type is saved. Do not include selectors that
  *     include the status update form.
  *   - view (optional): The default view to use as the context stream.
+ *   - visibility (optional): Flag to indicate how to apply contexts on pages.
+ *     (-1 = Use module default settings, 0 = Show on all pages except listed
+ *     pages, 1 = Show only on listed pages, 2 = Use custom PHP code to
+ *     determine visibility.)
+ *   - pages (optional): Either a list of paths on which to include/exclude the
+ *     context or PHP code, depending on "visibility" setting. Visibility and
+ *     pages provide a user-facing way of overriding the is_applicable()
+ *     function of the context handler.
  *   - weight (optional): The default precedence of the context type.
  *   - file (optional): A file to load before loading the context handler.
  * @see facebook_status_all_contexts()

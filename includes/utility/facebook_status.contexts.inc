@@ -256,3 +256,40 @@ class facebook_status_og_context extends facebook_status_node_context {
       og_is_group_member($recipient->nid, TRUE, $account->uid);
   }
 }
+
+/**
+ * The taxonomy term context.
+ */
+class facebook_status_term_context extends facebook_status_context {
+  function type() {
+    return 'term';
+  }
+  function is_applicable() {
+    return arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2));
+  }
+  function find_recipient() {
+    return $this->is_applicable() ? taxonomy_get_term(arg(2)) : new stdClass();
+  }
+  function load_recipient($id) {
+    return taxonomy_get_term($id);
+  }
+  function load_random_recipient() {
+    $tid = db_result(db_query_range("SELECT tid FROM {term_data} ORDER BY RAND() ASC", 0, 1));
+    return taxonomy_get_term($tid);
+  }
+  function recipient_id($recipient) {
+    return isset($recipient->tid) ? $recipient->tid : 0;
+  }
+  function recipient_url($recipient) {
+    return 'taxonomy/term/'. $this->recipient_id($recipient);
+  }
+  function recipient_name($recipient) {
+    return isset($recipient->name) ? $recipient->name : '';
+  }
+  function access_view($status, $account) {
+    return parent::access_view($status, $account) || user_access('administer taxonomy', $account);
+  }
+  function access_stream($recipient, $account) {
+    return parent::access_stream($recipient, $account) || user_access('administer taxonomy', $account);
+  }
+}
