@@ -20,6 +20,11 @@
  * @param $view
  *   The machine name of the view to display with the form. Overrides the one
  *   requested by the context.
+ * @param $display
+ *   The machine name of the view display. This is not used internally but
+ *   provided in case any external applications need it. There is no error
+ *   checking on this parameter; it is the caller's responsibility to ensure
+ *   that the specified display is valid and belongs to the relevant view.
  * @return
  *   HTML to display the status update form, or FALSE if:
  *   - The current user has no access to both the form and the associated
@@ -27,7 +32,7 @@
  *   - There are no relevant status messages and the current user does not
  *     have access to use the form
  */
-function theme_facebook_status_form_display($context = NULL, $type = NULL, $view = NULL) {
+function theme_facebook_status_form_display($context = NULL, $type = NULL, $view = NULL, $display = 'default') {
   global $user;
   // $context is NULL, so find everything.
   if (empty($context)) {
@@ -70,12 +75,12 @@ function theme_facebook_status_form_display($context = NULL, $type = NULL, $view
       if (count($args) === 1) {
         $args[1] = $user->uid;
       }
-      $output .= views_embed_view('facebook_status_conversation', 'default', $args[0], $args[1]);
+      $output .= views_embed_view('facebook_status_conversation', $display, $args[0], $args[1]);
       $selectors[] = '.view-id-facebook_status_conversation';
     }
   }
   elseif (!empty($view) && facebook_status_user_access('view_stream', $recipient, $type, $user)) {
-    $output .= views_embed_view($view, 'default', $context['handler']->recipient_id($recipient), $type);
+    $output .= views_embed_view($view, $display, $context['handler']->recipient_id($recipient), $type);
     $selectors[] = '.view-id-'. $view;
   }
   if (!empty($selectors)) {
