@@ -1,22 +1,35 @@
 Drupal.behaviors.fbss_comments = function (context) {
+  // The "Comment" link when there are no comments. Reveals the textarea and save button.
   $(context).find('.fbss-comments-show-comment-form').one('click', function() {
     $(this).hide();
-    $('#'+ this.id +' + div').show();
-    $(this).next().find('.fbss-comments-textarea').focus();
+    var f = $('#'+ this.id +' + div');
+    f.show();
+    var sid = this.id.split('-').pop();
+    f.find('.fbss-comments-replace-'+ sid +'-inner').show();
+    f.find('.fbss-comments-textarea').focus();
     return false;
   });
+  // The "Comment" link when there are comments. Reveals the textarea and save button.
   $(context).find('.fbss-comments-show-comment-form-inner').one('click', function() {
     $(this).hide();
-    $('#'+ this.id +' + div').show();
+    var sid = this.id.split('-').pop();
+    $(this).parents('form').find('.fbss-comments-replace-'+ sid +'-inner').show();
     $(this).parents('form').find('.fbss-comments-textarea').focus();
     return false;
   });
+  // The "Show all X comments" link when there are fewer than 10 comments. Reveals the hidden comments.
   $(context).find('a.fbss-comments-show-comments').one('click', function() {
     $(this).hide();
     $('#'+ this.id +' ~ div.fbss-comments-hide').show();
     return false;
   });
+  // Disable the save button at first.
   $(context).find('.fbss-comments-submit').attr('disabled', true);
+  // Disable the save button after saving a comment.
+  $(context).find('.fbss-comments-comment-form').bind('ahah_success', function() {
+    $(this).find('.fbss-comments-submit').attr('disabled', true);
+  });
+  // Enable the save button if there is text in the textarea.
   $(context).find('.fbss-comments-textarea').keypress(function(key) {
     var th = $(this);
     setTimeout(function() {

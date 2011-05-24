@@ -20,6 +20,35 @@ function facebook_status_tags_views_default_views() {
   $view->disabled = !module_exists('taxonomy');
   $handler = $view->new_display('default', 'Tag Reference', 'default');
   $handler->override_option('fields', array(
+    'sid' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 1,
+      'id' => 'sid',
+      'table' => 'facebook_status',
+      'field' => 'sid',
+      'relationship' => 'none',
+    ),
     'user_contextual_pic' => array(
       'label' => '',
       'alter' => array(
@@ -73,8 +102,8 @@ function facebook_status_tags_views_default_views() {
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
-        'make_link' => 0,
-        'path' => '',
+        'make_link' => 1,
+        'path' => 'statuses/[sid]',
         'alt' => '',
         'prefix' => '',
         'suffix' => '',
@@ -275,6 +304,35 @@ function facebook_status_tags_views_default_views() {
   $view->disabled = FALSE;
   $handler = $view->new_display('default', 'User Reference', 'default');
   $handler->override_option('fields', array(
+    'sid' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 1,
+      'id' => 'sid',
+      'table' => 'facebook_status',
+      'field' => 'sid',
+      'relationship' => 'none',
+    ),
     'user_contextual_pic' => array(
       'label' => '',
       'alter' => array(
@@ -328,8 +386,8 @@ function facebook_status_tags_views_default_views() {
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
-        'make_link' => 0,
-        'path' => '',
+        'make_link' => 1,
+        'path' => 'statuses/[sid]',
         'alt' => '',
         'prefix' => '',
         'suffix' => '',

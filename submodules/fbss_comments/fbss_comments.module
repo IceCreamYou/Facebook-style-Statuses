@@ -544,7 +544,7 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
   if (count($comments)) {
     $form['start-hide'] = array('#value' => '<div class="fbss-comments-show-comment-form-inner" id="fbss-comments-inner-toggle-'. $sid .'">'.
       l(t('Comment'), 'statuses/'. $sid, array('attributes' => array('class' => 'fbss-comments-show-comment-inner-form-link')))
-      .'</div><div class="fbss-comments-hide fbss-comments-replace-inner-'. $sid .'">');
+      .'</div><div class="fbss-comments-hide fbss-comments-replace-'. $sid .'-inner">');
   }
   $form['status-comment'] = array(
     '#type' => 'textarea',
@@ -552,10 +552,16 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
     '#attributes' => array('class' => 'fbss-comments-textarea'),
     '#resizable' => FALSE,
   );
+  if (count($comments)) {
+    $form['end-hide'] = array('#value' => '</div>');
+  }
+  $form['after'] = array('#value' => '</div>');
   $form['save'] = array(
     '#type' => 'submit',
     '#value' => t('Comment'),
     '#attributes' => array('class' => 'fbss-comments-submit'),
+    '#prefix' => '<div class="fbss-comments-hide fbss-comments-replace-'. $sid .'-inner">',
+    '#suffix' => '</div>',
     '#ahah' => array(
       'path' => 'fbss_comments/js/refresh',
       'wrapper' => 'fbss-comments-replace-'. $sid,
@@ -563,14 +569,11 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
       'method' => 'replace',
     ),
   );
-  if (count($comments)) {
-    $form['end-hide'] = array('#value' => '</div>');
-  }
-  $form['after'] = array('#value' => '</div>');
   $form['#sid'] = $sid;
   if ($form_state['fbss_comments']['sid']) {
     $form['#sid'] = $form_state['fbss_comments']['sid'];
   }
+  $form['#attributes'] = array('class' => 'fbss-comments-comment-form');
   return $form;
 }
 
@@ -610,7 +613,7 @@ function fbss_comments_save_js() {
   // Get HTML for the replacement form. Only these elements will be AHAH-refreshed.
   $new_form['comments']       = $form['comments'];
   $new_form['status-comment'] = $form['status-comment'];
-  $new_form['save']           = $form['save'];
+  //$new_form['save']           = $form['save'];
   $output = theme('status_messages') . drupal_render($new_form);
   // Return the results.
   drupal_json(array('status' => TRUE, 'data' => $output));
@@ -632,7 +635,7 @@ function fbss_comments_facebook_status_delete($sid) {
  */
 function fbss_comments_preprocess_facebook_status_item(&$vars) {
   if ($vars['options']['extras']) {
-    $vars['comments'] = theme('fbss_comments_form_display', $status->sid, FALSE, FALSE);
+    $vars['comments'] = theme('fbss_comments_form_display', $vars['status']->sid, FALSE, FALSE);
   }
 }
 

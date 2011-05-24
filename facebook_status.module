@@ -141,7 +141,8 @@ function facebook_status_menu() {
       'description' => 'Generate a given number of statuses. Optionally delete current items.',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('facebook_status_generate_form'),
-      'access callback' => '_facebook_status_generate_access',
+      'access callback' => 'facebook_status_user_access',
+      'access arguments' => array('generate'),
       'file' => 'includes/utility/facebook_status.generate.inc',
     );
   }
@@ -462,6 +463,7 @@ function theme_facebook_status_time($time) {
  *     - $recipient: The owner of the stream being viewed
  *     - $account: The user object of the person taking the action (defaults to
  *       the current user)
+ *   - 'generate': (no other parameters)
  * @return
  *   TRUE if the user has permission to perform the task; FALSE otherwise.
  */

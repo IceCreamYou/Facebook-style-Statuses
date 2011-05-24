@@ -124,3 +124,13 @@ function facebook_status_user_access_view_stream($recipient = NULL, $type = 'use
   $context = facebook_status_determine_context($type);
   return $context['handler']->access_stream($recipient, $account);
 }
+
+/**
+ * Checks permission to generate status updates via Devel Generate.
+ */
+function facebook_status_user_access_generate() {
+  return user_access('delete all statuses') &&
+    user_access('post status messages to other streams') &&
+    user_access('send messages to all users at once') &&
+    user_access('administer Facebook-style Statuses settings');
+}

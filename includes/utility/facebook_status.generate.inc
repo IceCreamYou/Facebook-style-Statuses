@@ -6,16 +6,6 @@
  */
 
 /**
- * Access callback for the Generate statuses page.
- */
-function _facebook_status_generate_access() {
-  return user_access('delete all statuses') &&
-    user_access('post status messages to other streams') &&
-    user_access('send messages to all users at once') &&
-    user_access('administer Facebook-style Statuses settings');
-}
-
-/**
  * The Generate statuses form.
  */
 function facebook_status_generate_form($form_state) {

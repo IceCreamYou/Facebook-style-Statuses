@@ -22,6 +22,35 @@ function fbss_flag_views_default_views() {
   $view->disabled = !flag_get_flag('follow')->status; // Line modified from default
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('fields', array(
+    'sid' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 1,
+      'id' => 'sid',
+      'table' => 'facebook_status',
+      'field' => 'sid',
+      'relationship' => 'none',
+    ),
     'user_contextual_pic' => array(
       'label' => '',
       'alter' => array(
@@ -143,8 +172,8 @@ function fbss_flag_views_default_views() {
       'alter' => array(
         'alter_text' => 0,
         'text' => '',
-        'make_link' => 0,
-        'path' => '',
+        'make_link' => 1,
+        'path' => 'statuses/[sid]',
         'link_class' => '',
         'alt' => '',
         'prefix' => '',

@@ -13,7 +13,7 @@
  *   decide conclusively that the action is definitely (not) permitted.
  * @param $op
  *   The action being taken. One of add, converse, delete, edit, view,
- *   view_stream.
+ *   view_stream, generate.
  * @param $args
  *   An array of additional arguments. Varies depending on $op.
  * @see facebook_status_user_access()
