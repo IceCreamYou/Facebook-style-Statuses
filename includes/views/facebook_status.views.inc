@@ -100,7 +100,7 @@ function facebook_status_views_data() {
       'click sortable' => TRUE,
     ),
     'filter' => array(
-      'handler' => 'views_handler_filter_string',
+      'handler' => 'facebook_status_views_handler_filter_type',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -344,6 +344,9 @@ function facebook_status_views_handlers() {
       ),
       'facebook_status_views_handler_filter_own' => array(
         'parent' => 'views_handler_filter_boolean_operator',
+      ),
+      'facebook_status_views_handler_filter_type' => array(
+        'parent' => 'views_handler_filter_in_operator',
       ),
     ),
   );
