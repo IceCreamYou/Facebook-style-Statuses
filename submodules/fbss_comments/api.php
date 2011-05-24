@@ -46,7 +46,7 @@ function hook_fbss_comments_delete($cid) {
  *   The action being taken on the comment. One of view, post, edit, delete.
  * @param $comment
  *   The comment object on which the action is being taken.
- * @param account
+ * @param $account
  *   The user object of the person taking the action.
  * @see fbss_comments_can()
  */

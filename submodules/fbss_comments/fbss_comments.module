@@ -322,8 +322,12 @@ function fbss_comments_get_comments($sid, $filter_view_access = FALSE) {
 /**
  * Saves a status comment.
  *
+ * @param $sid
+ *   The ID of the status on which the comment was saved.
  * @param $comment
- *   The status comment object.
+ *   The status comment text.
+ * @param $uid
+ *   The ID of the user who saved the comment.
  * @return
  *   The saved status comment object.
  */

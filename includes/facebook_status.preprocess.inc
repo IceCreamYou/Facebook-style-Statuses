@@ -80,7 +80,9 @@ function _facebook_status_show($status, $options) {
       $title = t('@sender: @message', array('@sender' => $sender->name, '@message' => $message));
     }
     else {
-      $recipient = _facebook_status_user_load($status->recipient);
+      $context = facebook_status_determine_context($status->type);
+      $recipient = $context['handler']->load_recipient($status->recipient);
+      $recipient_name = $context['handler']->recipient_name($recipient);
       //"\xC2\xBB" is the unicode escape sequence for the HTML entity &raquo; (a double right angle bracket)
       $title = t("@sender \xC2\xBB @recipient: @message",
         array('@sender' => $sender->name, '@recipient' => $recipient->name, '@message' => $message)
