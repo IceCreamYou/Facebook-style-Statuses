@@ -6,37 +6,16 @@
  */
 
 /**
- * Alter user access.
+ * React to a status being saved.
  *
- * @param $allow
- *   Whether the action is permitted to be taken. Change this only if you can
- *   decide conclusively that the action is definitely (not) permitted.
- * @param $op
- *   The action being taken. One of add, converse, delete, edit, view,
- *   view_stream, generate.
- * @param $args
- *   An array of additional arguments. Varies depending on $op.
- * @see facebook_status_user_access()
- */
-function hook_facebook_status_user_access_alter(&$allow, $op, $args) {
-  global $user;
-  switch ($op) {
-    case 'add':
-      $recipient = isset($args[0]) ? $args[0] : $user;
-      $type = isset($args[1]) ? $args[1] : 'user';
-      $sender = isset($args[2]) ? $args[2] : $user;
-      $context = facebook_status_determine_context($type);
-      //Updating one's own status should ALWAYS be allowed.
-      if ($type == 'user' && $context['handler']->recipient_id($recipient) == $sender->uid) {
-        $allow = TRUE;
-      }
-      break;
-  }
-}
-
-/**
- * Alter status save options.
- *
+ * @param $status
+ *   The status object that was just saved.
+ * @param $context
+ *   The stream context array.
+ * @param $edit
+ *   TRUE if the incoming status was just edited; FALSE if the status is
+ *   entirely new. Note that editing can mean either saving the edit form or
+ *   overwriting a previous status by timed override.
  * @param $options
  *   An associative array containing:
  *   - discard duplicates: Whether a new status containing exactly the same
@@ -44,52 +23,28 @@ function hook_facebook_status_user_access_alter(&$allow, $op, $args) {
  *   - timed override: Whether a status update will be overwritten if a new one
  *     is submitted within FACEBOOK_STATUS_OVERRIDE_TIMER seconds.
  *   - discard blank statuses: Whether blank status messages will be discarded.
- * @param $edit
- *   TRUE if the status is being edited; FALSE if it is being created.
  * @see facebook_status_save_status()
+ * @see facebook_status_edit_submit()
  */
-function hook_facebook_status_save_options_alter(&$options, $edit) {
-  //If we allow saving attachments with statuses, then we could have different
-  //attachments with the same message, so we need to allow saving statuses with
-  //duplicate messages.
-  if (module_exists('fbsmp')) {
-    $options['discard duplicates'] = FALSE;
+function hook_facebook_status_save($status, $context, $edit, $options) {
+  if ($edit) {
+    drupal_set_message(t('The status message has been saved.'));
+  }
+  else {
+    drupal_set_message(t('The status message has been updated.'));
   }
 }
 
 /**
- * Alter the refresh selectors.
+ * React to a status being deleted.
  *
- * Refresh selectors are DOM paths that specify regions of the page that should
- * be automatically refreshed via AHAH when a status is submitted.
- *
- * @param $selectors
- *   An array of DOM paths.
- * @param $recipient
- *   The entity which would receive a status message if one were posted on the
- *   current page.
- * @param
- *   The type of recipient.
- * @see theme_facebook_status_form_display()
- * @see hook_facebook_status_refresh_selectors()
+ * @param $sid
+ *   The status ID.
+ * @see facebook_status_delete_status()
  */
-function hook_facebook_status_refresh_selectors_alter(&$selectors, $recipient, $type) {
-  $selectors[] = '.view-facebook_status-all';
-}
-
-/**
- * Alter status links.
- *
- * @param $links
- *   A structured array as returned by implementations of hook_link().
- * @param $status
- *   A status object.
- * @see _facebook_status_show()
- */
-function hook_facebook_status_link_alter(&$links, $status) {
-  //Capitalize the first letter of every link.
-  foreach ($links as $type => $data) {
-    $links[$type]['title'] = drupal_ucfirst($links[$type]['title']);
+function hook_facebook_status_delete($sid) {
+  if (module_exists('facebook_status_tags')) {
+    db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
   }
 }
 
@@ -150,49 +105,6 @@ function hook_facebook_status_context_info() {
 }
 
 /**
- * React to a status being deleted.
- *
- * @param $sid
- *   The status ID.
- * @see facebook_status_delete_status()
- */
-function hook_facebook_status_delete($sid) {
-  if (module_exists('facebook_status_tags')) {
-    db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
-  }
-}
-
-/**
- * React to a status being saved.
- *
- * @param $status
- *   The status object that was just saved.
- * @param $context
- *   The stream context array.
- * @param $edit
- *   TRUE if the incoming status was just edited; FALSE if the status is
- *   entirely new. Note that editing can mean either saving the edit form or
- *   overwriting a previous status by timed override.
- * @param $options
- *   An associative array containing:
- *   - discard duplicates: Whether a new status containing exactly the same
- *     message as the previous status will be saved or discarded.
- *   - timed override: Whether a status update will be overwritten if a new one
- *     is submitted within FACEBOOK_STATUS_OVERRIDE_TIMER seconds.
- *   - discard blank statuses: Whether blank status messages will be discarded.
- * @see facebook_status_save_status()
- * @see facebook_status_edit_submit()
- */
-function hook_facebook_status_save($status, $context, $edit, $options) {
-  if ($edit) {
-    drupal_set_message(t('The status message has been saved.'));
-  }
-  else {
-    drupal_set_message(t('The status message has been updated.'));
-  }
-}
-
-/**
  * Return a list of DOM selectors whose contents FBSS should automatically
  * update via AJAX when a new status is submitted from a status update form on
  * the same page. Do not select a region which includes the status update form.
@@ -210,6 +122,102 @@ function hook_facebook_status_refresh_selectors($recipient, $type) {
   //Automatically update all instances of the view that is displayed for this context.
   $context = facebook_status_determine_context($type);
   return array('.view-id-'. $context['view']);
+}
+
+/**
+ * hook_link() is invoked with parameters 'facebook_status' and $status.
+ * Implement it just like you would implement hook_link() with nodes.
+ *
+ * @param $type
+ *   The type of link being processed.
+ * @param $status
+ *   The status object.
+ * @return
+ *   A structured array which will be run through drupal_render() to produce
+ *   links that will be displayed with themed statuses.
+ * @see facebook_status_link()
+ * @see _facebook_status_show()
+ */
+if (!function_exists('hook_link')) {
+  function hook_link($type, $object, $teaser = FALSE) {
+    $links = array();
+    if ($type == 'facebook_status') {
+      $status = $object;
+      $links['permalink'] = array(
+        'href' => 'statuses/'. $status->sid,
+        'title' => t('Permalink'),
+      );
+    }
+    return $links;
+  }
+}
+
+/**
+ * Alter status links.
+ *
+ * @param $links
+ *   A structured array as returned by implementations of hook_link().
+ * @param $status
+ *   A status object.
+ * @see _facebook_status_show()
+ */
+function hook_facebook_status_link_alter(&$links, $status) {
+  //Capitalize the first letter of every link.
+  foreach ($links as $type => $data) {
+    $links[$type]['title'] = drupal_ucfirst($links[$type]['title']);
+  }
+}
+
+/**
+ * Alter status save options.
+ *
+ * @param $options
+ *   An associative array containing:
+ *   - discard duplicates: Whether a new status containing exactly the same
+ *     message as the previous status will be saved or discarded.
+ *   - timed override: Whether a status update will be overwritten if a new one
+ *     is submitted within FACEBOOK_STATUS_OVERRIDE_TIMER seconds.
+ *   - discard blank statuses: Whether blank status messages will be discarded.
+ * @param $edit
+ *   TRUE if the status is being edited; FALSE if it is being created.
+ * @see facebook_status_save_status()
+ */
+function hook_facebook_status_save_options_alter(&$options, $edit) {
+  //If we allow saving attachments with statuses, then we could have different
+  //attachments with the same message, so we need to allow saving statuses with
+  //duplicate messages.
+  if (module_exists('fbsmp')) {
+    $options['discard duplicates'] = FALSE;
+  }
+}
+
+/**
+ * Alter user access.
+ *
+ * @param $allow
+ *   Whether the action is permitted to be taken. Change this only if you can
+ *   decide conclusively that the action is definitely (not) permitted.
+ * @param $op
+ *   The action being taken. One of add, converse, delete, edit, view,
+ *   view_stream, generate.
+ * @param $args
+ *   An array of additional arguments. Varies depending on $op.
+ * @see facebook_status_user_access()
+ */
+function hook_facebook_status_user_access_alter(&$allow, $op, $args) {
+  global $user;
+  switch ($op) {
+    case 'add':
+      $recipient = isset($args[0]) ? $args[0] : $user;
+      $type = isset($args[1]) ? $args[1] : 'user';
+      $sender = isset($args[2]) ? $args[2] : $user;
+      $context = facebook_status_determine_context($type);
+      //Updating one's own status should ALWAYS be allowed.
+      if ($type == 'user' && $context['handler']->recipient_id($recipient) == $sender->uid) {
+        $allow = TRUE;
+      }
+      break;
+  }
 }
 
 /**
@@ -234,16 +242,21 @@ function hook_facebook_status_form_ahah_alter(&$new_form, $old_form) {
 }
 
 /**
- * hook_link() is invoked with parameters 'facebook_status' and $status.
- * Implement it just like you would implement hook_link() with nodes.
+ * Alter the refresh selectors.
  *
- * @param $type
- *   The type of link being processed.
- * @param $status
- *   The status object.
- * @return
- *   A structured array which will be run through drupal_render() to produce
- *   links that will be displayed with themed statuses.
- * @see facebook_status_link()
- * @see _facebook_status_show()
+ * Refresh selectors are DOM paths that specify regions of the page that should
+ * be automatically refreshed via AHAH when a status is submitted.
+ *
+ * @param $selectors
+ *   An array of DOM paths.
+ * @param $recipient
+ *   The entity which would receive a status message if one were posted on the
+ *   current page.
+ * @param
+ *   The type of recipient.
+ * @see theme_facebook_status_form_display()
+ * @see hook_facebook_status_refresh_selectors()
  */
+function hook_facebook_status_refresh_selectors_alter(&$selectors, $recipient, $type) {
+  $selectors[] = '.view-facebook_status-all';
+}

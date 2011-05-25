@@ -145,17 +145,17 @@ class facebook_status_user_context extends facebook_status_context {
       if ($count === 1) {
         return is_numeric($args[0]) ? _facebook_status_user_load($args[0]) : $user;
       }
-      else if ($count == 2) {
+      elseif ($count == 2) {
         if ($args[0] == $user->uid) {
           return is_numeric($args[1]) ? _facebook_status_user_load($args[1]) : $user;
         }
-        else if ($args[1] == $user->uid) {
+        elseif ($args[1] == $user->uid) {
           return is_numeric($args[0]) ? _facebook_status_user_load($args[0]) : $user;
         }
       }
       return $user;
     }
-    return arg(0) == 'user' && is_numeric(arg(1)) ? /*menu_get_object('user')*/ _facebook_status_user_load(arg(1)) : $GLOBALS['user'];
+    return arg(0) == 'user' && is_numeric(arg(1)) ? /* menu_get_object('user') */ _facebook_status_user_load(arg(1)) : $GLOBALS['user'];
   }
   function load_recipient($id) {
     // FBSS has its own user_load() with extra caching for efficiency.

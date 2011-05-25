@@ -51,10 +51,6 @@
   margin: 0 1.5em;
 }
 
-.fbss-comments-hide {
-  display: none;
-}
-
 .fbss-comments-textarea {
   width: 100%;
   /* line-height: 1em; */
@@ -80,5 +76,9 @@
   padding-bottom: 0.5em;
 }
 
-/* The "Show all comments" link when it expands instead of redirecting. */
-.fbss-comments-show-comments {}
+/* These are "show" links that should not be visible to users with JS disabled. */
+.fbss-comments-show-comment-form,
+.fbss-comments-show-comment-form-inner,
+.fbss-comments-show-comments {
+  display: none;
+}

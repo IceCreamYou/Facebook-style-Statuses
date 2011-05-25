@@ -169,14 +169,12 @@ function fbss_refresh() {
     $.get(location +"ts="+ (new Date()).getTime(), function(data, textStatus) {
       // From load() in jQuery source. We already have the scripts we need.
       var new_data = data.replace(/<script(.|\s)*?\/script>/g, "");
-      /*
       if (Drupal.settings.fbss_comments && Drupal.settings.fbss_comments.ahah_enabled) {
         // EVIL BLACK MAGIC - updates Drupal.settings.ahah to reflect AHAH forms that are about to be loaded
         var settings_script = data.match(/(<script[\s\S]*?Drupal\.settings\,\s)((.|\s)*?)\/script>/)[2];
         eval('Drupal.settings2 = '+ settings_script.substring(0, settings_script.length-15));
         $.extend(Drupal.settings.ahah, Drupal.settings2.ahah);
       }
-       */
       // From ahah.js. Apparently Safari crashes with just $().
       var new_content = $('<div></div>').html(new_data);
       if (textStatus != 'error' && new_content) {

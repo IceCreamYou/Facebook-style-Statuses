@@ -23,6 +23,11 @@ Drupal.behaviors.fbss_comments = function (context) {
     $('#'+ this.id +' ~ div.fbss-comments-hide').show();
     return false;
   });
+  // Hide things we're not ready to show yet.
+  $(context).find('.fbss-comments-hide').hide();
+  // Show things we're not ready to hide yet.
+  $(context).find('.fbss-comments-show-comment-form, .fbss-comments-show-comment-form-inner, .fbss-comments-show-comments').show();
+  $(context).find('.fbss-comments-show-comments').css('display', 'block');
   // Disable the save button at first.
   $(context).find('.fbss-comments-submit').attr('disabled', true);
   // Disable the save button after saving a comment.

@@ -13,6 +13,7 @@
  *       + popups api
  *       + sms framework
  *       + views bulk operations
+ *       + notifications
  *   - Turn the comment theme functions into templates.
  */
 
@@ -36,6 +37,15 @@ function fbss_comments_init() {
  */
 function fbss_comments_menu() {
   $items = array();
+  $items['admin/settings/facebook_status/fbss_comments'] = array(
+    'title' => 'Comments',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fbss_comments_admin'),
+    'access arguments' => array('administer Facebook-style Statuses settings'),
+    'description' => 'Allows administrators to adjust settings for Facebook-style Statuses Comments.',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'fbss_comments.pages.inc',
+  );
   $items['statuses/comment/%fbss_comments/edit'] = array(
     'title' => 'Edit status comment',
     'page callback' => 'drupal_get_form',
@@ -43,7 +53,7 @@ function fbss_comments_menu() {
     'access callback' => 'fbss_comments_can',
     'access arguments' => array('edit', 2),
     'type' => MENU_CALLBACK,
-    'file' => 'fbss_comments.edit.inc',
+    'file' => 'fbss_comments.pages.inc',
   );
   $items['statuses/comment/%fbss_comments/delete'] = array(
     'title' => 'Delete status comment',
@@ -52,7 +62,7 @@ function fbss_comments_menu() {
     'access callback' => 'fbss_comments_can',
     'access arguments' => array('delete', 2),
     'type' => MENU_CALLBACK,
-    'file' => 'fbss_comments.edit.inc',
+    'file' => 'fbss_comments.pages.inc',
   );
   $items['fbss_comments/js/refresh'] = array(
     'title' => 'Save status comment form',
@@ -195,9 +205,9 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_js($path .'/fbss_comments.js');
   $output = '<div class="fbss-comments">';
-  if ($count > 3 && $delay_load) {
+  if ($count > variable_get('fbss_comments_hide_small', 3) && $delay_load) {
     $options = array('attributes' => array('class' => 'fbss-comments-show-comments-link fbss-comments-show-comments', 'id' => 'fbss-comments-toggle-'. $comments[0]->sid));
-    if ($count > 9) {
+    if ($count >= variable_get('fbss_comments_show_all', 10)) {
       $options['attributes']['class'] = 'fbss-comments-show-comments-link';
     }
     $output .= l(t('Show all @count comments', array('@count' => $count)), 'statuses/'. $comments[0]->sid, $options);
@@ -217,10 +227,10 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
     else {
       $classes[] = 'even';
     }
-    if ($count > 3 && $key != $count - 1 && $key != $count - 2 && $delay_load) {
+    if ($count > variable_get('fbss_comments_hide_small', 3) && $key <= $count - variable_get('fbss_comments_hide_small', 3) && $delay_load) {
       $classes[] = 'fbss-comments-hide';
     }
-    if (!$delay_load || $count < 10 || $key == $count - 1 || $key == $count - 2) {
+    if (!$delay_load || $count < variable_get('fbss_comments_show_all', 10) || $key > $count - variable_get('fbss_comments_hide_small', 3)) {
       $result = theme('fbss_comments_item', $comment, $classes, $destination);
       if (!empty($result)) {
         $output .= $result;
@@ -266,9 +276,9 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
       $output = '<span class="fbss-comments-show-comment-form" id="fbss-comments-toggle-'. $sid .'">'.
         l(t('Comment'), 'statuses/'. $sid, array('attributes' => array('class' => 'fbss-comments-show-comment-form-link')))
         .'</span>';
-        return $output .'<div class="fbss-comments-hide fbss-comments-form">'. drupal_get_form('fbss_comments_box', $sid, $delay_load_comments) .'</div>';
+        return $output .'<div class="fbss-comments-hide fbss-comments-form">'. drupal_get_form('fbss_comments_box_'. $sid, $sid, $delay_load_comments) .'</div>';
     }
-    return '<div class="fbss-comments-form">'. drupal_get_form('fbss_comments_box', $sid, $delay_load_comments) .'</div>';
+    return '<div class="fbss-comments-form">'. drupal_get_form('fbss_comments_box_'. $sid, $sid, $delay_load_comments) .'</div>';
   }
   else if (user_access('view all status comments')) {
     $path = drupal_get_path('module', 'fbss_comments');
@@ -515,6 +525,19 @@ function _fbss_comments_use_autogrow() {
 //=================
 
 /**
+ * Implementation of hook_forms().
+ */
+function fbss_comments_forms($form_id, $args) {
+  if (strpos($form_id, 'fbss_comments_box') === 0) {
+    return array(
+      $form_id => array(
+        'callback' => 'fbss_comments_box',
+      ),
+    );
+  }
+}
+
+/**
  * The status comment form.
  *
  * @param $sid
@@ -527,14 +550,12 @@ function _fbss_comments_use_autogrow() {
  *   thread page. If FALSE the "comment" link with delayed comment form loading
  *   will not be used.
  */
-function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
+function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_css($path .'/fbss_comments.css');
-  /*
   drupal_add_js(array('fbss_comments' => array(
     'ahah_enabled' => (bool) variable_get('fbss_comments_ahah', 0)
   )), 'setting');
-   */
   _fbss_comments_use_autogrow();
   $form = array();
   if (!isset($form_state['fbss_comments']['q'])) {
@@ -542,6 +563,10 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
   }
   else {
     $form['#qu'] = $form_state['fbss_comments']['q'];
+  }
+  if (isset($_GET['view_path'])) {
+    $form['#qu'] = $_GET['view_path'];
+    //$form['#action'] = url($_GET['view_path']);
   }
   $comments = fbss_comments_get_comments($sid, TRUE);
   $form['before'] = array('#value' => '<div id="fbss-comments-replace-'. $sid .'">');
@@ -561,21 +586,22 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
     $form['end-hide'] = array('#value' => '</div>');
   }
   $form['after'] = array('#value' => '</div>');
-  $form['save'] = array(
+  $form['save-'. $sid] = array(
     '#type' => 'submit',
     '#value' => t('Comment'),
     '#attributes' => array('class' => 'fbss-comments-submit'),
     '#prefix' => '<div class="fbss-comments-hide fbss-comments-replace-'. $sid .'-inner">',
     '#suffix' => '</div>',
+    '#submit' => array('fbss_comments_box_submit'),
   );
-  //if (variable_get('fbss_comments_ahah', 0)) {
+  if (variable_get('fbss_comments_ahah', 0)) {
     $form['save']['#ahah'] = array(
       'path' => 'fbss_comments/js/refresh',
       'wrapper' => 'fbss-comments-replace-'. $sid,
       'effect' => 'fade',
       'method' => 'replace',
     );
-  //}
+  }
   $form['#sid'] = $sid;
   if ($form_state['fbss_comments']['sid']) {
     $form['#sid'] = $form_state['fbss_comments']['sid'];
@@ -594,7 +620,12 @@ function fbss_comments_box_submit($form, &$form_state) {
   if (!empty($form_state['values']['status-comment'])) {
     fbss_comments_save_comment($form['#sid'], $form_state['values']['status-comment']);
   }
-  $form_state['rebuild'] = TRUE;
+  // TODO: With AHAH enabled, submitting a comment on a region loaded by AHAH
+  // (like the second page of a View with an AJAX pager) causes the user to end
+  // up on the AHAH callback page.
+  if (variable_get('fbss_comments_ahah', 0)) {
+    $form_state['rebuild'] = TRUE;
+  }
 }
 
 /**
@@ -629,20 +660,6 @@ function fbss_comments_save_js() {
 //===============
 // INTEGRATIONS.
 //===============
-
-/**
- * Implementation of hook_form_FORM_ID_alter().
- *
-function fbss_comments_form_facebook_status_admin_advanced_alter(&$form) {
-  $form['fbss_comments_ahah'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use AHAH to refresh status comment forms without refreshing the page'),
-    '#description' => '<strong>'. t("If you enable this, do NOT use comments on Views with AJAX-enabled pagers. Otherwise comments will not work on pages other than the first page.") .'</strong>',
-    '#default_value' => variable_get('fbss_comments_ahah', 0),
-    '#weight' => -9,
-  );
-}
- */
 
 /**
  * Implementation of hook_facebook_status_delete().
