@@ -82,4 +82,5 @@ function fbss_comments_install() {
  */
 function fbss_comments_uninstall() {
   drupal_uninstall_schema('fbss_comments');
+  //variable_del('facebook_status_ahah');
 }

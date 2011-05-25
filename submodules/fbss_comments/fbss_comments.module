@@ -530,6 +530,11 @@ function _fbss_comments_use_autogrow() {
 function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_css($path .'/fbss_comments.css');
+  /*
+  drupal_add_js(array('fbss_comments' => array(
+    'ahah_enabled' => (bool) variable_get('fbss_comments_ahah', 0)
+  )), 'setting');
+   */
   _fbss_comments_use_autogrow();
   $form = array();
   if (!isset($form_state['fbss_comments']['q'])) {
@@ -562,13 +567,15 @@ function fbss_comments_box($form_state, $sid, $delay_load = TRUE) {
     '#attributes' => array('class' => 'fbss-comments-submit'),
     '#prefix' => '<div class="fbss-comments-hide fbss-comments-replace-'. $sid .'-inner">',
     '#suffix' => '</div>',
-    '#ahah' => array(
+  );
+  //if (variable_get('fbss_comments_ahah', 0)) {
+    $form['save']['#ahah'] = array(
       'path' => 'fbss_comments/js/refresh',
       'wrapper' => 'fbss-comments-replace-'. $sid,
       'effect' => 'fade',
       'method' => 'replace',
-    ),
-  );
+    );
+  //}
   $form['#sid'] = $sid;
   if ($form_state['fbss_comments']['sid']) {
     $form['#sid'] = $form_state['fbss_comments']['sid'];
@@ -622,6 +629,20 @@ function fbss_comments_save_js() {
 //===============
 // INTEGRATIONS.
 //===============
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ *
+function fbss_comments_form_facebook_status_admin_advanced_alter(&$form) {
+  $form['fbss_comments_ahah'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use AHAH to refresh status comment forms without refreshing the page'),
+    '#description' => '<strong>'. t("If you enable this, do NOT use comments on Views with AJAX-enabled pagers. Otherwise comments will not work on pages other than the first page.") .'</strong>',
+    '#default_value' => variable_get('fbss_comments_ahah', 0),
+    '#weight' => -9,
+  );
+}
+ */
 
 /**
  * Implementation of hook_facebook_status_delete().
