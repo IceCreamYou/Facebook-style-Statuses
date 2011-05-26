@@ -2,8 +2,56 @@
 
 /**
  * @file
- *   Edit and delete forms for the Facebook-style Statuses Comments module.
+ *   Form/page callbacks for the Facebook-style Statuses Comments module.
  */
+
+/**
+ * The administrative settings form.
+ */
+function fbss_comments_admin() {
+  $form = array();
+  $form['fbss_comments_ahah'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use AHAH to refresh status comment forms without refreshing the page'),
+    '#description' => '<strong>'. t('If you enable this, do NOT use comments on Views with AJAX-enabled pagers.') .' '.
+      t('Otherwise comments will not work on pages other than the first page.') .'</strong>',
+    '#default_value' => variable_get('fbss_comments_ahah', 0),
+    '#disabled' => TRUE,
+  );
+  $form['fbss_comments_hide_small'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minimum number of comments at which some will be hidden'),
+    '#description' => t('When there are at least this many comments on a status, some will be hidden behind a "Show all comments" link.'),
+    '#default_value' => variable_get('fbss_comments_hide_small', 3),
+    '#size' => 4,
+    '#maxlength' => 4,
+  );
+  $form['fbss_comments_show_all'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minimum number of comments at which the "Show all comments" link will redirect the user to the individual status page'),
+    '#description' => t('When there are at least this many comments on a status, the user will be directed to the status page if they try to view them all.'),
+    '#default_value' => variable_get('fbss_comments_show_all', 10),
+    '#size' => 4,
+    '#maxlength' => 4,
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Validate the administrative settings form.
+ */
+function fbss_comments_admin_validate($form, $form_state) {
+  $v = $form_state['values'];
+  if (!is_numeric($v['fbss_comments_hide_small']) || $v['fbss_comments_hide_small'] < 1) {
+    form_set_error('fbss_comments_hide_small', t('The minimum number of comments at which some will be hidden must be a positive integer.'));
+  }
+  if (!is_numeric($v['fbss_comments_show_all']) || $v['fbss_comments_show_all'] < 1) {
+    form_set_error('fbss_comments_show_all', t('The minimum number of comments at which the "Show all comments" link will redirect the user to the individual status page must be a positive integer.'));
+  }
+  if ($v['fbss_comments_show_all'] < $v['fbss_comments_hide_small']) {
+    form_set_error('fbss_comments_show_all', t('The minimum number of comments at which the "Show all comments" link will redirect the user to the individual status page must be less than the minimum number of comments at which some will be hidden.'));
+  }
+}
 
 /**
  * The edit form for status comments.
