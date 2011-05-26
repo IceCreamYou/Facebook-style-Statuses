@@ -710,7 +710,7 @@ function facebook_status_tags_hook_info() {
  * or
  * Implementation of hook_trigger_name().
  */
-function facebook_status_facebook_status($op, $status, $account) {
+function facebook_status_tags_facebook_status_tags($op, $status, $account) {
   if ($op != 'facebook_status_tags_user_was_tagged') {
     return;
   }

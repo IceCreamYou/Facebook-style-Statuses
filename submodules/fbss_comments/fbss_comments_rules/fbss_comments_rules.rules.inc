@@ -173,6 +173,9 @@ function fbss_comments_rules_edit_action($settings) {
   db_query("UPDATE {fbss_comments} SET comment = '%s' WHERE cid = %d", $settings['message'], $settings['cid']);
   $c = fbss_comments_load($settings['cid']);
   module_invoke_all('fbss_comments_after_save', $c, TRUE);
+  if (module_exists('trigger')) {
+    module_invoke_all('fbss_comments', 'fbss_comments_edited', $c);
+  }
 }
 
 /**
