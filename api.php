@@ -70,13 +70,19 @@ function hook_facebook_status_delete($sid) {
  *     include the status update form.
  *   - view (optional): The default view to use as the context stream.
  *   - visibility (optional): Flag to indicate how to apply contexts on pages.
- *     (-1 = Use module default settings, 0 = Show on all pages except listed
- *     pages, 1 = Show only on listed pages, 2 = Use custom PHP code to
- *     determine visibility.)
+ *     - -1: Use module default settings
+ *     - 0: Show on all pages except listed pages
+ *     - 1: Show only on listed pages
+ *     - 2: Use custom PHP code to determine visibility
+ *     - 3: Use the conditions from a Context from the Context module
  *   - pages (optional): Either a list of paths on which to include/exclude the
  *     context or PHP code, depending on "visibility" setting. Visibility and
  *     pages provide a user-facing way of overriding the is_applicable()
  *     function of the context handler.
+ *   - context (optional): A Context defined by the Context module whose
+ *     conditions should be used to determine whether the stream context
+ *     applies on this page if the "visibility" flag is set appropriately.
+ *     Overrides the is_applicable() function of the context handler.
  *   - weight (optional): The default precedence of the context type.
  *   - file (optional): A file to load before loading the context handler.
  * @see facebook_status_all_contexts()

@@ -565,15 +565,39 @@ function facebook_status_context_load($type) {
  *   The type of context to return. If not specified, the context is
  *   automatically determined.
  * @return
- *   An associative array containing these elements:
- *   - title: The "friendly" name of the context.
- *   - description: An explanation of who owns the stream that the context
- *     defines.
- *   - handler: A context handler object. See facebook_status.contexts.inc to
- *     see the default context handlers and their properties.
- *   - weight: The precedence of the context type.
- *   - file: A file that will be included before any of the associated
- *     functions are run.
+ *   An associative array of associative arrays. The outer array keys indicate
+ *   the context type (machine name). Inner arrays have these elements:
+ *   - title: The "friendly" name of the context type.
+ *   - description (optional): An explanation of who owns the recipient stream
+ *     if this context is used. This will be displayed in a "title" attribute,
+ *     so do not use double quotes.
+ *   - handler: The name of a class that extends facebook_status_context (and
+ *     thus defines useful methods to describe the context).
+ *   - parent (optional): The name of the parent context type (not the
+ *     parent handler).
+ *   - dependencies (optional): An array containing the names of modules that
+ *     must be enabled for that context type to be used.
+ *   - selectors (optional): A string containing CSS selectors separated by
+ *     newlines. Each selector will be automatically updated via AJAX when a
+ *     new status of the relevant type is saved. Do not include selectors that
+ *     include the status update form.
+ *   - view (optional): The default view to use as the context stream.
+ *   - visibility (optional): Flag to indicate how to apply contexts on pages.
+ *     - -1: Use module default settings
+ *     - 0: Show on all pages except listed pages
+ *     - 1: Show only on listed pages
+ *     - 2: Use custom PHP code to determine visibility
+ *     - 3: Use the conditions from a Context from the Context module
+ *   - pages (optional): Either a list of paths on which to include/exclude the
+ *     context or PHP code, depending on "visibility" setting. Visibility and
+ *     pages provide a user-facing way of overriding the is_applicable()
+ *     function of the context handler.
+ *   - context (optional): A Context defined by the Context module whose
+ *     conditions should be used to determine whether the stream context
+ *     applies on this page if the "visibility" flag is set appropriately.
+ *     Overrides the is_applicable() function of the context handler.
+ *   - weight (optional): The default precedence of the context type.
+ *   - file (optional): A file to load before loading the context handler.
  */
 function facebook_status_determine_context($type = NULL) {
   $contexts = facebook_status_all_contexts();
@@ -622,6 +646,7 @@ function facebook_status_determine_context($type = NULL) {
     'selectors' => '',
     'visibility' => -1,
     'pages' => '',
+    'context' => '',
     'weight' => 0,
     'file' => '',
     'parent' => '',
@@ -646,6 +671,9 @@ function facebook_status_all_contexts() {
     $contexts[$c['type']]['weight'] = $c['weight'];
     $contexts[$c['type']]['view'] = $c['view'];
     $contexts[$c['type']]['selectors'] = $c['selectors'];
+    $contexts[$c['type']]['visibility'] = $c['visibility'];
+    $contexts[$c['type']]['pages'] = $c['pages'];
+    $contexts[$c['type']]['context'] = $c['context'];
   }
   uasort($contexts, '_facebook_status_element_sort');
   foreach ($contexts as $type => $context) {
@@ -903,6 +931,12 @@ function _facebook_status_context_applies($context) {
     'visibility' => -1,
   );
   if ($context['visibility'] == -1) {
+    return $context['handler']->is_applicable();
+  }
+  elseif ($context['visibility'] == 3) {
+    if (module_exists('context')) {
+      return in_array($context['context'], array_keys(context_active_contexts()));
+    }
     return $context['handler']->is_applicable();
   }
   // Match path if necessary. This behavior adapted from block_list()

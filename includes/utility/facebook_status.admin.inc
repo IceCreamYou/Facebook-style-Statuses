@@ -310,7 +310,7 @@ function facebook_status_admin_context_settings($form_state, $context) {
   // adapted from block_admin_configure()
   $form['page_vis_settings'] = array(
     '#type' => 'fieldset', 
-    '#title' => t('Page specific visibility settings'), 
+    '#title' => t('Advanced: change where this context applies'), 
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
@@ -339,12 +339,31 @@ function facebook_status_admin_context_settings($form_state, $context) {
       $options[2] = t('Show if the following PHP code returns <code>TRUE</code> (PHP-mode, experts only).');
       $description .= ' '. t('If the PHP-mode is chosen, enter PHP code between %php. Note that executing incorrect PHP-code can break your Drupal site.', array('%php' => '<?php ?>'));
     }
+    if (module_exists('context')) {
+      $options[3] = t('Use the conditions from a Context from the Context module');
+      drupal_add_js(drupal_get_path('module', 'facebook_status') .'/resources/facebook_status_admin.js');
+    }
     $form['page_vis_settings']['visibility'] = array(
       '#type' => 'radios',
       '#title' => t('Apply context on specific pages'), 
       '#options' => $options, 
-      '#default_value' => isset($context['visibility']) ? $context['visibility'] : -1,
+      '#default_value' => isset($context['visibility']) ? ($context['visibility'] == 3 && !module_exists('context') ? -1 : $context['visibility']) : -1,
     );
+    if (module_exists('context')) {
+      $form['page_vis_settings']['context'] = array(
+        '#type' => 'select',
+        '#title' => t('Context'),
+        '#description' => t('Choose a context provided by the Context module whose conditions should be evaluated to determine whether the stream context applies.'),
+        '#default_value' => isset($context['context']) ? $context['context'] : '',
+        '#options' => drupal_map_assoc(array_keys(context_enabled_contexts())),
+      );
+    }
+    else {
+      $form['page_vis_settings']['context'] = array(
+        '#type' => 'value',
+        '#value' => isset($context['context']) ? $context['context'] : '',
+      );
+    }
     $form['page_vis_settings']['pages'] = array(
       '#type' => 'textarea', 
       '#title' => t('Pages'), 
@@ -353,6 +372,10 @@ function facebook_status_admin_context_settings($form_state, $context) {
     );
   }
 
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
   $form['type'] = array(
     '#type' => 'hidden',
     '#value' => $type,
@@ -380,6 +403,7 @@ function facebook_status_admin_context_settings_submit($form, &$form_state) {
     'selectors' => $v['selectors'],
     'visibility' => intval($v['visibility']),
     'pages' => $v['pages'],
+    'context' => $v['context'],
   );
   if ($v['already_saved']) {
     drupal_write_record('facebook_status_contexts', $record, 'type');
