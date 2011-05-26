@@ -70,6 +70,13 @@ function fbss_comments_menu() {
     'access arguments' => array('post status comment'),
     'type' => MENU_CALLBACK,
   );
+  $items['fbss_comments/js/modalframe/%'] = array(
+    'title' => 'Refresh a list of comments',
+    'page callback' => 'fbss_comments_modalframe_refresh',
+    'page arguments' => array(3),
+    'access arguments' => array('view own status comments'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -176,6 +183,9 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
       .'</span>';
   }
   $output .= '</div></div>';
+  if (module_exists('modalframe')) {
+    modalframe_parent_js();
+  }
   return $output;
 }
 
@@ -675,6 +685,14 @@ function fbss_comments_preprocess_facebook_status_item(&$vars) {
   if ($vars['options']['extras']) {
     $vars['comments'] = theme('fbss_comments_form_display', $vars['status']->sid, FALSE, FALSE);
   }
+}
+
+/**
+ * The JS callback for the Modalframe submit callback.
+ */
+function fbss_comments_modalframe_refresh($sid) {
+  drupal_set_header('Content-Type: text/html; charset: utf-8');
+  echo theme('fbss_comments_items', fbss_comments_get_comments($sid, TRUE));
 }
 
 /**

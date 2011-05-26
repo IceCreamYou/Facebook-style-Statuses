@@ -72,6 +72,9 @@ function fbss_comments_edit($form_state, $comment) {
     '#value' => t('Update'),
   );
   $form['#cid'] = $comment->cid;
+  if (module_exists('modalframe')) {
+    modalframe_child_js();
+  }
   return $form;
 }
 
@@ -89,6 +92,9 @@ function fbss_comments_edit_submit($form, &$form_state) {
     $form_state['redirect'] = '<front>';
   }
   drupal_set_message(t('Status comment has been successfully edited.'));
+  if (module_exists('modalframe')) {
+    modalframe_close_dialog();
+  }
 }
 
 /**
@@ -114,6 +120,9 @@ function fbss_comments_delete($form_state, $comment) {
     '#submit' => array('fbss_comments_delete_cancel'),
   );
   $form['#cid'] = $comment->cid;
+  if (module_exists('modalframe')) {
+    modalframe_child_js();
+  }
   return $form;
 }
 
@@ -129,6 +138,9 @@ function fbss_comments_delete_confirm($form, &$form_state) {
   else {
     $form_state['redirect'] = '<front>';
   }
+  if (module_exists('modalframe')) {
+    modalframe_close_dialog();
+  }
 }
 
 /**
@@ -141,5 +153,8 @@ function fbss_comments_delete_cancel($form, &$form_state) {
   }
   else {
     $form_state['redirect'] = '<front>';
+  }
+  if (module_exists('modalframe')) {
+    modalframe_close_dialog();
   }
 }
