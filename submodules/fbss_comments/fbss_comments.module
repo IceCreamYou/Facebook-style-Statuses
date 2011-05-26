@@ -404,7 +404,14 @@ function fbss_comments_delete_comment($cid) {
  */
 function fbss_comments_count_comments($sid, $filter_view_access = FALSE) {
   if ($filter_view_access) {
-    return db_result(db_query("SELECT COUNT(cid) FROM {fbss_comments} WHERE sid = %d AND uid = %d", $sid, $GLOBALS['user']->uid));
+    $result = db_query("SELECT * FROM {fbss_comments} WHERE sid = %d", $sid);
+    $count = 0;
+    while ($comment = db_fetch_object($result)) {
+      if (fbss_comments_can('view', $comment)) {
+        $count++;
+      }
+    }
+    return $count;
   }
   return db_result(db_query("SELECT COUNT(cid) FROM {fbss_comments} WHERE sid = %d", $sid));
 }
