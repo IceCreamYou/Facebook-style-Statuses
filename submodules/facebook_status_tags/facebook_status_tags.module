@@ -605,6 +605,10 @@ function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
       if (module_exists('rules')) {
         rules_invoke_event('facebook_status_tags_user_was_tagged', $status, $account);
       }
+      if (module_exists('trigger')) {
+        module_invoke_all('facebook_status_tags', 'facebook_status_tags_user_was_tagged', _facebook_status_user_load($status->sender), $account);
+      }
+      module_invoke_all('facebook_status_tags_user_was_tagged', $account, $sender);
     }
   }
   
@@ -684,4 +688,40 @@ function facebook_status_tags_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'delete') {
     db_query("DELETE FROM {facebook_status_tags} WHERE rid = %d and type = 'user'", $account->uid);
   }
+}
+
+/**
+ * Implementation of hook_hook_info().
+ */
+function facebook_status_tags_hook_info() {
+  return array(
+    'facebook_status_tags' => array(
+      'facebook_status_tags' => array(
+        'facebook_status_tags_user_was_tagged' => array(
+          'runs when' => t('A user has been mentioned in a status message'),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_facebook_status().
+ * or
+ * Implementation of hook_trigger_name().
+ */
+function facebook_status_facebook_status($op, $sender, $mentioned, $context = NULL) {
+  if ($op != 'facebook_status_tags_user_was_tagged') {
+    return;
+  }
+  $aids = _trigger_get_hook_aids('facebook_status_tags', $op);
+
+  $activity_context = array(
+    'hook' => 'facebook_status_tags',
+    'op' => $op,
+    'sender' => $sender,
+    'account' => $mentioned,
+    'context' => $context,
+  );
+  actions_do(array_keys($aids), $mentioned, $activity_context);
 }
