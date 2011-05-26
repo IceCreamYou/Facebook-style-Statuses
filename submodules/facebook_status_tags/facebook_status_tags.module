@@ -606,9 +606,9 @@ function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
         rules_invoke_event('facebook_status_tags_user_was_tagged', $status, $account);
       }
       if (module_exists('trigger')) {
-        module_invoke_all('facebook_status_tags', 'facebook_status_tags_user_was_tagged', _facebook_status_user_load($status->sender), $account);
+        module_invoke_all('facebook_status_tags', 'facebook_status_tags_user_was_tagged', $status, $account);
       }
-      module_invoke_all('facebook_status_tags_user_was_tagged', $account, $sender);
+      module_invoke_all('facebook_status_tags_user_was_tagged', $status, $account);
     }
   }
   
@@ -710,18 +710,16 @@ function facebook_status_tags_hook_info() {
  * or
  * Implementation of hook_trigger_name().
  */
-function facebook_status_facebook_status($op, $sender, $mentioned, $context = NULL) {
+function facebook_status_facebook_status($op, $status, $account) {
   if ($op != 'facebook_status_tags_user_was_tagged') {
     return;
   }
   $aids = _trigger_get_hook_aids('facebook_status_tags', $op);
-
-  $activity_context = array(
+  $context = array(
     'hook' => 'facebook_status_tags',
     'op' => $op,
-    'sender' => $sender,
-    'account' => $mentioned,
-    'context' => $context,
+    'facebook_status' => $status,
+    'account' => $account,
   );
-  actions_do(array_keys($aids), $mentioned, $activity_context);
+  actions_do(array_keys($aids), $account, $context);
 }
