@@ -704,6 +704,20 @@ function fbss_comments_modalframe_refresh($sid) {
 }
 
 /**
+ * Implementation of hook_views_bulk_operations_object_info().
+ */
+function facebook_status_views_bulk_operations_object_info() {
+  return array(
+    'fbss_comments' => array(
+      'type' => 'fbss_comment',
+      'base_table' => 'fbss_comments',
+      'load' => 'fbss_comments_load',
+      'title' => 'comment',
+    ),
+  );
+}
+
+/**
  * Implementation of hook_views_api().
  */
 function fbss_comments_views_api() {

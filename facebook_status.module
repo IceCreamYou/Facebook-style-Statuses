@@ -1232,7 +1232,7 @@ function facebook_status_views_bulk_operations_object_info() {
       'type' => 'facebook_status',
       'base_table' => 'facebook_status',
       'load' => 'facebook_status_load',
-      'title' => 'status',
+      'title' => 'message',
     ),
   );
 }
