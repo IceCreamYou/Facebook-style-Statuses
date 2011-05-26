@@ -93,15 +93,16 @@ function fbss_comments_user($op, &$edit, &$account, $category = NULL) {
  * Implementation of hook_perm().
  */
 function fbss_comments_perm() {
-  return array('delete all status comments',
-               'delete own status comments',
-               'delete comments on own statuses',
-               'edit all status comments',
-               'edit own status comments',
-               'edit comments on own statuses',
-               'post status comment',
-               'view all status comments',
-               'view own status comments',
+  return array(
+    'delete all status comments',
+    'delete own status comments',
+    'delete comments on own statuses',
+    'edit all status comments',
+    'edit own status comments',
+    'edit comments on own statuses',
+    'post status comment',
+    'view all status comments',
+    'view own status comments',
   );
 }
 
@@ -181,6 +182,13 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
     $output .= '<span class="fbss-comments-edit-delete">'.
       l(t('Delete'), 'statuses/comment/'. $comment->cid .'/delete', array('query' => array('destination' => $q)))
       .'</span>';
+  }
+  if (module_exists('fbss_comments_flag')) {
+    foreach (flag_get_flags() as $name => $info) {
+      if ($info->content_type == 'fbss_comment') {
+        $output .= flag_create_link($name, $comment->cid);
+      }
+    }
   }
   $output .= '</div></div>';
   if (module_exists('modalframe')) {

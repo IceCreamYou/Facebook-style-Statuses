@@ -1,8 +1,8 @@
 <?php
 
 /**
-* Implementation of hook_rules_event_info().
-*/
+ * Implementation of hook_rules_event_info().
+ */
 function fbss_comments_rules_rules_event_info() {
   return array(
     'fbss_comments_save' => array(

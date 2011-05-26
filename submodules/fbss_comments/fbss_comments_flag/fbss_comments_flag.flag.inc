@@ -2,7 +2,7 @@
 
 /**
  @file
- *   Includes a class that extends the Flag module for Facebook-style Statuses.
+ *   Extends the Flag module for Facebook-style Statuses Comments.
  */
 
 /**
@@ -17,31 +17,32 @@ if (!class_exists('flag_flag')) {
 /**
  * Adds a new flag type.
  */
-class fbss_flag extends flag_flag {
+class fbss_comments_flag extends flag_flag {
   function _load_content($content_id) {
-    return is_numeric($content_id) ? facebook_status_load($content_id) : NULL;
+    return is_numeric($content_id) ? fbss_comments_load($content_id) : NULL;
   }
-  function applies_to_content_object($status) {
-    return !empty($status) && !empty($status->message);
+  function applies_to_content_object($comment) {
+    return !empty($comment) && !empty($comment->comment);
   }
-  function get_content_id($status) {
-    return $status->sid;
+  function get_content_id($comment) {
+    return $comment->cid;
   }
   function get_labels_token_types() {
-    return array('facebook_status');
+    return array('fbss_comment');
   }
   function get_views_info() {
     return array(
-      'views table' => 'facebook_status',
-      'join field' => 'sid',
-      'title field' => 'message',
-      'title' => t('Facebook-style Statuses'),
-      'help' => t('Display information about the flag set on a status.'),
-      'counter title' => t('Facebook-style Statuses flag counter'),
+      'views table' => 'fbss_comments',
+      'join field' => 'cid',
+      'title field' => 'comment',
+      'title' => t('Facebook-style Statuses Comments'),
+      'help' => t('Display information about the flag set on a status comment.'),
+      'counter title' => t('Facebook-style Statuses Comments flag counter'),
       'counter help' => t('Include this to gain access to the flag counter field.'),
     );
   }
   function applies_to_content_id_array($content_ids) {
+    $passed = array();
     foreach ($content_ids as $content_id) {
       $passed[$content_id] = TRUE;
     }
@@ -49,33 +50,32 @@ class fbss_flag extends flag_flag {
   }
   function get_relevant_action_objects($content_id) {
     return array(
-      'facebook_status' => $this->fetch_content($content_id),
+      'fbss_comment' => $this->fetch_content($content_id),
     );
   }
   function replace_tokens($label, $contexts, $content_id) {
-    if ($content_id && ($status = $this->fetch_content($content_id))) {
-      $contexts['facebook_status'] = $status;
+    if ($content_id && ($comment = $this->fetch_content($content_id))) {
+      $contexts['fbss_comment'] = $comment;
     }
     return parent::replace_tokens($label, $contexts, $content_id);
   }
   function get_flag_action($content_id) {
     $flag_action = parent::get_flag_action($content_id);
-    $status = $this->fetch_content($content_id);
-    $flag_action->content_title = $status->message;
-    $context = facebook_status_determine_context($status->type);
-    $flag_action->content_url = $context['handler']->recipient_url($context['handler']->load_recipient($status->recipient));
+    $comment = $this->fetch_content($content_id);
+    $flag_action->content_title = $comment->comment;
+    $flag_action->content_url = 'statuses/'. $comment->sid;
     return $flag_action;
   }
   function rules_get_event_arguments_definition() {
     return array(
       'account' => array(
-        'type' => 'facebook_status',
-        'label' => t('Flagged status'),
+        'type' => 'fbss_comment',
+        'label' => t('Flagged status comment'),
         'handler' => 'flag_rules_get_event_argument',
       ),
     );
   }
   function rules_get_element_argument_definition() {
-    return array('type' => 'facebook_status', 'label' => t('Flagged status'));
+    return array('type' => 'fbss_comment', 'label' => t('Flagged status comment'));
   }
 }
