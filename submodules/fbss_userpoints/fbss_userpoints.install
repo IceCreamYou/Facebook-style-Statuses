@@ -12,4 +12,6 @@ function fbss_userpoints_uninstall() {
   variable_del('facebook_status_userpoints_other');
   variable_del('facebook_status_userpoints_max');
   variable_del('facebook_status_userpoints_own');
+  variable_del('fbss_comments_userpoints_max');
+  variable_del('fbss_comments_userpoints');
 }
