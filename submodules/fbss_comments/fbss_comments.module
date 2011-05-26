@@ -77,6 +77,17 @@ function fbss_comments_menu() {
     'access arguments' => array('view own status comments'),
     'type' => MENU_CALLBACK,
   );
+  if (module_exists('devel_generate')) {
+    $items['admin/generate/fbss_comments'] = array(
+      'title' => 'Generate status comments',
+      'description' => 'Generate a given number of status comments. Optionally delete current items.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('fbss_comments_generate_form'),
+      'access callback' => 'facebook_status_user_access',
+      'access arguments' => array('generate'),
+      'file' => 'fbss_comments.generate.inc',
+    );
+  }
   return $items;
 }
 
@@ -706,7 +717,7 @@ function fbss_comments_modalframe_refresh($sid) {
 /**
  * Implementation of hook_views_bulk_operations_object_info().
  */
-function facebook_status_views_bulk_operations_object_info() {
+function fbss_comments_views_bulk_operations_object_info() {
   return array(
     'fbss_comments' => array(
       'type' => 'fbss_comment',

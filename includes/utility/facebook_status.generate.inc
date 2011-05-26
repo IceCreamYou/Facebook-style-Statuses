@@ -83,7 +83,7 @@ function facebook_status_generate_form_submit($form, &$form_state) {
       'title' => t('Generating statuses'),
       'operations' => $operations,
       'finished' => 'facebook_status_generate_finished',
-      'file' => drupal_get_path('module', 'facebook_status') .'/facebook_status.generate.inc',
+      'file' => drupal_get_path('module', 'facebook_status') .'/includes/utility/facebook_status.generate.inc',
     ));
   }
   else {
@@ -91,7 +91,7 @@ function facebook_status_generate_form_submit($form, &$form_state) {
     for ($i = 0; $i < $v['num']; $i++) {
       facebook_status_generate_status($v['time'], $v['types'], $v['tags'], $context);
     }
-    facebook_status_generate_finished(TRUE, $context, array());
+    facebook_status_generate_finished(TRUE, $context['results'], array());
   }
 }
 
