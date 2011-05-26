@@ -74,6 +74,8 @@ Drupal.behaviors.facebookStatus = function (context) {
       Drupal.modalFrame.open({url: $(this).attr('href'), onSubmit: fbss_refresh});
     });
   }
+  // Don't show multiple loading symbols if a status is submitted via AHAH after an attached view changes pages via AJAX.
+  ctxt.find('#facebook-status-replace').unbind('ahah_success');
   // React when a status is submitted.
   ctxt.find('#facebook-status-replace').bind('ahah_success', function(context) {
     if ($(context.target).html() != $(this).html()) {
