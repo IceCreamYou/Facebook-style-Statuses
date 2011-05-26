@@ -757,3 +757,74 @@ function fbss_comments_views_default_views_alter(&$views) {
     }
   }
 }
+
+//====================
+// TOKEN INTEGRATION.
+//====================
+
+/**
+ * Implementation of hook_token_list().
+ */
+function fbss_comments_token_list($type = 'all') {
+  if ($type == 'fbss_comment') {
+    $tokens['fbss_comment'] = array(
+      'commenter-themed' => t('The themed name of the user who posted the status message.'),
+      'commenter-name' => t('The safe name of the user who posted the status message.'),
+      'commenter-name-raw' => t('The raw name of the user who posted the status message. WARNING: raw user input.'),
+      'commenter-uid' => t('The User ID of the user who posted the status message.'),
+      'message-unformatted' => t('The comment text, with HTML escaped but no filters run over it.'),
+      'message-formatted' => t('The formatted comment text.'),
+      'message-raw' => t('The completely unfiltered comment text. WARNING: raw user input.'),
+      'comment-themed' => t('The new status completely themed, including usernames and times.'),
+      'comment-id' => t('The Comment ID.'),
+      'comment-status-id' => t('The Status ID.'),
+      'comment-status-url' => t('The URL of the related status message.'),
+      'comment-edit' => t('Edit comment link.'),
+      'comment-delete' => t('Delete comment link.'),
+      'comment-created' => t('The themed time the comment was submitted.'),
+    );
+    $tokens['fbss_comment'] += token_get_date_token_info(t('The comment created'), 'comment-created-');
+    return $tokens;
+  }
+}
+
+/**
+ * Implementation of hook_token_values().
+ */
+function fbss_comments_token_values($type, $data = NULL, $options = array()) {
+  if ($type != 'fbss_comment' || empty($data)) {
+    return;
+  }
+  $comment = $data;
+  $account = _facebook_status_user_load($comment->uid);
+  $edit = '';
+  $delete = '';
+  if (fbss_comments_can('edit', $comment)) {
+    $edit = '<span class="fbss-comments-edit-delete">'.
+      l(t('Edit'), 'statuses/comment/'. $comment->cid .'/edit', array('query' => array('destination' => $_GET['q'])))
+      .'</span>';
+  }
+  if (fbss_comments_can('delete', $comment)) {
+    $delete = '<span class="fbss-comments-edit-delete">'.
+      l(t('Delete'), 'statuses/comment/'. $comment->cid .'/delete', array('query' => array('destination' => $_GET['q'])))
+      .'</span>';
+  }
+  $values = array(
+    'commenter-themed' => theme('username', $account),
+    'commenter-name' => check_plain($account->name),
+    'commenter-name-raw' => $account->name,
+    'commenter-uid' => $account->uid,
+    'message-unformatted' => check_plain($comment->comment),
+    'message-formatted' => nl2br(_facebook_status_run_filter($comment->comment)),
+    'message-raw' => $comment->comment,
+    'comment-themed' => theme('fbss_comments_item', $comment, array(), $_GET['q']),
+    'comment-id' => $comment->cid,
+    'comment-status-id' => $comment->sid,
+    'comment-status-url' => url('statuses/'. $comment->sid, array('absolute' => TRUE)),
+    'comment-edit' => $edit,
+    'comment-delete' => $delete,
+    'comment-created' => format_date($comment->created, 'small'),
+  );
+  $values += token_get_date_token_values($comment->created, 'created-');
+  return $values;
+}
