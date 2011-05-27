@@ -606,7 +606,7 @@ function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
         rules_invoke_event('facebook_status_tags_user_was_tagged', $status, $account);
       }
       if (module_exists('trigger')) {
-        module_invoke_all('facebook_status_tags', 'facebook_status_tags_user_was_tagged', $status, $account);
+        module_invoke_all('facebook_status_tags', 'fbsst_user_tagged', $status, $account);
       }
       module_invoke_all('facebook_status_tags_user_was_tagged', $status, $account);
     }
@@ -637,6 +637,15 @@ function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
  */
 function facebook_status_tags_facebook_status_delete($sid) {
   db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
+
+  $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status_tags' AND eid = %d", $sid);
+  $records = array();
+  while ($record = db_fetch_object($result)) {
+    $records[] = $record->aid;
+  }
+  if (!empty($records)) {
+    activity_delete($records);
+  }
 }
 
 //=====================
@@ -697,7 +706,7 @@ function facebook_status_tags_hook_info() {
   return array(
     'facebook_status_tags' => array(
       'facebook_status_tags' => array(
-        'facebook_status_tags_user_was_tagged' => array(
+        'fbsst_user_tagged' => array(
           'runs when' => t('A user has been mentioned in a status message'),
         ),
       ),
@@ -711,7 +720,7 @@ function facebook_status_tags_hook_info() {
  * Implementation of hook_trigger_name().
  */
 function facebook_status_tags_facebook_status_tags($op, $status, $account) {
-  if ($op != 'facebook_status_tags_user_was_tagged') {
+  if ($op != 'fbsst_user_tagged') {
     return;
   }
   $aids = _trigger_get_hook_aids('facebook_status_tags', $op);
@@ -722,4 +731,84 @@ function facebook_status_tags_facebook_status_tags($op, $status, $account) {
     'account' => $account,
   );
   actions_do(array_keys($aids), $account, $context);
+}
+
+//=======================
+// ACTIVITY INTEGRATION.
+//=======================
+
+/**
+ * Implementation of hook_activity_info().
+ */
+function facebook_status_tags_activity_info() {
+  $info = new stdClass();
+  $info->api = 2;
+  $info->name = 'facebook_status_tags';
+  $info->object_type = 'facebook_status';
+  $info->eid_field = 'sid';
+  $info->objects = array('Mentioned user' => 'facebook_status');
+  $info->hooks = array('facebook_status_tags' => array('fbsst_user_tagged'));
+  $info->realms = array('facebook_status_tags_mentioned' => 'Mentioned user');
+  return $info;
+}
+
+/**
+ * Implementation of hook_activity_grants().
+ */
+function facebook_status_tags_activity_grants($activity) {
+  $realms = array();
+  if ($activity->type == 'facebook_status_tags') {
+    $result = db_query("SELECT rid FROM {facebook_status_tags} WHERE type = 'user' AND sid = %d", $activity->eid);
+    while ($account = db_fetch_object($result)) {
+      $realms['facebook_status_tags_mentioned'][] = $account->rid;
+    }
+  }
+  return $realms;
+}
+
+/**
+ * Implementation of hook_activity_access_grants().
+ */
+function facebook_status_tags_activity_access_grants($account) {
+  return array(
+    'facebook_status_tags_mentioned' => array($account->uid),
+  );
+}
+
+/**
+ * Implementation of hook_list_activity_actions().
+ */
+function facebook_status_tags_list_activity_actions($hook, $op, $max_age) {
+  $actions = array();
+  if (!empty($max_age)) {
+    $min_time = time() - $max_age;
+  }
+  else {
+    $min_time = 0;
+  }
+
+  $result = db_query("SELECT f.sid as id, f.created, t.rid as actor FROM {facebook_status_tags} t INNER JOIN {facebook_status} f ON t.sid = f.sid WHERE t.type = 'user' AND created > %d", $min_time);
+  while ($row = db_fetch_array($result)) {
+    $actions[] = $row;
+  }
+
+  return $actions;
+}
+
+/**
+ * Implementation of hook_load_activity_context().
+ */
+function facebook_status_tags_load_activity_context($hook, $op, $id) {
+  $staus = facebook_status_load($id);
+  $activity_context = array();
+
+  if (!empty($status)) {
+    $activity_context = array(
+      'hook' => 'facebook_status_tags',
+      'op' => $op,
+      'facebook_status' => $status,
+    );
+  }
+
+  return $activity_context;
 }
