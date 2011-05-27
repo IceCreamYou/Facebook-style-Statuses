@@ -85,7 +85,7 @@ function _facebook_status_show($status, $options) {
       $recipient_name = $context['handler']->recipient_name($recipient);
       //"\xC2\xBB" is the unicode escape sequence for the HTML entity &raquo; (a double right angle bracket)
       $title = t("@sender \xC2\xBB @recipient: @message",
-        array('@sender' => $sender->name, '@recipient' => $recipient->name, '@message' => $message)
+        array('@sender' => $sender->name, '@recipient' => $recipient_name, '@message' => $message)
       );
     }
     if (drupal_strlen($title) > 80) {
