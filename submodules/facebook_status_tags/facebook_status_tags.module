@@ -638,13 +638,15 @@ function facebook_status_tags_facebook_status_save($status, $edit = FALSE) {
 function facebook_status_tags_facebook_status_delete($sid) {
   db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
 
-  $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status_tags' AND eid = %d", $sid);
-  $records = array();
-  while ($record = db_fetch_object($result)) {
-    $records[] = $record->aid;
-  }
-  if (!empty($records)) {
-    activity_delete($records);
+  if (module_exists('activity')) {
+    $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status_tags' AND eid = %d", $sid);
+    $records = array();
+    while ($record = db_fetch_object($result)) {
+      $records[] = $record->aid;
+    }
+    if (!empty($records)) {
+      activity_delete($records);
+    }
   }
 }
 

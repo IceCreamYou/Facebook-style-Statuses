@@ -709,13 +709,15 @@ function fbss_comments_save_js() {
 function fbss_comments_facebook_status_delete($sid) {
   db_query("DELETE FROM {fbss_comments} WHERE sid = %d", $sid);
 
-  $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND eid IN (SELECT sid FROM {fbss_comments} WHERE cid = %d)", $sid);
-  $records = array();
-  while ($record = db_fetch_object($result)) {
-    $records[] = $record->aid;
-  }
-  if (!empty($records)) {
-    activity_delete($records);
+  if (module_exists('activity')) {
+    $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND eid IN (SELECT sid FROM {fbss_comments} WHERE cid = %d)", $sid);
+    $records = array();
+    while ($record = db_fetch_object($result)) {
+      $records[] = $record->aid;
+    }
+    if (!empty($records)) {
+      activity_delete($records);
+    }
   }
 }
 
@@ -941,13 +943,15 @@ function fbss_comments_token_values($type, $data = NULL, $options = array()) {
  * Implementation of hook_fbss_comments_delete().
  */
 function fbss_comments_fbss_comments_delete($cid) {
-  $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND eid = %d", $cid);
-  $records = array();
-  while ($record = db_fetch_object($result)) {
-    $records[] = $record->aid;
-  }
-  if (!empty($records)) {
-    activity_delete($records);
+  if (module_exists('activity')) {
+    $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND eid = %d", $cid);
+    $records = array();
+    while ($record = db_fetch_object($result)) {
+      $records[] = $record->aid;
+    }
+    if (!empty($records)) {
+      activity_delete($records);
+    }
   }
 }
 
