@@ -340,18 +340,22 @@ function facebook_status_update_6301() {
  */
 function facebook_status_update_6302() {
   $ret = array();
-  db_add_field($ret, 'facebook_status_contexts', 'visibility', array(
-    'type' => 'int',
-    'not null' => TRUE,
-    'default' => -1,
-    'size' => 'tiny',
-    'description' => 'Flag to indicate how to apply contexts on pages. (-1 = Use module default settings, 0 = Show on all pages except listed pages, 1 = Show only on listed pages, 2 = Use custom PHP code to determine visibility)',
-  ));
-  db_add_field($ret, 'facebook_status_contexts', 'pages', array(
-    'type' => 'text',
-    'not null' => TRUE,
-    'description' => 'Contains either a list of paths on which to include/exclude the context or PHP code, depending on "visibility" setting.',
-  ));
+  if (!db_column_exists('facebook_status_contexts', 'visibility')) {
+    db_add_field($ret, 'facebook_status_contexts', 'visibility', array(
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => -1,
+      'size' => 'tiny',
+      'description' => 'Flag to indicate how to apply contexts on pages. (-1 = Use module default settings, 0 = Show on all pages except listed pages, 1 = Show only on listed pages, 2 = Use custom PHP code to determine visibility)',
+    ));
+  }
+  if (!db_column_exists('facebook_status_contexts', 'pages')) {
+    db_add_field($ret, 'facebook_status_contexts', 'pages', array(
+      'type' => 'text',
+      'not null' => TRUE,
+      'description' => 'Contains either a list of paths on which to include/exclude the context or PHP code, depending on "visibility" setting.',
+    ));
+  }
   return $ret;
 }
 
@@ -360,13 +364,15 @@ function facebook_status_update_6302() {
  */
 function facebook_status_update_6303() {
   $ret = array();
-  db_add_field($ret, 'facebook_status_contexts', 'context', array(
-    'description' => 'The primary identifier for a context.',
-    'type' => 'varchar',
-    'length' => 255,
-    'not null' => TRUE,
-    'default' => '',
-  ));
+  if (!db_column_exists('facebook_status_contexts', 'context')) {
+    db_add_field($ret, 'facebook_status_contexts', 'context', array(
+      'description' => 'The primary identifier for a context.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+    ));
+  }
   return $ret;
 }
 
