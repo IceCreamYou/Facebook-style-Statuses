@@ -34,7 +34,7 @@ function fbss_twitter_admin() {
     '#default_value' => variable_get('fbss_twitter_select_account', 0),
     '#weight' => -30,
   );
-  return $form;
+  return system_settings_form($form);
 }
 
 /**
