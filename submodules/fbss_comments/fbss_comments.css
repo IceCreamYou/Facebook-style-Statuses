@@ -30,13 +30,15 @@
   padding: 0.5em 0 0;
 }
 
-.fbss-comments-closure {
+.fbss-comments-created,
+.fbss-comments-edit-delete {
+  padding-right: 1em;
   font-size: 90%;
   margin-top: 0.25em;
 }
 
-.fbss-comments-closure span {
-  padding-right: 1em;
+.fbss-comments-closure .flag-wrapper {
+  margin-left: 0;
 }
 
 .fbss-comments-created {

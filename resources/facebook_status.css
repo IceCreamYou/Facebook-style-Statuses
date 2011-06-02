@@ -18,7 +18,8 @@
 .facebook-status-edit,
 .facebook-status-delete,
 .facebook-status-respond,
-.facebook-status-repost {
+.facebook-status-repost,
+.facebook-status-details .flag-wrapper {
   font-size: 90%;
   margin-left: 0.5em;
 }

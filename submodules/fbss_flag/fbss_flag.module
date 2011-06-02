@@ -24,6 +24,74 @@ function fbss_flag_views_api() {
 }
 
 /**
+ * Implementation of hook_views_default_views_alter().
+ */
+function fbss_flag_views_default_views_alter(&$views) {
+  // Add the "like" field to default Views.
+  $flag = flag_get_flag('like');
+  if (!$flag || !$flag->status) {
+    return;
+  }
+  // This whole function only applies to default Views, not overridden ones.
+  foreach ($views as $view) {
+    if ($view->tag == 'Facebook-style Statuses') {
+      // Set the view to show DISTINCT results on the primary key (sid).
+      $view->display['default']->display_options['distinct'] = 1;
+      // Add the "Flag: Facebook-style Statuses" relationship to expose the Flag link field.
+      $view->display['default']->display_options['relationships']['flag_content_rel'] = array(
+        'label' => 'flag',
+        'required' => 0,
+        'flag' => 'like',
+        'user_scope' => 'any',
+        'id' => 'flag_content_rel',
+        'table' => 'facebook_status',
+        'field' => 'flag_content_rel',
+        'relationship' => 'none',
+      );
+      // Set up the "Flags: Flag link" field.
+      $ops = array(
+        'label' => '',
+        'alter' => array(
+          'alter_text' => 0,
+          'text' => '',
+          'make_link' => 0,
+          'path' => '',
+          'link_class' => '',
+          'alt' => '',
+          'prefix' => '',
+          'suffix' => '',
+          'target' => '',
+          'help' => '',
+          'trim' => 0,
+          'max_length' => '',
+          'word_boundary' => 1,
+          'ellipsis' => 1,
+          'html' => 0,
+          'strip_tags' => 0,
+        ),
+        'empty' => '',
+        'hide_empty' => 0,
+        'empty_zero' => 0,
+        'link_type' => '',
+        'exclude' => 1,
+        'id' => 'ops',
+        'table' => 'flag_content',
+        'field' => 'ops',
+        'relationship' => 'flag_content_rel',
+      );
+      // Add the Flag link above the Global: Nothing field so we can use it as a token.
+      $nothing = array_pop($view->display['default']->display_options['fields']);
+      $view->display['default']->display_options['fields']['ops'] = $ops;
+      $view->display['default']->display_options['fields']['nothing'] = $nothing;
+      // Add the Flag link token to the Global: Nothing field.
+      $t = $view->display['default']->display_options['fields']['nothing']['alter']['text'];
+      $t = str_replace('[edit] [delete]', '[edit] [delete] [ops]', $t);
+      $view->display['default']->display_options['fields']['nothing']['alter']['text'] = $t;
+    }
+  }
+}
+
+/**
  * Implementation of hook_flag_definitions().
  */
 function fbss_flag_flag_definitions() {
