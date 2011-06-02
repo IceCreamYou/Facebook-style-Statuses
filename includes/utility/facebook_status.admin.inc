@@ -193,7 +193,11 @@ function facebook_status_admin_contexts(&$form_state) {
       '#options' => $options,
     );
     $form['components'][$type]['link'] = array(
-      '#value' => l(t('Configure'), 'admin/settings/facebook_status/contexts/'. $type),
+      '#value' => l(
+        t('Configure'),
+        'admin/settings/facebook_status/contexts/'. $type,
+        array('query' => array('destination' => 'admin/settings/facebook_status/contexts'))
+      ),
     );
     $form['components'][$type]['weight'] = array(
       '#type' => 'weight',
@@ -411,4 +415,5 @@ function facebook_status_admin_context_settings_submit($form, &$form_state) {
   else {
     drupal_write_record('facebook_status_contexts', $record);
   }
+  drupal_set_message(t('The configuration options have been saved.'));
 }
