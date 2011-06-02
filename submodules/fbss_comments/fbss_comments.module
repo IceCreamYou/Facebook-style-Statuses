@@ -944,7 +944,7 @@ function fbss_comments_token_values($type, $data = NULL, $options = array()) {
  */
 function fbss_comments_fbss_comments_delete($cid) {
   if (module_exists('activity')) {
-    $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND eid = %d", $cid);
+    $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND op <> 'fbss_comments_deleted' AND eid = %d", $cid);
     $records = array();
     while ($record = db_fetch_object($result)) {
       $records[] = $record->aid;

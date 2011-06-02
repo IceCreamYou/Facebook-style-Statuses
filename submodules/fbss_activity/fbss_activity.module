@@ -9,7 +9,7 @@
  * Implementation of hook_facebook_status_delete().
  */
 function fbss_activity_facebook_status_delete($status) {
-  $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $status->sid);
+  $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND op NOT LIKE 'fbss_deleted%' AND eid = %d", $status->sid);
   $records = array();
   while ($record = db_fetch_object($result)) {
     $records[] = $record->aid;
