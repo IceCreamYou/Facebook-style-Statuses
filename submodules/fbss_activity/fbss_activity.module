@@ -8,8 +8,8 @@
 /**
  * Implementation of hook_facebook_status_delete().
  */
-function fbss_activity_facebook_status_delete($sid) {
-  $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $sid);
+function fbss_activity_facebook_status_delete($status) {
+  $result = db_query("SELECT aid FROM {activity} WHERE type = 'facebook_status' AND eid = %d", $status->sid);
   $records = array();
   while ($record = db_fetch_object($result)) {
     $records[] = $record->aid;
@@ -33,13 +33,25 @@ function facebook_status_activity_info() {
   $info->object_type = 'facebook_status';
   $info->eid_field = 'sid';
   $info->objects = array('Recipient' => 'facebook_status', 'Sender' => 'sender');
-  $hooks = array('fbss_deleted', 'fbss_edited_user_self', 'fbss_edited_user_other', 'fbss_submitted_user_self', 'fbss_submitted_user_other');
+  $hooks = array(
+    'fbss_deleted',
+    'fbss_deleted_user_self',
+    'fbss_deleted_user_other',
+    'fbss_edited',
+    'fbss_edited_user_self',
+    'fbss_edited_user_other',
+    'fbss_submitted',
+    'fbss_submitted_user_self',
+    'fbss_submitted_user_other'
+  );
   foreach (facebook_status_all_contexts() as $type => $details) {
     if ($type != 'user') {
+      $hooks[] = 'fbss_deleted_'. $type;
       $hooks[] = 'fbss_edited_'. $type;
       $hooks[] = 'fbss_submitted_'. $type;
     }
   }
+  sort($hooks);
   $info->hooks = array('facebook_status' => $hooks);
   $info->realms = array('facebook_status_sender' => 'Facebook-style Statuses Sender', 'facebook_status_recipient' => 'Facebook-style Statuses Recipient');
   return $info;
@@ -152,7 +164,7 @@ function facebook_status_form_activity_form_alter(&$form, &$form_state) {
   if ($form_state['storage']['values']['triggers']['hook'] == 'facebook_status') {
     $op = $form_state['storage']['values']['operations']['operation'];
     // Remove the "Recipient" field unless this is for a user posting a message to another user.
-    if ($op != 'fbss_submitted_user_other' && $op != 'fbss_edited_user_other') {
+    if ($op != 'fbss_submitted_user_other' && $op != 'fbss_edited_user_other' && $op != 'fbss_deleted_user_other') {
       foreach (activity_enabled_languages() as $id => $language) {
         unset($form[$id .'_fieldset']['facebook_status-pattern-'. $id]);
       }

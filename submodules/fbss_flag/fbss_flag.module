@@ -8,9 +8,9 @@
 /**
  * Implementation of hook_facebook_status_delete().
  */
-function fbss_flag_facebook_status_delete($sid) {
-  db_query("DELETE FROM {flag_content} WHERE content_type = 'facebook_status' AND content_id = %d", $sid);
-  db_query("DELETE FROM {flag_counts} WHERE content_type = 'facebook_status' AND content_id = %d", $sid);
+function fbss_flag_facebook_status_delete($status) {
+  db_query("DELETE FROM {flag_content} WHERE content_type = 'facebook_status' AND content_id = %d", $status->sid);
+  db_query("DELETE FROM {flag_counts} WHERE content_type = 'facebook_status' AND content_id = %d", $status->sid);
 }
 
 /**

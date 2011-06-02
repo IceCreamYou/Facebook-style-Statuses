@@ -706,11 +706,11 @@ function fbss_comments_save_js() {
 /**
  * Implementation of hook_facebook_status_delete().
  */
-function fbss_comments_facebook_status_delete($sid) {
-  db_query("DELETE FROM {fbss_comments} WHERE sid = %d", $sid);
+function fbss_comments_facebook_status_delete($status) {
+  db_query("DELETE FROM {fbss_comments} WHERE sid = %d", $status->sid);
 
   if (module_exists('activity')) {
-    $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND eid IN (SELECT sid FROM {fbss_comments} WHERE cid = %d)", $sid);
+    $result = db_query("SELECT aid FROM {activity} WHERE type = 'fbss_comments' AND eid IN (SELECT sid FROM {fbss_comments} WHERE cid = %d)", $status->sid);
     $records = array();
     while ($record = db_fetch_object($result)) {
       $records[] = $record->aid;

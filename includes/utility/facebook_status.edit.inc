@@ -110,7 +110,7 @@ function _facebook_status_delete(&$form_state, $status) {
  */
 function _facebook_status_delete_confirm($form, &$form_state) {
   $status = facebook_status_load($form_state['values']['status-sid']);
-  facebook_status_delete_status($status->sid);
+  facebook_status_delete_status($status);
   drupal_set_message(t('Status deleted.'));
   if ($_GET['destination']) {
     $form_state['redirect'] = $_GET['destination'];

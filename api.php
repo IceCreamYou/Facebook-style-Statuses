@@ -38,8 +38,8 @@ function hook_facebook_status_save($status, $context, $edit, $options) {
 /**
  * React to a status being deleted.
  *
- * @param $sid
- *   The status ID.
+ * @param $status
+ *   The Status ID or a status object.
  * @param $meta
  *   An array of metadata that affects what behaviors are triggered from this
  *   function. There are no default options, but other modules may use them.
@@ -48,9 +48,9 @@ function hook_facebook_status_save($status, $context, $edit, $options) {
  *   deleted has attached media.
  * @see facebook_status_delete_status()
  */
-function hook_facebook_status_delete($sid, $meta = array()) {
+function hook_facebook_status_delete($status, $meta = array()) {
   if (module_exists('facebook_status_tags')) {
-    db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
+    db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $status->sid);
   }
 }
 

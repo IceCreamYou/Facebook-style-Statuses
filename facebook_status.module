@@ -692,7 +692,7 @@ function facebook_status_all_contexts() {
 /**
  * Delete a status from the database.
  *
- * @param $sid
+ * @param $status
  *   The Status ID or a status object.
  * @param $meta
  *   An array of metadata that affects what behaviors are triggered from this
@@ -701,17 +701,22 @@ function facebook_status_all_contexts() {
  *   "has attachment" option, which denotes whether the status that is being
  *   deleted has attached media.
  */
-function facebook_status_delete_status($sid, $meta = array()) {
-  if (is_object($sid)) {
-    $sid = $sid->sid;
+function facebook_status_delete_status($status, $meta = array()) {
+  if (!is_object($status)) {
+    $status = facebook_status_load($status);
   }
   // Trigger integration.
   // Don't call if there is an attachment (from the FBSMP module) because there is a separate trigger for that.
   if (module_exists('trigger') && empty($options['has attachment'])) {
-    module_invoke_all('facebook_status', 'fbss_deleted', $sid);
+    module_invoke_all('facebook_status', 'fbss_deleted', $status);
+    $type = $status->type;
+    if ($type == 'user') {
+      $type .= ($status->sender == $status->recipient ? '_self' : '_other');
+    }
+    module_invoke_all('facebook_status', 'fbss_deleted_'. $type, $status);
   }
-  module_invoke_all('facebook_status_delete', $sid, $meta);
-  db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
+  module_invoke_all('facebook_status_delete', $status, $meta);
+  db_query("DELETE FROM {facebook_status} WHERE sid = %d", $status->sid);
 }
 
 /**
@@ -789,6 +794,7 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
         $op .= ($recipient_id == $sender->uid ? '_self' : '_other');
       }
       module_invoke_all('facebook_status', $op, $object, $context);
+      module_invoke_all('facebook_status', 'fbss_submitted', $object, $context);
     }
   }
   elseif ($message == $status->status) {
@@ -845,7 +851,8 @@ function facebook_status_edit_status($status, $new_message, $options = array()) 
     if ($status->type == 'user') {
       $op .= ($status->recipient == $status->sender ? '_self' : '_other');
     }
-    module_invoke_all('facebook_status', $op, $status, $context, $options);
+    module_invoke_all('facebook_status', $op, $status, $context);
+    module_invoke_all('facebook_status', 'fbss_edited', $status, $context);
   }
   return $status;
 }
@@ -1032,11 +1039,23 @@ function facebook_status_hook_info() {
         'fbss_deleted' => array(
           'runs when' => t('A status has been deleted'),
         ),
+        'fbss_deleted_user_self' => array(
+          'runs when' => t('A user has deleted their status'),
+        ),
+        'fbss_deleted_user_other' => array(
+          'runs when' => t('A user has deleted a status message to another user'),
+        ),
+        'fbss_edited' => array(
+          'runs when' => t('A status has been edited'),
+        ),
         'fbss_edited_user_self' => array(
           'runs when' => t('A user has edited their own status'),
         ),
         'fbss_edited_user_other' => array(
           'runs when' => t('A user has edited a status message to another user'),
+        ),
+        'fbss_submitted' => array(
+          'runs when' => t('A status has been submitted'),
         ),
         'fbss_submitted_user_self' => array(
           'runs when' => t('A user has updated their own status'),
@@ -1049,10 +1068,13 @@ function facebook_status_hook_info() {
   );
   foreach (facebook_status_all_contexts() as $type => $details) {
     if ($type != 'user') {
-      $info['facebook_status']['facebook_status']['fbss_edited_'. $type ] = array(
+      $info['facebook_status']['facebook_status']['fbss_deleted_'. $type] = array(
+        'runs when' => t('A user has deleted a status message to a stream of type %type', array('%type' => $type)),
+      );
+      $info['facebook_status']['facebook_status']['fbss_edited_'. $type] = array(
         'runs when' => t('A user has edited a status message to a stream of type %type', array('%type' => $type)),
       );
-      $info['facebook_status']['facebook_status']['fbss_submitted_'. $type ] = array(
+      $info['facebook_status']['facebook_status']['fbss_submitted_'. $type] = array(
         'runs when' => t('A user has posted a new status to a stream of type %type', array('%type' => $type)),
       );
     }
@@ -1065,17 +1087,11 @@ function facebook_status_hook_info() {
  * or
  * Implementation of hook_trigger_name().
  */
-function facebook_status_facebook_status($op, $a1, $context = NULL) {
-  if ($op != 'fbss_deleted' && strpos($op, 'fbss_submitted') !== 0 && strpos($op, 'fbss_edited') !== 0) {
+function facebook_status_facebook_status($op, $status, $context = NULL) {
+  if (strpos($op, 'fbss_deleted') !== 0 && strpos($op, 'fbss_submitted') !== 0 && strpos($op, 'fbss_edited') !== 0) {
     return;
   }
   $aids = _trigger_get_hook_aids('facebook_status', $op);
-  if ($op == 'fbss_deleted' || strpos($op, 'fbss_edited') === 0) {
-    $status = facebook_status_load($a1);
-  }
-  elseif (strpos($op, 'fbss_submitted') === 0) {
-    $status = $a1;
-  }
   $context = facebook_status_determine_context($status->type);
   $recipient = $context['handler']->load_recipient($status->recipient);
   $sender = _facebook_status_user_load($status->sender);
