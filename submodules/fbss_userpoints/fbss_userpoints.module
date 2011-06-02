@@ -142,7 +142,12 @@ function fbss_userpoints_facebook_status_save($status, $context, $edit, $options
 /**
  * Implementation of hook_facebook_status_delete().
  */
-function fbss_userpoints_facebook_status_delete($sid) {
+function fbss_userpoints_facebook_status_delete($sid, $meta = array()) {
+  // If the FBSMP module is enabled and there is an attachment on this status,
+  // FBSMP will take care of handling userpoints.
+  if (!empty($options['has attachment'])) {
+    return;
+  }
   $status = facebook_status_load($sid);
   $sender = _facebook_status_user_load(array('uid' => $status->sender));
   global $user;

@@ -694,16 +694,23 @@ function facebook_status_all_contexts() {
  *
  * @param $sid
  *   The Status ID or a status object.
+ * @param $meta
+ *   An array of metadata that affects what behaviors are triggered from this
+ *   function. There are no default options, but other modules may use them.
+ *   For example, the Facebook-style Micropublisher module makes use of a
+ *   "has attachment" option, which denotes whether the status that is being
+ *   deleted has attached media.
  */
-function facebook_status_delete_status($sid) {
+function facebook_status_delete_status($sid, $meta = array()) {
   if (is_object($sid)) {
     $sid = $sid->sid;
   }
   // Trigger integration.
-  if (module_exists('trigger')) {
+  // Don't call if there is an attachment (from the FBSMP module) because there is a separate trigger for that.
+  if (module_exists('trigger') && empty($options['has attachment'])) {
     module_invoke_all('facebook_status', 'fbss_deleted', $sid);
   }
-  module_invoke_all('facebook_status_delete', $sid);
+  module_invoke_all('facebook_status_delete', $sid, $meta);
   db_query("DELETE FROM {facebook_status} WHERE sid = %d", $sid);
 }
 
