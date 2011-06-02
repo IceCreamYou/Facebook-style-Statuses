@@ -48,7 +48,7 @@ function hook_facebook_status_save($status, $context, $edit, $options) {
  *   deleted has attached media.
  * @see facebook_status_delete_status()
  */
-function hook_facebook_status_delete($sid) {
+function hook_facebook_status_delete($sid, $meta = array()) {
   if (module_exists('facebook_status_tags')) {
     db_query("DELETE FROM {facebook_status_tags} WHERE sid = %d", $sid);
   }
