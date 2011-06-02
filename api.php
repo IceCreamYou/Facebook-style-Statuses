@@ -40,6 +40,12 @@ function hook_facebook_status_save($status, $context, $edit, $options) {
  *
  * @param $sid
  *   The status ID.
+ * @param $meta
+ *   An array of metadata that affects what behaviors are triggered from this
+ *   function. There are no default options, but other modules may use them.
+ *   For example, the Facebook-style Micropublisher module makes use of a
+ *   "has attachment" option, which denotes whether the status that is being
+ *   deleted has attached media.
  * @see facebook_status_delete_status()
  */
 function hook_facebook_status_delete($sid) {
