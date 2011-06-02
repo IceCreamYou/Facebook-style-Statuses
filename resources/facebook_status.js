@@ -34,38 +34,41 @@ Drupal.behaviors.facebookStatus = function (context) {
     });
     // Clear the status field the first time it's in focus if it hasn't been changed.
     ctxt.find('.facebook-status-text-main').one('focus', function() {
-      if ($(this).val() == facebook_status_original_value) {
-        $(this).val('');
-        fbss_print_remaining(fbss_maxlen, $(this).parent().next());
+      var th = $(this);
+      if (th.val() == facebook_status_original_value) {
+        th.val('');
+        fbss_print_remaining(fbss_maxlen, th.parent().next());
       }
-      $(this).removeClass('facebook-status-faded');
+      th.removeClass('facebook-status-faded');
     });
   }
   // Truncate long status messages.
+  function fbss_truncate(i, val) {
+    var th = $(val);
+    var oldMsgText = th.html();
+    var oldMsgLen = oldMsgText.length;
+    if (oldMsgLen > fbss_hidelen) {
+      var newMsgText =
+        oldMsgText.substring(0, fbss_hidelen - 1) +
+        '<span class="facebook-status-hellip">&hellip;&nbsp;</span><a class="facebook-status-readmore-toggle active">' +
+        Drupal.t('Read more') +
+        '</a><span class="facebook-status-readmore">' +
+        oldMsgText.substring(fbss_hidelen - 1) +
+        '</span>';
+      th.html(newMsgText);
+      th.find('.facebook-status-readmore').hide();
+      th.find('.facebook-status-readmore-toggle').click(function(e) {
+        var thi = $(this);
+        e.preventDefault();
+        var pa = thi.parents('.facebook-status-content');
+        thi.hide();
+        pa.find('.facebook-status-hellip').hide();
+        pa.find('.facebook-status-readmore').show();
+      });
+    }
+  }
   if (fbss_hidelen > 0) {
-    ctxt.find('.facebook-status-content').each(function() {
-      var th = $(this);
-      var oldMsgText = th.html();
-      var oldMsgLen = oldMsgText.length;
-      if (oldMsgLen > fbss_hidelen) {
-        var newMsgText =
-          oldMsgText.substring(0, fbss_hidelen - 1) +
-          '<span class="facebook-status-hellip">&hellip;&nbsp;</span><a class="facebook-status-readmore-toggle active">' +
-          Drupal.t('Read more') +
-          '</a><span class="facebook-status-readmore">' +
-          oldMsgText.substring(fbss_hidelen - 1) +
-          '</span>';
-        th.html(newMsgText);
-        th.find('.facebook-status-readmore').hide();
-        th.find('.facebook-status-readmore-toggle').click(function(e) {
-          e.preventDefault();
-          var pa = $(this).parents('.facebook-status-content');
-          $(this).hide();
-          pa.find('.facebook-status-hellip').hide();
-          pa.find('.facebook-status-readmore').show();
-        });
-      }
-    });
+    ctxt.find('.facebook-status-content').each(fbss_truncate);
   }
   // Modal Frame integration.
   if (Drupal.modalFrame) {
@@ -110,15 +113,18 @@ Drupal.behaviors.facebookStatus = function (context) {
   });
   // Restore original status text if the field is blank and the slider is clicked.
   ctxt.find('.facebook-status-intro').click(function() {
-    if ($(this).next().find('.facebook-status-text').val() == '') {
-      $(this).next().find('.facebook-status-text').val(facebook_status_original_value);
-      fbss_print_remaining(fbss_maxlen - facebook_status_original_value.length, $(this).parents('.facebook-status-update').find('.facebook-status-chars'));
+    var th = $(this);
+    var te = th.next().find('.facebook-status-text');
+    if (te.val() == '') {
+      te.val(facebook_status_original_value);
+      fbss_print_remaining(fbss_maxlen - facebook_status_original_value.length, th.parents('.facebook-status-update').find('.facebook-status-chars'));
     }
   });
   // Count remaining characters.
   ctxt.find('.facebook-status-text').bind('keydown keyup', function(fbss_key) {
-    var thCC = $(this).parents('.facebook-status-update').find('.facebook-status-chars');
-    var fbss_remaining = fbss_maxlen - $(this).val().length;
+    var th = $(this);
+    var thCC = th.parents('.facebook-status-update').find('.facebook-status-chars');
+    var fbss_remaining = fbss_maxlen - th.val().length;
     fbss_print_remaining(fbss_remaining, thCC);
   });
 }
