@@ -263,7 +263,7 @@ function facebook_status_views_default_views() {
       'alter' => array(
         'text' => '<div>[user_contextual_pic] [message]</div>
 
-<div>[created] [edit] [delete] [respond] [repost]</div>',
+<div class="facebook-status-details">[created] [edit] [delete] [respond] [repost]</div>',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',
@@ -609,7 +609,7 @@ function facebook_status_views_default_views() {
       'alter' => array(
         'text' => '<div>[picture] [name] [message]</div>
 
-<div>[created] [edit] [delete]</div>',
+<div class="facebook-status-details">[created] [edit] [delete]</div>',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',
@@ -1046,7 +1046,7 @@ function facebook_status_views_default_views() {
       'alter' => array(
         'text' => '<div>[picture] [name] [message]</div>
 
-<div>[created] [edit] [delete] [respond] [repost]</div>',
+<div class="facebook-status-details">[created] [edit] [delete] [respond] [repost]</div>',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',

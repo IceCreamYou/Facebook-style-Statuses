@@ -262,7 +262,7 @@ function fbss_flag_views_default_views() {
       'alter' => array(
         'text' => '<div>[user_contextual_pic] [message]</div>
 
-<div>[created] [edit] [delete] [respond] [repost]</div>',
+<div class="facebook-status-details">[created] [edit] [delete] [respond] [repost]</div>',
         'make_link' => 0,
         'make_link' => 0,
         'path' => '',

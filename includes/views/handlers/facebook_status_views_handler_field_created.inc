@@ -23,34 +23,44 @@ class facebook_status_views_handler_field_created extends views_handler_field_da
     $value = $values->{$this->field_alias};
     $format = $this->options['date_format'];
     $custom_format = '';
+    $output = '<span class="facebook-status-time">';
     if (in_array($format, array('custom', 'raw time ago', 'time ago', 'raw time span', 'time span'))) {
       $custom_format = $this->options['custom_date_format'];
     }
     if (!$value) {
-      return theme('views_nodate');
+      $output .= theme('views_nodate');
     }
     else {
       $time_diff = time() - $value; // will be positive for a datetime in the past (ago), and negative for a datetime in the future (hence)
       switch ($format) {
         case 'raw time ago':
-          return format_interval($time_diff, is_numeric($custom_format) ? $custom_format : 2);
+          $output .= format_interval($time_diff, is_numeric($custom_format) ? $custom_format : 2);
+          break;
         case 'time ago':
-          return t('%time ago', array('%time' => format_interval($time_diff, is_numeric($custom_format) ? $custom_format : 2)));
+          $output .= t('%time ago', array('%time' => format_interval($time_diff, is_numeric($custom_format) ? $custom_format : 2)));
+          break;
         case 'raw time span':
-          return ($time_diff < 0 ? '-' : '') . format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2);
+          $output .= ($time_diff < 0 ? '-' : '') . format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2);
+          break;
         case 'time span':
           $args = array('%time' => format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2));
           if ($time_diff < 0) {
-            return t('%time hence', $args);
+            $output .= t('%time hence', $args);
+            break;
           }
-          return t('%time ago', $args);
+          $output .= t('%time ago', $args);
+          break;
         case 'custom':
-          return format_date($value, $format, $custom_format);
+          $output .= format_date($value, $format, $custom_format);
+          break;
         case 'themed':
-          return theme('facebook_status_time', $value);
+          $output .= theme('facebook_status_time', $value);
+          break;
         default:
-          return format_date($value, $format);
+          $output .= format_date($value, $format);
+          break;
       }
     }
+    return $output .'</span>';
   }
 }
