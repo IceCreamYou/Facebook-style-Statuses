@@ -39,7 +39,7 @@ function hook_facebook_status_save($status, $context, $edit, $options) {
  * React to a status being deleted.
  *
  * @param $status
- *   The Status ID or a status object.
+ *   The status object to delete.
  * @param $meta
  *   An array of metadata that affects what behaviors are triggered from this
  *   function. There are no default options, but other modules may use them.
