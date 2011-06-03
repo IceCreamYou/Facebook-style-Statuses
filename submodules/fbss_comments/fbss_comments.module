@@ -595,6 +595,8 @@ function fbss_comments_forms($form_id, $args) {
 function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_css($path .'/fbss_comments.css');
+  // Defer execution so that it runs after ajax_view.js
+  drupal_add_js($path .'/fbss_comments_views_ahah.js', 'module', 'header', TRUE);
   drupal_add_js(array('fbss_comments' => array(
     'ahah_enabled' => (bool) variable_get('fbss_comments_ahah', 0)
   )), 'setting');
@@ -637,7 +639,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
     '#submit' => array('fbss_comments_box_submit'),
   );
   if (variable_get('fbss_comments_ahah', 0)) {
-    $form['save']['#ahah'] = array(
+    $form['save-'. $sid]['#ahah'] = array(
       'path' => 'fbss_comments/js/refresh',
       'wrapper' => 'fbss-comments-replace-'. $sid,
       'effect' => 'fade',

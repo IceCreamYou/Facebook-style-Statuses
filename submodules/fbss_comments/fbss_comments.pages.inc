@@ -16,7 +16,7 @@ function fbss_comments_admin() {
     '#description' => '<strong>'. t('If you enable this, do NOT use comments on Views with AJAX-enabled pagers.') .' '.
       t('Otherwise comments will not work on pages other than the first page.') .'</strong>',
     '#default_value' => variable_get('fbss_comments_ahah', 0),
-    '#disabled' => TRUE,
+    //'#disabled' => TRUE,
   );
   $form['fbss_comments_hide_small'] = array(
     '#type' => 'textfield',
