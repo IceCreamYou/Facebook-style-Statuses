@@ -48,7 +48,7 @@
       <span class="facebook-status-meta"><?php echo $meta; ?></span>
     <?php endif; ?>
     <?php if ($links): ?>
-      <div class="facebook-status-links"><?php echo $links; ?></div>
+      <span class="facebook-status-links"><?php echo $links; ?></span>
     <?php endif; ?>
   </div>
   <?php if (!empty($comments)): ?>

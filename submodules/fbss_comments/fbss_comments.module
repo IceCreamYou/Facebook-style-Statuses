@@ -598,7 +598,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
   // Defer execution so that it runs after ajax_view.js
   drupal_add_js($path .'/fbss_comments_views_ahah.js', 'module', 'header', TRUE);
   drupal_add_js(array('fbss_comments' => array(
-    'ahah_enabled' => (bool) variable_get('fbss_comments_ahah', 0)
+    'ahah_enabled' => (bool) variable_get('fbss_comments_ahah', 1)
   )), 'setting');
   _fbss_comments_use_autogrow();
   $form = array();
@@ -638,7 +638,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
     '#suffix' => '</div>',
     '#submit' => array('fbss_comments_box_submit'),
   );
-  if (variable_get('fbss_comments_ahah', 0)) {
+  if (variable_get('fbss_comments_ahah', 1)) {
     $form['save-'. $sid]['#ahah'] = array(
       'path' => 'fbss_comments/js/refresh',
       'wrapper' => 'fbss-comments-replace-'. $sid,
@@ -664,10 +664,7 @@ function fbss_comments_box_submit($form, &$form_state) {
   if (!empty($form_state['values']['status-comment'])) {
     fbss_comments_save_comment($form['#sid'], $form_state['values']['status-comment']);
   }
-  // TODO: With AHAH enabled, submitting a comment on a region loaded by AHAH
-  // (like the second page of a View with an AJAX pager) causes the user to end
-  // up on the AHAH callback page.
-  if (variable_get('fbss_comments_ahah', 0)) {
+  if (variable_get('fbss_comments_ahah', 1)) {
     $form_state['rebuild'] = TRUE;
   }
 }
