@@ -36,10 +36,12 @@ function facebook_status_edit(&$form_state, $status) {
     '#resizable' => FALSE,
     '#weight' => -40,
   );
-  $form['chars'] = array(
-    '#value' => '<span id="facebook-status-chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
-    '#weight' => -38,
-  );
+  if ($maxlength > 0) {
+    $form['chars'] = array(
+      '#value' => '<span class="facebook-status-chars">'. t('%chars characters allowed', array('%chars' => $maxlength)) .'</span>',
+      '#weight' => -38,
+    );
+  }
   $form['sid'] = array(
     '#type' => 'value',
     '#value' => $status->sid,
