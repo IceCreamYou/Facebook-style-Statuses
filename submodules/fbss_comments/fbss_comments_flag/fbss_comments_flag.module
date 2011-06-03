@@ -10,7 +10,7 @@
  */
 function fbss_comments_flag_facebook_status_delete($status) {
   db_query("DELETE FROM {flag_content} WHERE content_type = 'fbss_comment' AND content_id IN (SELECT cid FROM {fbss_comments} WHERE sid = %d)", $status->sid);
-  db_query("DELETE FROM {flag_counts} WHERE content_type = 'fbss_comment' AND content_id = IN (SELECT cid FROM {fbss_comments} WHERE sid = %d)", $status->sid);
+  db_query("DELETE FROM {flag_counts} WHERE content_type = 'fbss_comment' AND content_id IN (SELECT cid FROM {fbss_comments} WHERE sid = %d)", $status->sid);
 }
 
 /**

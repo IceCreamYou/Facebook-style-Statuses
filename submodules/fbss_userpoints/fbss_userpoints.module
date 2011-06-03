@@ -148,7 +148,7 @@ function fbss_userpoints_facebook_status_delete($status, $meta = array()) {
   if (!empty($options['has attachment'])) {
     return;
   }
-  $sender = _facebook_status_user_load(array('uid' => $status->sender));
+  $sender = _facebook_status_user_load($status->sender);
   global $user;
   $result = db_fetch_object(db_query(
     "SELECT points FROM {userpoints_txn} WHERE operation LIKE 'facebook_status add%%' AND reference = %d AND uid = %d",
