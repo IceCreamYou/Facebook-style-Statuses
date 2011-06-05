@@ -13,6 +13,7 @@ function fbss_flag_views_data() {
 
   $data['facebook_status']['user-flag-plus-current'] = array(
     'title' => t('Content from flagged users or the current user'),
+    'help' => t('Shows content from only flagged users or the current user.'),
     'filter' => array(
       'field' => 'sender',
       'handler' => 'facebook_status_views_handler_filter_flagged_user',
@@ -20,6 +21,7 @@ function fbss_flag_views_data() {
   );
   $data['facebook_status']['user-flag-plus-arg'] = array(
     'title' => t('Content from flagged users or the argument user'),
+    'help' => t('Shows content from only flagged users or the argument user.'),
     'argument' => array(
       'field' => 'sender',
       'handler' => 'facebook_status_views_handler_argument_flagged_user',
