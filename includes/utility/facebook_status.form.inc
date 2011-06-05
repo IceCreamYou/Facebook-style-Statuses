@@ -102,7 +102,7 @@ function theme_facebook_status_form_display($context = NULL, $type = NULL, $view
  * @return
  *   A $form array.
  */
-function facebook_status_box($form_state, $recipient, $type = 'user') {
+function facebook_status_box(&$form_state, $recipient, $type = 'user') {
   global $user;
   _facebook_status_use_autogrow();
   if (isset($form_state['facebook_status'])) {
@@ -120,7 +120,7 @@ function facebook_status_box($form_state, $recipient, $type = 'user') {
 
   $default = variable_get('facebook_status_default_text', '');
   $intro = '';
-  if (arg(0) == 'statuses' && arg(1) == 'share') {
+  if (arg(0) == 'statuses' && (arg(1) == 'share' || arg(1) == 'conversation')) {
     // This page is autofocused. We don't want default text there since the user would have to manually remove it.
     $default = '';
   }

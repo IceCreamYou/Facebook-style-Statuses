@@ -30,6 +30,11 @@
  * are also available:
  * - $comments: Comments on the relevant status plus the form to leave a comment
  *
+ * If the Facebook-style Statuses Private Statuses module is enabled, these
+ * variables are also available:
+ * - $private: Whether the status update is private or not
+ * - $private_text: The translated version of either "Private" or "Public"
+ *
  * Other modules may add additional variables.
  */
 ?>
@@ -40,6 +45,9 @@
   <span class="facebook-status-sender"><?php echo $sender_link; ?></span>
   <?php if ($type == 'user' && !$self): ?>
     &raquo; <span class="facebook-status-recipient"><?php echo $recipient_link; ?></span>
+  <?php endif; ?>
+  <?php if ($private): ?>
+    <span class="facebook-status-private-text"><?php echo $private_text; ?></span>
   <?php endif; ?>
   <span class="facebook-status-content"><?php echo $message; ?></span>
   <div class="facebook-status-details">

@@ -31,7 +31,7 @@ function facebook_status_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'description' => 'The ID of the entity that received the status message..',
+        'description' => 'The ID of the entity that received the status message.',
       ),
       'type' => array(
         'type' => 'varchar',
