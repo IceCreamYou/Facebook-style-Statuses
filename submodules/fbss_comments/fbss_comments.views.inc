@@ -62,6 +62,24 @@ function fbss_comments_views_data() {
       'handler' => 'views_handler_argument_numeric',
     ),
   );
+  $data['fbss_comments']['edit'] = array(
+    'title' => t('Edit'),
+    'help' => t('Shows a link to edit the status comment to users with permission to see it.'),
+    'field' => array(
+      'field' => 'cid',
+      'handler' => 'fbss_comments_views_handler_field_edit',
+      'click sortable' => FALSE,
+    ),
+  );
+  $data['fbss_comments']['delete'] = array(
+    'title' => t('Delete'),
+    'help' => t('Shows a link to delete the status comment to users with permission to see it.'),
+    'field' => array(
+      'field' => 'cid',
+      'handler' => 'fbss_comments_views_handler_field_delete',
+      'click sortable' => FALSE,
+    ),
+  );
 
   // Declares the Status ID column.
   $data['fbss_comments']['sid'] = array(
@@ -205,6 +223,12 @@ function fbss_comments_views_handlers() {
         'parent' => 'views_handler_field',
       ),
       'fbss_comments_views_handler_field_cc2' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'fbss_comments_views_handler_field_delete' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'fbss_comments_views_handler_field_edit' => array(
         'parent' => 'views_handler_field',
       ),
     ),
