@@ -26,11 +26,14 @@ function fbss_twitter_menu() {
  * Implementation of hook_form_FORM_ID_alter().
  */
 function fbss_twitter_form_facebook_status_box_alter(&$form, &$form_state) {
-  if ($form_state['facebook_status']['recipient'] != $GLOBALS['user']->uid || $form_state['facebook_status']['type'] != 'user') {
+  $recipient = $form['recipient']['#value'];
+  $type = $form['type']['#value'];
+  if ($recipient != $GLOBALS['user']->uid || $type != 'user') {
     return;
   }
-  $context = facebook_status_determine_context($form_state['facebook_status']['type']);
-  $recipient = $context['handler']->load_recipient($form_state['facebook_status']['recipient']);
+  drupal_add_css(drupal_get_path('module', 'fbss_twitter') .'/fbss_twitter.css');
+  $context = facebook_status_determine_context($type);
+  $recipient = $context['handler']->load_recipient($recipient);
   $data = $recipient->data;
   if (is_string($data)) {
     $data = unserialize($data);
@@ -43,7 +46,7 @@ function fbss_twitter_form_facebook_status_box_alter(&$form, &$form_state) {
       '#weight' => -30,
     );
   }
-  $form_state['submit'][] = 'fbss_twitter_facebook_status_box_submit';
+  $form['fbss-submit']['#submit'][] = 'fbss_twitter_facebook_status_box_submit';
 }
 
 /**
@@ -59,7 +62,7 @@ function fbss_twitter_facebook_status_box_submit(&$form, &$form_state) {
       if (isset($form_state['facebook_status']['sid'])) {
         $sid = $form_state['facebook_status']['sid'];
       }
-      fbss_twitter_post_to_twitter($account, $new_status, $sid);
+      fbss_twitter_post_to_twitter($GLOBALS['user'], $new_status, $sid);
     }
   }
 }
@@ -129,7 +132,7 @@ function fbss_twitter_twitter_submit($form, &$form_state) {
       }
     }
     user_save($account, array(
-      'fbss_twitter' => $twitter_account,
+      'fbss_twitter_account' => $twitter_account,
       'fbss_twitter_default' => $form_state['values']['fbss_twitter_default'],
     ), 'twitter');
   }
