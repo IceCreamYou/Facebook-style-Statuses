@@ -299,14 +299,16 @@ function facebook_status_link($type, $status) {
     $links['edit'] = array(
       'href' => 'statuses/'. $status->sid .'/edit',
       'title' => t('edit'),
-      'attributes' => array('class' => 'facebook-status-edit-link facebook-status-action-link'),
+      'attributes' => array('class' => 'facebook-status-edit facebook-status-action-link'),
+      'weight' => -5,
     );
   }
   if (facebook_status_user_access('delete', $status)) {
     $links['delete'] = array(
       'href' => 'statuses/'. $status->sid .'/delete',
       'title' => t('delete'),
-      'attributes' => array('class' => 'facebook-status-delete-link facebook-status-action-link'),
+      'attributes' => array('class' => 'facebook-status-delete facebook-status-action-link'),
+      'weight' => -4,
     );
   }
   // If not self update by current user (because if it is a self update by the current user, there is no need for a response)
@@ -332,7 +334,8 @@ function facebook_status_link($type, $status) {
       $links['respond'] = array(
         'href' => 'statuses/conversation/'. $status->sender .','. $user->uid,
         'title' => $title,
-        'attributes' => array('class' => 'facebook-status-respond-link facebook-status-action-link'),
+        'attributes' => array('class' => 'facebook-status-respond facebook-status-action-link'),
+        'weight' => 3,
       );
     }
   }
@@ -341,7 +344,8 @@ function facebook_status_link($type, $status) {
       'href' => 'statuses/share',
       'title' => t('share'),
       'query' => array('sid' => $status->mid, 'destination' => $_GET['q']),
-      'attributes' => array('class' => 'facebook-status-share-link facebook-status-action-link'),
+      'attributes' => array('class' => 'facebook-status-share facebook-status-action-link'),
+      'weight' => 5,
     );
   }
   return $links;

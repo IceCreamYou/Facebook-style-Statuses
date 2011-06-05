@@ -67,6 +67,7 @@ function _facebook_status_show($status, $options) {
   if ($options['links']) {
     $status->links = module_invoke_all('link', 'facebook_status', $status);
     drupal_alter('facebook_status_link', $status->links, $status);
+    uasort($status->links, '_facebook_status_links_sort');
   }
   $message = trim($status->message);
   if ($options['page']) {
@@ -96,4 +97,17 @@ function _facebook_status_show($status, $options) {
   }
   drupal_add_css(drupal_get_path('module', 'facebook_status') .'/resources/facebook_status.css');
   return theme('facebook_status_item', $status, $options);
+}
+
+/**
+ * Helps sort links by weight.
+ */
+function _facebook_status_links_sort($a, $b) {
+  if (!isset($a['weight'])) {
+    $a['weight'] = 0;
+  }
+  if (!isset($b['weight'])) {
+    $b['weight'] = 0;
+  }
+  return $a['weight'] > $b['weight'] ? 1 : ($a['weight'] < $b['weight'] ? -1 : 0);
 }
