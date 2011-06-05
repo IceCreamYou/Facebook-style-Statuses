@@ -370,6 +370,12 @@ function facebook_status_views_plugins() {
         'uses options' => FALSE,
         'type' => 'feed',
       ),
-    )
+    ),
+    'argument validator' => array(
+      'status' => array(
+        'title' => t('Status'),
+        'handler' => 'facebook_status_plugin_argument_validate',
+      ),
+    ),
   );
 }
