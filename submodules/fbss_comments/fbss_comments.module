@@ -15,22 +15,12 @@
  *       + views bulk operations
  *       + notifications
  *   - Turn the comment theme functions into templates.
+ *   - Make Views integration good enough that we can use it for comment lists.
  */
 
 //===============
 // DRUPAL HOOKS.
 //===============
-
-/**
- * Implementation of hook_init().
- */
-function fbss_comments_init() {
-  if (strpos($_GET['q'], 'admin/build/views/edit') !== FALSE) {
-    $path = drupal_get_path('module', 'fbss_comments');
-    drupal_add_js($path .'/fbss_comments.js');
-    drupal_add_css($path .'/fbss_comments.css');
-  }
-}
 
 /**
  * Implementation of hook_menu().
@@ -168,6 +158,7 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
   if (!fbss_comments_can('view', $comment)) {
       return FALSE;
   }
+  drupal_add_css(drupal_get_path('module', 'fbss_comments') .'/fbss_comments.css');
   array_unshift($classes, 'fbss-comments-comment');
   $classes = implode(' ', $classes);
   $output = '<div class="'. $classes .'">';
@@ -231,8 +222,7 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
   if (!$count) {
     return;
   }
-  $path = drupal_get_path('module', 'fbss_comments');
-  drupal_add_js($path .'/fbss_comments.js');
+  drupal_add_js(drupal_get_path('module', 'fbss_comments') .'/fbss_comments.js');
   $output = '<div class="fbss-comments">';
   if ($count > variable_get('fbss_comments_hide_small', 3) && $delay_load) {
     $options = array('attributes' => array('class' => 'fbss-comments-show-comments-link fbss-comments-show-comments', 'id' => 'fbss-comments-toggle-'. $comments[0]->sid));
@@ -298,8 +288,6 @@ function theme_fbss_comments_items($comments, $delay_load = TRUE, $destination =
  */
 function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_load_comments = TRUE) {
   if (fbss_comments_can('post', facebook_status_load($sid))) {
-    $path = drupal_get_path('module', 'fbss_comments');
-    drupal_add_js($path .'/fbss_comments.js');
     $output = '';
     if ($delay_load_form && !fbss_comments_count_comments($sid, TRUE)) {
       $output = '<span class="fbss-comments-show-comment-form" id="fbss-comments-toggle-'. $sid .'">'.
@@ -310,9 +298,6 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
     return '<div class="fbss-comments-form">'. drupal_get_form('fbss_comments_box_'. $sid, $sid, $delay_load_comments) .'</div>';
   }
   else if (user_access('view all status comments')) {
-    $path = drupal_get_path('module', 'fbss_comments');
-    drupal_add_js($path .'/fbss_comments.js');
-    drupal_add_css($path .'/fbss_comments.css');
     return theme('fbss_comments_items', fbss_comments_get_comments($sid, TRUE), $delay_load_comments, $_GET['q']);
   }
 }
@@ -595,6 +580,7 @@ function fbss_comments_forms($form_id, $args) {
 function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_css($path .'/fbss_comments.css');
+  drupal_add_js($path .'/fbss_comments.js');
   // Defer execution so that it runs after ajax_view.js
   drupal_add_js($path .'/fbss_comments_views_ahah.js', 'module', 'header', TRUE);
   if (variable_get('fbss_comments_enter', 0)) {
