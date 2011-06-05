@@ -10,14 +10,6 @@
  */
 function fbss_comments_admin() {
   $form = array();
-  $form['fbss_comments_ahah'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use AHAH to refresh status comment forms without refreshing the page'),
-    '#description' => '<strong>'. t('If you enable this, do NOT use comments on Views with AJAX-enabled pagers.') .' '.
-      t('Otherwise comments will not work on pages other than the first page.') .'</strong>',
-    '#default_value' => variable_get('fbss_comments_ahah', 1),
-    //'#disabled' => TRUE,
-  );
   $form['fbss_comments_hide_small'] = array(
     '#type' => 'textfield',
     '#title' => t('Minimum number of comments at which some will be hidden'),
@@ -33,6 +25,19 @@ function fbss_comments_admin() {
     '#default_value' => variable_get('fbss_comments_show_all', 10),
     '#size' => 4,
     '#maxlength' => 4,
+  );
+  $form['fbss_comments_enter'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Submit the comment form when pressing Enter'),
+    '#description' => t('If enabled, the comment form will be submitted when the user presses Enter.') .' '.
+      t('Users can still create line breaks by pressing Shift+Enter.'),
+    '#default_value' => variable_get('fbss_comments_enter', 0),
+  );
+  $form['fbss_comments_ahah'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use AHAH to refresh status comment forms without refreshing the page'),
+    '#description' => '<strong>'. t('Disable this if comments are being loaded onto the page via AJAX by a module other than FBSS or Views.') .'</strong>',
+    '#default_value' => variable_get('fbss_comments_ahah', 1),
   );
   return system_settings_form($form);
 }
