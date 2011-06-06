@@ -32,7 +32,6 @@ function fbss_comments_admin() {
     foreach ($presets as $preset) {
       $opt[$preset['presetname']] = check_plain($preset['presetname']);
     }
-    $options = $this->options;
     $form['fbss_comments_user_pictures'] = array(
       '#title' => t('Imagecache preset for user pictures in comments'),
       '#type'  => 'select',
