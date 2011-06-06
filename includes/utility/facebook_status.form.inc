@@ -113,8 +113,6 @@ function facebook_status_box(&$form_state, $recipient, $type = 'user') {
   }
   else {
     $context = facebook_status_determine_context($type);
-    $type = $context['handler']->type();
-    $recipient = $context['handler']->find_recipient();
     $rid = $context['handler']->recipient_id($recipient);
   }
 
