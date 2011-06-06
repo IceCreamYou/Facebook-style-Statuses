@@ -285,6 +285,46 @@ function facebook_status_views_data() {
     ),
   );
 
+  // Limits users by who they have communicated with.
+  $data['users']['communicated'] = array(
+    'title' => t('Users have communicated with current user'),
+    'help' => t('Shows only users who have sent status messages to or received status messages from the current user.'),
+    'filter' => array(
+      'field' => 'uid',
+      'handler' => 'facebook_status_views_handler_filter_communicated',
+      'label' => t('Users communicated'),
+    ),
+  );
+  $data['users']['communicate'] = array(
+    'title' => t('Users have communicated with argument user'),
+    'help' => t('Shows only users who have sent status messages to or received status messages from the argument user.'),
+    'argument' => array(
+      'field' => 'uid',
+      'handler' => 'facebook_status_views_handler_argument_communicated',
+      'label' => t('Users communciated'),
+    ),
+  );
+
+  // Last status to current user from user.
+  $data['users']['last_status'] = array(
+    'title' => t('Last status to current user'),
+    'help' => t('Shows the last status each user sent to the current user, if any.'),
+    'field' => array(
+      'field' => 'uid',
+      'handler' => 'facebook_status_views_handler_field_last',
+    ),
+  );
+
+  // Current user's UID.
+  $data['users']['current_uid'] = array(
+    'title' => t("Current user's User ID"),
+    'help' => t('Shows the User ID of the current user.'),
+    'field' => array(
+      'field' => 'uid',
+      'handler' => 'facebook_status_views_handler_field_current_uid',
+    ),
+  );
+
   return $data;
 }
 
@@ -297,6 +337,9 @@ function facebook_status_views_handlers() {
       'path' => drupal_get_path('module', 'facebook_status') .'/includes/views/handlers',
     ),
     'handlers' => array(
+      'facebook_status_views_handler_argument_communicated' => array(
+        'parent' => 'views_handler_argument',
+      ),
       'facebook_status_views_handler_argument_participant' => array(
         'parent' => 'views_handler_argument',
       ),
@@ -309,10 +352,16 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_field_cross_pic' => array(
         'parent' => 'views_handler_field',
       ),
+      'facebook_status_views_handler_field_current_uid' => array(
+        'parent' => 'views_handler_field',
+      ),
       'facebook_status_views_handler_field_delete' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_edit' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'facebook_status_views_handler_field_last' => array(
         'parent' => 'views_handler_field',
       ),
       'facebook_status_views_handler_field_message' => array(
@@ -333,11 +382,14 @@ function facebook_status_views_handlers() {
       'facebook_status_views_handler_filter_autotype' => array(
         'parent' => 'views_handler_filter',
       ),
-      'facebook_status_views_handler_filter_participant' => array(
+      'facebook_status_views_handler_filter_communicated' => array(
         'parent' => 'views_handler_filter',
       ),
       'facebook_status_views_handler_filter_latest_only' => array(
         'parent' => 'views_handler_filter_boolean_operator',
+      ),
+      'facebook_status_views_handler_filter_participant' => array(
+        'parent' => 'views_handler_filter',
       ),
       'facebook_status_views_handler_filter_not_own' => array(
         'parent' => 'views_handler_filter_boolean_operator',
