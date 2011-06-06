@@ -35,6 +35,10 @@
  * - $private: Whether the status update is private or not
  * - $private_text: The translated version of either "Private" or "Public"
  *
+ * If the (third-party) Facebook-style Micropublisher module is enabled, these
+ * variables are also available:
+ * - $attachment: The themed attachment to the status update
+ *
  * Other modules may add additional variables.
  */
 ?>
@@ -50,6 +54,9 @@
     <span class="facebook-status-private-text"><?php echo $private_text; ?></span>
   <?php endif; ?>
   <span class="facebook-status-content"><?php echo $message; ?></span>
+  <?php if ($attachment): ?>
+    <div class="fbsmp"><?php echo $attachment; ?></div>
+  <?php endif; ?>
   <div class="facebook-status-details">
     <span class="facebook-status-time"><?php echo $created; ?></span>
     <?php if ($meta): ?>
