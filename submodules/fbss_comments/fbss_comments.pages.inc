@@ -26,6 +26,27 @@ function fbss_comments_admin() {
     '#size' => 4,
     '#maxlength' => 4,
   );
+  if (module_exists('imagecache_profiles')) {
+    $presets = imagecache_presets();
+    $opt = array(0 => t('No user pictures'));
+    foreach ($presets as $preset) {
+      $opt[$preset['presetname']] = check_plain($preset['presetname']);
+    }
+    $options = $this->options;
+    $form['fbss_comments_user_pictures'] = array(
+      '#title' => t('Imagecache preset for user pictures in comments'),
+      '#type'  => 'select',
+      '#options' => $opt,
+      '#default_value' => variable_get('fbss_comments_user_pictures', 0),
+    );
+  }
+  else {
+    $form['fbss_comments_user_pictures'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show user pictures on comments'),
+      '#default_value' => variable_get('fbss_comments_user_pictures', 0),
+    );
+  }
   $form['fbss_comments_enter'] = array(
     '#type' => 'checkbox',
     '#title' => t('Submit the comment form when pressing Enter'),

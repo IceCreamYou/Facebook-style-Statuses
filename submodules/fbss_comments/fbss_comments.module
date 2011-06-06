@@ -159,10 +159,19 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
       return FALSE;
   }
   drupal_add_css(drupal_get_path('module', 'fbss_comments') .'/fbss_comments.css');
+  $author = _facebook_status_user_load($comment->uid);
   array_unshift($classes, 'fbss-comments-comment');
   $classes = implode(' ', $classes);
   $output = '<div class="'. $classes .'">';
-  $output .= '<div class="fbss-comments-author">'. theme('username', _facebook_status_user_load($comment->uid)) .'</div>';
+  if (variable_get('fbss_comments_user_pictures', 0)) {
+    if (module_exists('imagecache_profiles')) {
+      $output .= '<div class="fbss-comments-author-picture">'. theme('imagecache', variable_get('fbss_comments_user_pictures', 0), $author->picture) .'</div>';
+    }
+    else {
+      $output .= '<div class="fbss-comments-author-picture">'. theme('user_picture', $author) .'</div>';
+    }
+  }
+  $output .= '<div class="fbss-comments-author">'. theme('username', $author) .'</div>';
   $comment_text = _facebook_status_run_filter($comment->comment);
   $comment_text = nl2br($comment_text);
   $output .= '<div class="fbss-comments-text">'. $comment_text .'</div>';
