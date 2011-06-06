@@ -1192,7 +1192,7 @@ function facebook_status_token_values($type, $data = NULL, $options = array()) {
     'message-unformatted' => check_plain($status->message),
     'message-formatted' => $message_formatted,
     'message-raw' => $status->message,
-    'status-themed' => theme('facebook_status_item', $status),
+    'status-themed' => facebook_status_show($status),
     'status-id' => $status->sid,
     'status-url' => url('statuses/'. $status->sid, array('absolute' => TRUE)),
     'status-edit' => $edit,
