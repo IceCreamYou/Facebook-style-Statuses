@@ -145,13 +145,17 @@ function fbss_twitter_twitter_submit($form, &$form_state) {
  *   The $user object for the user posting the tweet.
  * @param $message
  *   The text of the message being posted.
- * @param $sid
- *   (optional) If the message is too long to fit in a tweet and a SID is
- *   given, the tweet will be truncated and a link to view the whole status
- *   message will be appended. If the message is too long and a SID is not
- *   given, Twitter will simply truncate the message on its own.
+ * @param $options
+ *   (optional) An associative array of parameters to control how the tweet is
+ *   constructed. If the "add URL" parameter is TRUE, a link to the status will
+ *   be added to the message and the message will be truncated if necessary.
+ *   Otherwise, if the message is too long to fit in a tweet and the "sid"
+ *   parameter is given (identifying the status that the message is about) then
+ *   the tweet will be truncated and a link to view the whole status message
+ *   will be appended. If the message is too long and the "sid" parameter is
+ *   not given, Twitter will simply truncate the message on its own.
  */
-function fbss_twitter_post_to_twitter($account, $message, $sid = NULL) {
+function fbss_twitter_post_to_twitter($account, $message, $options = array()) {
   if (empty($message)) {
     return;
   }
@@ -159,14 +163,25 @@ function fbss_twitter_post_to_twitter($account, $message, $sid = NULL) {
   if ($user->uid != $account->uid) {
     return;
   }
+  // Backwards compatibility.
+  if (is_numeric($options)) {
+    $options = array('sid' => $options);
+  }
+  $options += array('add URL' => FALSE);
   // Try to fit the message into a tweet.
-  if (!empty($sid) && drupal_strlen($message) > 140) {
-    $url = url('statuses/'. $sid);
+  $message_length = drupal_strlen($message);
+  if ((!empty($options['sid']) && $message_length > 140) || $options['add URL']) {
+    $url = url('statuses/'. $options['sid']);
     if (module_exists('shorten')) {
       $url = shorten_url($url);
     }
     $url_length = drupal_strlen($url);
-    $message = drupal_substr($message, 0, 138 - $url_length) ."\xE2\x80\xA6 ". $url;
+    if ($message_length + $url_length > 140) {
+      $message = drupal_substr($message, 0, 138 - $url_length) ."\xE2\x80\xA6 ". $url;
+    }
+    else {
+      $message .= ' '. $url;
+    }
   }
   module_load_include('inc', 'twitter');
   $twitter_accounts = twitter_get_user_accounts($account->uid);
