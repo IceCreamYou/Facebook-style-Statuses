@@ -48,6 +48,7 @@
 
 .fbss-comments-author-picture {
   display: inline;
+  padding-right: 0.5em;
 }
 
 .fbss-comments-form .resizable-textarea {

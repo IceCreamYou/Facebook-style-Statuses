@@ -164,12 +164,7 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
   $classes = implode(' ', $classes);
   $output = '<div class="'. $classes .'">';
   if (variable_get('fbss_comments_user_pictures', 0)) {
-    if (module_exists('imagecache_profiles')) {
-      $output .= '<div class="fbss-comments-author-picture">'. theme('imagecache', variable_get('fbss_comments_user_pictures', 0), $author->picture) .'</div>';
-    }
-    else {
-      $output .= '<div class="fbss-comments-author-picture">'. theme('user_picture', $author) .'</div>';
-    }
+    $output .= '<div class="fbss-comments-author-picture">'. _fbss_comments_user_picture($author) .'</div>';
   }
   $output .= '<div class="fbss-comments-author">'. theme('username', $author) .'</div>';
   $comment_text = _facebook_status_run_filter($comment->comment);
@@ -554,6 +549,38 @@ function _fbss_comments_use_autogrow() {
   elseif (file_exists('libraries/jquery.autogrow.js')) {
     drupal_add_js('libraries/jquery.autogrow.js');
   }
+}
+
+/**
+ * Renders a user's profile picture.
+ *
+ * @see template_preprocess_user_picture()
+ */
+function _fbss_comments_user_picture($account) {
+  if (!module_exists('imagecache_profiles')) {
+    return theme('user_picture', $account);
+  }
+  $output = '';
+  if (variable_get('user_pictures', 0)) {
+    if (!empty($account->picture) && file_exists($account->picture)) {
+      $picture = file_create_url($account->picture);
+    }
+    else if (variable_get('user_picture_default', '')) {
+      $picture = variable_get('user_picture_default', '');
+    }
+    if (isset($picture)) {
+      $alt = t("@user's picture", array('@user' => $account->name ? $account->name : variable_get('anonymous', t('Anonymous'))));
+      $output = theme('imagecache', variable_get('fbss_comments_user_pictures', 0), $picture, $alt, $alt, NULL, FALSE);
+      if (!empty($account->uid) && user_access('access user profiles')) {
+        $attributes = array(
+          'attributes' => array('title' => t('View user profile.')),
+          'html' => TRUE,
+        );
+        $output = l($output, "user/$account->uid", $attributes);
+      }
+    }
+  }
+  return $output;
 }
 
 //=================
