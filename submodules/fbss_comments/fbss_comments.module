@@ -299,7 +299,7 @@ function theme_fbss_comments_form_display($sid, $delay_load_form = TRUE, $delay_
         .'</span>';
         return $output .'<div class="fbss-comments-hide fbss-comments-form">'. drupal_get_form('fbss_comments_box_'. $sid, $sid, $delay_load_comments) .'</div>';
     }
-    return '<div class="fbss-comments-form">'. drupal_get_form('fbss_comments_box_'. $sid, $sid, $delay_load_comments) .'</div>';
+    return '<div class="fbss-comments-form">'. drupal_get_form('fbss_comments_box_'. $sid, $sid, $delay_load_comments, $delay_load_form) .'</div>';
   }
   else if (user_access('view all status comments')) {
     return theme('fbss_comments_items', fbss_comments_get_comments($sid, TRUE), $delay_load_comments, $_GET['q']);
@@ -613,7 +613,7 @@ function fbss_comments_forms($form_id, $args) {
  *   thread page. If FALSE the "comment" link with delayed comment form loading
  *   will not be used.
  */
-function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
+function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE, $hide_submit = TRUE) {
   $path = drupal_get_path('module', 'fbss_comments');
   drupal_add_css($path .'/fbss_comments.css');
   drupal_add_js($path .'/fbss_comments.js');
@@ -640,7 +640,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
   $comments = fbss_comments_get_comments($sid, TRUE);
   $form['before'] = array('#value' => '<div id="fbss-comments-replace-'. $sid .'">');
   $form['comments'] = array('#value' => theme('fbss_comments_items', $comments, $delay_load, $form['#qu']));
-  if (count($comments)) {
+  if (count($comments) && $hide_submit) {
     $form['start-hide'] = array('#value' => '<div class="fbss-comments-show-comment-form-inner" id="fbss-comments-inner-toggle-'. $sid .'">'.
       l(t('Comment'), 'statuses/'. $sid, array('attributes' => array('class' => 'fbss-comments-show-comment-inner-form-link')))
       .'</div><div class="fbss-comments-hide fbss-comments-replace-'. $sid .'-inner">');
@@ -651,7 +651,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
     '#attributes' => array('class' => 'fbss-comments-textarea'),
     '#resizable' => FALSE,
   );
-  if (count($comments)) {
+  if (count($comments) && $hide_submit) {
     $form['end-hide'] = array('#value' => '</div>');
   }
   $form['after'] = array('#value' => '</div>');
@@ -659,7 +659,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE) {
     '#type' => 'submit',
     '#value' => t('Comment'),
     '#attributes' => array('class' => 'fbss-comments-submit'),
-    '#prefix' => '<div class="fbss-comments-hide fbss-comments-replace-'. $sid .'-inner">',
+    '#prefix' => '<div class="'. ($hide_submit ? 'fbss-comments-hide' : '') .' fbss-comments-replace-'. $sid .'-inner">',
     '#suffix' => '</div>',
     '#submit' => array('fbss_comments_box_submit'),
   );
