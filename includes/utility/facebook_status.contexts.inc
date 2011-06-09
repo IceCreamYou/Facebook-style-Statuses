@@ -165,7 +165,7 @@ class facebook_status_user_context extends facebook_status_context {
     $uids = devel_get_users();
     if (!empty($uids)) {
       $uid = $uids[array_rand($uids)];
-      return $this->load_recipient($id);
+      return $this->load_recipient($uid);
     }
     return user_load(0);
   }
