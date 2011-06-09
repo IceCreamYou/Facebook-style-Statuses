@@ -824,7 +824,7 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
  *     'update timestamp' => FALSE,
  *   );
  *   The first three options have little meaning if the status is being edited,
- *   but othermodules are free to add their own options that should be
+ *   but other modules are free to add their own options that should be
  *   respected here.
  */
 function facebook_status_edit_status($status, $new_message, $options = array()) {
