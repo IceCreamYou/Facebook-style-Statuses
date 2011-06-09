@@ -821,9 +821,11 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
  *     'discard duplicates' => TRUE,
  *     'timed override' => TRUE,
  *     'discard blank statuses' => TRUE,
+ *     'update timestamp' => FALSE,
  *   );
- *   These options have little meaning if the status is being edited, but other
- *   modules are free to add their own options that should be respected here.
+ *   The first three options have little meaning if the status is being edited,
+ *   but othermodules are free to add their own options that should be
+ *   respected here.
  */
 function facebook_status_edit_status($status, $new_message, $options = array()) {
   $context = facebook_status_determine_context($status->type);
@@ -833,6 +835,7 @@ function facebook_status_edit_status($status, $new_message, $options = array()) 
     'discard duplicates' => TRUE,
     'timed override' => TRUE,
     'discard blank statuses' => TRUE,
+    'update timestamp' => FALSE,
   );
   // Calls hook_facebook_status_save_options_alter(&$options, $edit).
   drupal_alter('facebook_status_save_options', $options, TRUE);
@@ -840,11 +843,17 @@ function facebook_status_edit_status($status, $new_message, $options = array()) 
   global $user;
   // Pretend to have set a new status if the submitted status is exactly the same as the old one.
   if ($new_message != $status->message) {
-    $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d";
-    db_query($sql, $new_message, $time, $status->sid);
-    // Invokes hook_facebook_status_save($status, $edit).
+    if ($options['update timestamp']) {
+      $sql = "UPDATE {facebook_status} SET message = '%s', created = %d WHERE sid = %d";
+      db_query($sql, $new_message, $time, $status->sid);
+      $status->created = $time;
+    }
+    else {
+      $sql = "UPDATE {facebook_status} SET message = '%s' WHERE sid = %d";
+      db_query($sql, $new_message, $status->sid);
+    }
     $status->message = $new_message;
-    $status->created = $time;
+    // Invokes hook_facebook_status_save($status, $context, $edit, $options).
     module_invoke_all('facebook_status_save', $status, $context, TRUE, $options);
   }
   // Trigger integration.
