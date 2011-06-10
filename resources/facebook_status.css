@@ -3,7 +3,11 @@
 }
 
 .facebook-status-chars {
-  margin-right: 0.5em;
+  float: right;
+}
+
+#facebook-status-edit .facebook-status-chars {
+  float: none;
 }
 
 .facebook-status-profile-category .profile {
