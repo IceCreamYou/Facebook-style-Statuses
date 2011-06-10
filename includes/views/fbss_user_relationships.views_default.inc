@@ -424,22 +424,6 @@ function fbss_user_relationships_views_default_views() {
       'field' => 'message',
       'relationship' => 'none',
     ),
-    'rtype' => array(
-      'operator' => 'in',
-      'value' => array(
-        '0' => '1',
-      ),
-      'group' => '0',
-      'exposed' => FALSE,
-      'expose' => array(
-        'operator' => FALSE,
-        'label' => '',
-      ),
-      'id' => 'rtype',
-      'table' => 'user_relationships',
-      'field' => 'rtype',
-      'relationship' => 'none',
-    ),
     'type' => array(
       'operator' => 'in',
       'value' => array(
