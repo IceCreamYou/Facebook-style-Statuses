@@ -182,7 +182,7 @@ function facebook_status_box(&$form_state, $recipient, $type = 'user') {
   if (variable_get('facebook_status_length', 140) > 0) {
     $form['chars'] = array(
       '#value' => '<span class="facebook-status-chars">'. t('%chars characters allowed', array('%chars' => variable_get('facebook_status_length', 140))) .'</span>',
-      '#weight' => -41,
+      '#weight' => module_exists('fbss_privacy') ? -41 : -24,
     );
   }
   $form['fbss-status'] = array(
