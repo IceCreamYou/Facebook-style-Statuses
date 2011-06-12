@@ -457,8 +457,8 @@ function facebook_status_views_default_views() {
     'name' => array(
       'label' => '',
       'alter' => array(
-        'alter_text' => 0,
-        'text' => '',
+        'alter_text' => 1,
+        'text' => '<span class="facebook-status-sender">[name]</span>',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',
@@ -835,8 +835,8 @@ function facebook_status_views_default_views() {
     'name' => array(
       'label' => '',
       'alter' => array(
-        'alter_text' => 0,
-        'text' => '',
+        'alter_text' => 1,
+        'text' => '<span class="facebook-status-sender">[name]</span>',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',
