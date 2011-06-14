@@ -153,7 +153,7 @@ function facebook_status_generate_status($time, $types, $tags, &$context) {
 
   $text = '';
   //Mentions.
-  if (module_exists('facebook_status_tags') && $tags && $type == 'user' && $uid == $recipient->uid && mt_rand(0, 1)) {
+  if (module_exists('facebook_status_tags') && $tags && $type == 'user' && mt_rand(0, 1)) {
     $rid = 0;
     while ($rid == 0 || $rid == $uid) {
       $rid = $uids[array_rand($uids)];
