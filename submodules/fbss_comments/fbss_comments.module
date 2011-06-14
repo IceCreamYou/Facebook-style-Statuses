@@ -539,16 +539,7 @@ function _fbss_comments_get_thread_author($sid) {
  * Adds the Autogrow jQuery extension.
  */
 function _fbss_comments_use_autogrow() {
-  if (module_exists('libraries')) {
-    drupal_add_js(libraries_get_path('autogrow') .'/jquery.autogrow.js');
-    return;
-  }
-  if (file_exists('sites/all/libraries/jquery.autogrow.js')) {
-    drupal_add_js('sites/all/libraries/jquery.autogrow.js');
-  }
-  elseif (file_exists('libraries/jquery.autogrow.js')) {
-    drupal_add_js('libraries/jquery.autogrow.js');
-  }
+  _facebook_status_use_autogrow();
 }
 
 /**
