@@ -216,7 +216,7 @@ function facebook_status_generate_finished($success, $results, $operations) {
     ));
   }
   if ($success && $results['num']) {
-    $message = t('Finished creating @num statuses successfully.', array('@num' => $results['num']));
+    $message = format_plural($results['num'], 'Finished creating 1 status successfully.', 'Finished creating @count statuses successfully.');
   }
   elseif ($success) {
     $message = t('Finished processing 0 statuses.');
