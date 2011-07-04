@@ -9,7 +9,7 @@
 define('FBSS_NOTIFICATIONS_PAGER', 20);
 
 /**
- * Implementation of hook_menu();
+ * Implementation of hook_menu().
  */
 function fbss_notifications_menu() {
   $items = array();
@@ -23,8 +23,7 @@ function fbss_notifications_menu() {
   );
   $items['user/%user/notifications/status'] = array(
     'type' => MENU_LOCAL_TASK,
-    'access callback' => FALSE, 
-    'access arguments' => FALSE,
+    'access arguments' => array('maintain own subscriptions'),
     'title' => 'Status threads',
     'page callback' => 'fbss_notifications_page_thread',
     'page arguments' => array(1),
@@ -56,10 +55,11 @@ function fbss_notifications_menu() {
  * Implementation of hook_perm().
  */
 function fbss_notifications_perm() {
-  return array(
-    "subscribe to a user's status updates",
-    "subscribe to an entity's status stream",
-  );
+  $perms = array('subscribe to a status stream');
+  if (module_exists('fbss_comments')) {
+    $perms[] = 'subscribe to comments on a status';
+  }
+  return $perms;
 }
 
 /**
@@ -193,7 +193,7 @@ function fbss_notifications_fbss_comments_after_save($comment, $edit) {
  */
 function fbss_notifications_notifications($op, &$arg0 = NULL, $arg1 = NULL, $arg2 = NULL) {
   switch ($op) {
-    case 'subscription types': // Kinds of subscriptions a user can add, e.g. "Subscribe to thread" and "Subscribe to stream."
+    case 'subscription types': // Kinds of subscriptions a user can add, e.g. "Subscribe to thread" and "Subscribe to stream"
       $types = array();
       if (module_exists('fbss_comments')) {
         $types['status'] = array( // 'status' is $subscription->type
@@ -292,34 +292,34 @@ function fbss_notifications_notifications($op, &$arg0 = NULL, $arg1 = NULL, $arg
       foreach (array('status', 'stream') as $type) {
         $types[] = array(
           'type' => $type,
-          'action' => 'create self',
+          'action' => 'create-self',
           'name' => t('@type: A user has saved a new status update', array('@type' => $type)),
           'line' => t('[sender-name] [message-unformatted]'),
-          'digest' => array('status', 'type'),
+          'digest' => array('facebook_status', 'recipient'),
           'description' => t('Personal status creation'),
         );
         $types[] = array(
           'type' => $type,
-          'action' => 'update self',
+          'action' => 'update-self',
           'name' => t('@type: A user has edited their status', array('@type' => $type)),
           'line' => t('[sender-name] [message-unformatted]'),
-          'digest' => array('status', 'type'),
+          'digest' => array('facebook_status', 'recipient'),
           'description' => t('Personal status update'),
         );
         $types[] = array(
           'type' => $type,
-          'action' => 'create other',
+          'action' => 'create-other',
           'name' => t('@type: A user has sent a new status message', array('@type' => $type)),
           'line' => t("[sender-name] \xE2\x80\xA6 [recipient-name]: [message-unformatted]"),
-          'digest' => array('status', 'type'),
+          'digest' => array('facebook_status', 'recipient'),
           'description' => t('New status message sent'),
         );
         $types[] = array(
           'type' => $type,
-          'action' => 'update other',
+          'action' => 'update-other',
           'name' => t('@type: A user has edited their status', array('@type' => $type)),
           'line' => t('[sender-name] [message-unformatted]'),
-          'digest' => array('status', 'type'),
+          'digest' => array('facebook_status', 'recipient'),
           'description' => t('Status message edited'),
         );
       }
@@ -328,11 +328,11 @@ function fbss_notifications_notifications($op, &$arg0 = NULL, $arg1 = NULL, $arg
         'action' => 'status comment',
         'name' => t('@type: A user has commented on a status', array('@type' => $type)),
         'line' => t('[commenter-name] wrote [message-unformatted] at [status-url]'),
-        'digest' => array('status', 'sid'),
+        'digest' => array('facebook_status', 'sid'),
         'description' => t('Status comment'),
       );
       return $types;
-    case 'query': // Describe which field values identify an object so that Notifications can detect whether a subscription exists for it.
+    case 'query': // Describe which field values identify an object so that Notifications can detect whether a subscription exists for it
       $op = $arg0; // Either 'user' or 'event'
       $event_type = $arg1;
       $object = $arg2; // the event object if $op == 'event', or the status/node/comment object if $op == 'user'
@@ -354,7 +354,7 @@ function fbss_notifications_notifications($op, &$arg0 = NULL, $arg1 = NULL, $arg
       }
       // elseif ($event_type == 'stream' && $op == 'user' && $recipient = $object) {} // This case never happens.
       break;
-    case 'user options': // Describe the links that should show up on the user for subscribing to their stream  $options = array();
+    case 'user options': // Describe the links that should show up on the user for subscribing to their stream
       // $arg0 == $account, $arg1 == $recipient
       $options = array();
       if (in_array('user', array_values(variable_get('fbss_notifications_link', array('user' => 'user', 'node' => 0, 'og' => 'og'))))) {
@@ -394,9 +394,11 @@ function fbss_notifications_notifications($op, &$arg0 = NULL, $arg1 = NULL, $arg
       if ($op == 'event' && ($object->type == 'status' || $object->type == 'stream')) {
         if (!empty($object->objects['recipient'])) { // stream
           $access = facebook_status_user_access('view_stream', $recipient, $object->objects['context']['handler']->type(), $account);
+          $access = $access && user_access('subscribe to a status stream');
         }
         elseif (!empty($object->objects['status'])) { // status
           $access = facebook_status_user_access('view', $object->objects['status'], $account);
+          $access = $access && user_access('subscribe to comments on a status');
         }
       }
       elseif ($op == 'subscription') {
@@ -405,10 +407,12 @@ function fbss_notifications_notifications($op, &$arg0 = NULL, $arg1 = NULL, $arg
           $context = facebook_status_determine_context($type);
           $recipient = $context['handler']->load_recipient($object->fields['recipient']);
           $access = facebook_status_user_access('view_stream', $recipient, $context['handler']->type(), $account);
+          $access = $access && user_access('subscribe to a status stream');
         }
         elseif (!empty($object->fields['sid'])) { // status
           if ($status = facebook_status_load($object->fields['sid'])) {
             $access = facebook_status_user_access('view', $status, $account);
+            $access = $access && user_access('subscribe to comments on a status');
           }
           else {
             $access = FALSE;
@@ -500,7 +504,7 @@ function fbss_notifications_messaging($op, $arg1 = NULL, $arg2 = NULL) {
       );
       return $info;
     case 'message keys':
-      switch($arg1) {
+      switch ($arg1) {
         case 'notifications-event-stream':
         case 'notifications-event-stream-create-self':
         case 'notifications-event-stream-create-other':
@@ -522,7 +526,7 @@ function fbss_notifications_messaging($op, $arg1 = NULL, $arg2 = NULL) {
       break;
 
     case 'messages':
-      switch($arg1) {
+      switch ($arg1) {
         case 'notifications-event-stream':
           return array(
             'subject' => t('A status to which you are subscribed has been updated'),

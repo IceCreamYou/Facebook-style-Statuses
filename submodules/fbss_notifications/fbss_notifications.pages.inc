@@ -11,6 +11,7 @@
 
 /**
  * Page callback for admin/settings/notifications/status.
+ * Display global settings for what subscriptions are enabled and where they are displayed.
  */
 function fbss_notifications_settings_form($form) {
   $form = array();
@@ -37,6 +38,7 @@ function fbss_notifications_settings_form($form) {
 
 /**
  * Page callback for user/%user/notifications/status.
+ * List status subscriptions.
  *
  * 'type' is 'status', analogous to 'thread'
  * 'event_type' is 'status', analogous to 'node'
@@ -93,6 +95,7 @@ function fbss_notifications_page_thread($account = NULL) {
 
 /**
  * Page callback for user/%user/notifications/status-$type.
+ * List stream subscriptions.
  *
  * 'type' is arg(3), analogous to 'author'
  * 'event_type' is 'status', analogous to 'node'

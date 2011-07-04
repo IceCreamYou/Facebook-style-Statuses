@@ -17,8 +17,6 @@ class facebook_status_context {
 
   /**
    * The context type.
-   * Used to automatically determine several values, but not required by
-   * subclasses if those values are overridden.
    */
   function type() {
     return '';
