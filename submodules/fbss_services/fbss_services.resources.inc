@@ -126,22 +126,14 @@ function fbss_services_operations_resources() {
 }
 
 /**
- * Provides actions that are compatible with the Twitter API.
- * The goal is to allow any client application that can connect with
- * arbitrary status.net sites to support any site running FBSS.
- *
- * Exceptions:
- * - RSS and ATOM formats are not supported because the data is not
- *   sufficiently rich.
- *
- * @see http://developer.twitter.com/doc
- * @see http://status.net/wiki/Twitter-compatible_API
+ * Provides extended actions.
  */
 function fbss_services_actions_resources() {
   return array(
     'all' => array(
       'help' => 'Returns the 20 most recent non-private statuses.',
       'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'fbss_services.twitter'),
+      'method' => 'GET',
       'callback' => 'fbss_services_all',
       'access callback' => 'fbss_services_extended_access',
       'access arguments' => array('fbss_services_all_access'),
