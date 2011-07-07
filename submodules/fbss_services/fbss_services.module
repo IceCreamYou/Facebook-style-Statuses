@@ -127,3 +127,8 @@ function fbss_services_services_resources() {
     ),
   );
 }
+
+function _fbss_services_access($action) {
+  module_load_include('inc', 'fbss_services');
+  return fbss_services_access($action);
+}
