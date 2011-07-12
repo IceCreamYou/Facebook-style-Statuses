@@ -750,6 +750,9 @@ function facebook_status_save_status($recipient, $type, $message, $sender = NULL
   $recipient_id = $context['handler']->recipient_id($recipient);
   $time = time();
   $message = trim($message);
+  if (module_exists('og') && arg(0) == 'facebook_status' && arg(1) == 'js') {
+    og_set_group_context($recipient);
+  }
   // Merge in defaults.
   $options += array(
     'discard duplicates' => TRUE,
