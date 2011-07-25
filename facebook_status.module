@@ -300,6 +300,7 @@ function facebook_status_link($type, $status) {
       'href' => 'statuses/'. $status->sid .'/edit',
       'title' => t('Edit'),
       'attributes' => array('class' => 'facebook-status-edit facebook-status-action-link'),
+      'query' => array('destination' => $_GET['q']),
       'weight' => -5,
     );
   }
@@ -308,6 +309,7 @@ function facebook_status_link($type, $status) {
       'href' => 'statuses/'. $status->sid .'/delete',
       'title' => t('Delete'),
       'attributes' => array('class' => 'facebook-status-delete facebook-status-action-link'),
+      'query' => array('destination' => $_GET['q']),
       'weight' => -4,
     );
   }
