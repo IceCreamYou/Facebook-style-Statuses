@@ -1036,6 +1036,14 @@ function facebook_status_facebook_status_context_info() {
       'weight' => 1000, // heavier than the user context, therefore disabled by default
       'file' => $path .'/includes/utility/facebook_status.contexts.inc',
     ),
+    'domain' => array(
+      'title' => module_exists('fbss_domain') ? t('Domains') : t('General - the site itself'),
+      'description' => t('The stream belongs to the site itself. Allows using FBSS like a guestbook.'),
+      'handler' => 'facebook_status_domain_context',
+      'view' => 'facebook_status_stream',
+      'weight' => 1337,
+      'file' => $path .'/includes/utility/facebook_status.contexts.inc',
+    ),
   );
 }
 
