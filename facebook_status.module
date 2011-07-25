@@ -298,7 +298,7 @@ function facebook_status_link($type, $status) {
   if (facebook_status_user_access('edit', $status)) {
     $links['edit'] = array(
       'href' => 'statuses/'. $status->sid .'/edit',
-      'title' => t('edit'),
+      'title' => t('Edit'),
       'attributes' => array('class' => 'facebook-status-edit facebook-status-action-link'),
       'weight' => -5,
     );
@@ -306,7 +306,7 @@ function facebook_status_link($type, $status) {
   if (facebook_status_user_access('delete', $status)) {
     $links['delete'] = array(
       'href' => 'statuses/'. $status->sid .'/delete',
-      'title' => t('delete'),
+      'title' => t('Delete'),
       'attributes' => array('class' => 'facebook-status-delete facebook-status-action-link'),
       'weight' => -4,
     );
@@ -318,15 +318,15 @@ function facebook_status_link($type, $status) {
       $second_uid = $user->uid;
       // If to current user (not a self update)
       if ($status->type == 'user' && $status->recipient == $user->uid) {
-        $title = t('reply');
+        $title = t('Reply');
       }
       // If self update (not by current user)
       elseif ($status->type == 'user' && $status->recipient == $status->sender) {
-        $title = t('respond');
+        $title = t('Respond');
       }
       // If from one user to another and the current user is not the recipient
       elseif ($status->type == 'user') {
-        $title = t('view conversation');
+        $title = t('View conversation');
         $second_uid = $status->recipient;
       }
       $links['respond'] = array(
@@ -340,7 +340,7 @@ function facebook_status_link($type, $status) {
   if (facebook_status_user_access('add', $user, 'user', $user)) {
     $links['share'] = array(
       'href' => 'statuses/share',
-      'title' => t('share'),
+      'title' => t('Share'),
       'query' => array('sid' => $status->mid, 'destination' => $_GET['q']),
       'attributes' => array('class' => 'facebook-status-share facebook-status-action-link'),
       'weight' => 5,
