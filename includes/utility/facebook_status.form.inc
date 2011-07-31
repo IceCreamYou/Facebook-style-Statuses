@@ -176,7 +176,6 @@ function facebook_status_box(&$form_state, $recipient, $type = 'user') {
   }
   drupal_add_js($path .'/facebook_status_ahah.js', 'module', 'footer');
   drupal_add_css($path .'/facebook_status.css');
-  $form = array('#cache' => TRUE);
   // Form elements between ['opendiv'] and ['closediv'] will be refreshed via AHAH on form submission.
   $form['opendiv'] = array(
     '#value' => '<div id="facebook-status-replace">',
