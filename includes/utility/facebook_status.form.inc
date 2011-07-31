@@ -142,7 +142,7 @@ function facebook_status_box(&$form_state, $recipient, $type = 'user') {
   // @todo: Replace with a "true" re-posting system.
   if (isset($_GET['sid']) && is_numeric($_GET['sid'])) {
     $rs = facebook_status_load($_GET['sid']);
-    $sender = _facebook_status_user_load($rs->sender);
+    $sender = user_load($rs->sender);
     if ($sender->uid != $user->uid && $rs->message) {
       $name = '@'. $sender->name;
       // Properly reference tags with word-break characters in them.
@@ -256,7 +256,9 @@ function facebook_status_box_validate($form, &$form_state) {
   if ($len > $maxlen && $maxlen != 0) {
     form_set_error('status',
       t('You may use a maximum of %maxchars characters, but you are using %chars characters.',
-      array('%maxchars' => $maxlen, '%chars' => $len)));
+        array('%maxchars' => $maxlen, '%chars' => $len)
+      )
+    );
   }
 }
 
