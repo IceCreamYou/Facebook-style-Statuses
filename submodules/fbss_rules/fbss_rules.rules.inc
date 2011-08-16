@@ -309,7 +309,8 @@ function fbss_rules_add_action($settings) {
   $context = facebook_status_determine_context($type);
   $recipient = $context['handler']->load_recipient($settings['recipient']);
   $message = $settings['message'];
-  $sender = _facebook_status_user_load_by_name($settings['sender']);
+  $sender_name = empty($settings['sender']) ? $GLOBALS['user']->name : $settings['sender'];
+  $sender = _facebook_status_user_load_by_name($sender_name);
   facebook_status_save_status($recipient, $type, $message, $sender);
 }
 
