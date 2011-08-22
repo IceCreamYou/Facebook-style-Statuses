@@ -32,8 +32,6 @@ function facebook_status_save_js() {
   $new_form['chars']       = $form['chars'];
   $new_form['fbss-submit'] = $form['fbss-submit'];
   $new_form['sdefault']    = $form['sdefault'];
-  //Clear the status form after it's already been submitted once to prevent confusion.
-  unset($new_form['status']['#default_value']);
   //Calls hook_facebook_status_form_ahah_alter(&$new_form, $form).
   drupal_alter('facebook_status_form_ahah', $new_form, $form);
   //If the $form['fbss-submit']['#ahah']['wrapper'] div was found in a #prefix or #suffix of a form element that we re-rendered here,
