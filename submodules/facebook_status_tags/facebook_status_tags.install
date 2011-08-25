@@ -78,7 +78,8 @@ function facebook_status_tags_install() {
       'help' => '',
     );
     taxonomy_save_vocabulary($vocab);
-    $vid = db_result(db_query("SELECT vid FROM {vocabulary} WHERE name = '%s' AND module = 'facebook_status_tags'", st('Hashtags')));
+    $vid = isset($vocab['vid']) ? $vocab['vid'] :
+      db_result(db_query("SELECT vid FROM {vocabulary} WHERE name = '%s' AND module = 'facebook_status_tags'", st('Hashtags')));
     variable_set('facebook_status_tags_vid', $vid);
     drupal_set_message(st('The vocabulary "Hashtags" has been created and configured for use with the Facebook-style Statuses Tags module.'));
   }
