@@ -38,7 +38,7 @@ function fbss_privacy_form_facebook_status_box_alter(&$form, &$form_state) {
   $form['private'] = array(
     '#type' => 'checkbox',
     '#title' => t('Private'),
-    '#default_value' => 0,
+    '#default_value' => empty($_GET['private-status']) ? 0 : $_GET['private-status'],
     '#weight' => -24,
     '#prefix' => '<div class="facebook-status-private-box">',
     '#suffix' => '</div>',
@@ -83,6 +83,18 @@ function fbss_privacy_preprocess_facebook_status_item(&$vars) {
   $vars['private'] = (bool) $vars['status']->private;
   $vars['private_text'] = $vars['private'] ? t('(Private)') : t('Public');
   drupal_add_css(drupal_get_path('module', 'fbss_privacy') .'/fbss_privacy.css');
+}
+
+/**
+ * Implementation of hook_facebook_status_link_alter().
+ */
+function fbss_privacy_facebook_status_link_alter(&$links, $status) {
+  if (isset($links['respond']) && !empty($status->private)) {
+    if (!isset($links['respond']['query'])) {
+      $links['respond']['query'] = array();
+    }
+    $links['respond']['query']['private-status'] = 1;
+  }
 }
 
 //=============
