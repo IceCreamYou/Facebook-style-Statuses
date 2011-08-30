@@ -48,10 +48,9 @@ function _facebook_status_conversation() {
     if ($count === 1) {
       $args[1] = $user->uid;
     }
-    $arg = implode(',', $args);
-    return views_embed_view('facebook_status_conversation', 'default', $arg, $arg);
+    return views_embed_view('facebook_status_conversation', 'default', $args[0], $args[1]);
   }
-  $key = $key ? 0 : 1; //The recipient is not the current user.
+  $key = $key ? 0 : 1; // The recipient is not the current user.
   $recipient = _facebook_status_user_load($args[$key]);
   if (facebook_status_user_access('converse') && !empty($recipient->uid)) {
     return theme('facebook_status_form_display', $recipient, 'user');
