@@ -7,10 +7,9 @@
 
 /**
  * Implementation of hook_views_default_views_alter().
- *
- * Use the page URL from the 
  */
 function facebook_status_tags_views_default_views_alter(&$views) {
+  // Use the #hashtag URL from the administrative settings in the view.
   $url = variable_get('facebook_status_tags_url', 'statuses/term');
   $views['facebook_status_tags']->display['page_1']->display_options['path'] = $url;
   if (strpos($url, '%') === FALSE) {
@@ -18,6 +17,16 @@ function facebook_status_tags_views_default_views_alter(&$views) {
   }
   $url .= '/feed';
   $views['facebook_status_tags']->display['feed_1']->display_options['path'] = $url;
+
+  // Use the correct #hashtag vocabulary ID.
+  $vid = variable_get('facebook_status_tags_vid', -1);
+  if ($vid != -1) {
+    foreach ($views['facebook_status_tags']->display as $id => $display) {
+      if (isset($views['facebook_status_tags']->display[$id]->display_options['arguments']['has-specific-tag'])) {
+        $views['facebook_status_tags']->display[$id]->display_options['arguments']['has-specific-tag']['validate_argument_vocabulary'] = array($vid => $vid);
+      }
+    }
+  }
 }
 
 /**
