@@ -6,6 +6,21 @@
  */
 
 /**
+ * Implementation of hook_views_default_views_alter().
+ *
+ * Use the page URL from the 
+ */
+function facebook_status_tags_views_default_views_alter(&$views) {
+  $url = variable_get('facebook_status_tags_url', 'statuses/term');
+  $views['facebook_status_tags']->display['page_1']->display_options['path'] = $url;
+  if (strpos($url, '%') === FALSE) {
+    $url .= '/%';
+  }
+  $url .= '/feed';
+  $views['facebook_status_tags']->display['feed_1']->display_options['path'] = $url;
+}
+
+/**
  * Implementation of hook_views_data().
  */
 function facebook_status_tags_views_data() {
