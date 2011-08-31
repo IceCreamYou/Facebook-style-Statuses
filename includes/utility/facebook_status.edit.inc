@@ -33,6 +33,8 @@ function facebook_status_edit(&$form_state, $status) {
     '#default_value' => $status->message,
     '#attributes' => array('class' => 'facebook-status-text'),
     '#resizable' => FALSE,
+    '#prefix' => '<div class="facebook-status-textarea-wrapper">',
+    '#suffix' => '</div>',
     '#weight' => -40,
   );
   if ($maxlength > 0) {

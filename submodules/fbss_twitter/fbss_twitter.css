@@ -1,5 +1,4 @@
-.facebook-status-update #edit-twitter-wrapper {
-  clear: none;
-  margin: 0;
-  display: inline;
+.fbss-twitter-box {
+  float: right;
+  margin: 0.5em;
 }

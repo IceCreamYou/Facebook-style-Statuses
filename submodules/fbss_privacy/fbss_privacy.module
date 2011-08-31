@@ -39,7 +39,7 @@ function fbss_privacy_form_facebook_status_box_alter(&$form, &$form_state) {
     '#type' => 'checkbox',
     '#title' => t('Private'),
     '#default_value' => empty($_GET['private-status']) ? 0 : $_GET['private-status'],
-    '#weight' => -24,
+    '#weight' => -15,
     '#prefix' => '<div class="facebook-status-private-box">',
     '#suffix' => '</div>',
   );

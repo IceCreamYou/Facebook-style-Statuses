@@ -19,6 +19,7 @@ Drupal.behaviors.facebookStatus = function (context) {
   if ($.fn.autogrow && $facebook_status_field) {
     // jQuery Autogrow plugin integration.
     $facebook_status_field.autogrow({expandTolerance: 2});
+    $facebook_status_field.css('resize', 'none');
   }
   if (Drupal.settings.facebook_status.autofocus) {
     $facebook_status_field.focus();

@@ -72,6 +72,7 @@ Drupal.behaviors.fbss_comments = function (context) {
   }
   if ($.fn.autogrow) {
     // jQuery Autogrow plugin integration.
-    $('.fbss-comments-textarea').autogrow({expandTolerance: 2});
+    ctxt.find('.fbss-comments-textarea').autogrow({expandTolerance: 2});
+    ctxt.find('.fbss-comments-textarea').css('resize', 'none');
   }
 }
