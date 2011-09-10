@@ -14,7 +14,7 @@ function facebook_status_views_data() {
   $data['facebook_status']['table']['join'] = array(
     'users' => array(
       'left_field' => 'uid',
-      'field' => 'recipient',
+      'field' => 'sender',
       'type' => 'INNER',
     ),
   );
@@ -33,6 +33,27 @@ function facebook_status_views_data() {
     'help' => t('Stores status updates.'),
     'weight' => 10,
   );
+
+  // Make it possible to add a relationship to the Users table.
+  // Commented out because Views automatically JOINs on the {users} table when
+  // using User data without a Relationship, so adding the Relationship will
+  // cause a duplicate JOIN.
+  /*
+  $data['facebook_status']['users'] = array(
+    'group' => t('Facebook-style Statuses'),
+    'relationship' => array(
+      'title' => t('Users'),
+      'label' => t('Users'),
+      'help' => t('Add a relationship to gain access to information related to the users who submitted the relevant statuses.'),
+      'relationship table' => 'facebook_status',
+      'relationship field' => 'sender',
+      'base' => 'users',
+      'field' => 'uid',
+      'type' => 'INNER',
+      'handler' => 'views_handler_relationship',
+    ),
+  );
+   */
 
   // Declares the Status ID column.
   $data['facebook_status']['sid'] = array(
