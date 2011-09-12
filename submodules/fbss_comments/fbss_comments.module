@@ -402,14 +402,18 @@ function fbss_comments_load($cid) {
  *   An array of comment objects for the relative thread.
  */
 function fbss_comments_get_comments($sid, $filter_view_access = FALSE) {
-  $result = db_query("SELECT * FROM {fbss_comments} WHERE sid = %d ORDER BY created ASC, cid ASC", $sid);
-  $results = array();
-  while ($comment = db_fetch_object($result)) {
-    if (!$filter_view_access || fbss_comments_can('view', $comment)) {
-      $results[] = $comment;
+  static $comments = array();
+  $cache_id = $sid . '-' . (int)$filter_view_access;
+  if (!isset($comments[$cache_id])) {
+    $result = db_query("SELECT * FROM {fbss_comments} WHERE sid = %d ORDER BY cid ASC", $sid);
+    $comments[$cache_id] = array();
+    while ($comment = db_fetch_object($result)) {
+      if (!$filter_view_access || fbss_comments_can('view', $comment)) {
+        $comments[$cache_id][] = $comment;
+      }
     }
   }
-  return $results;
+  return $comments[$cache_id];
 }
 
 /**

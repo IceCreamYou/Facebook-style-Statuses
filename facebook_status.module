@@ -552,7 +552,11 @@ function facebook_status_has_status($recipient_id = NULL, $type = 'user', $sende
  *   A status object containing sid, sender, recipient, type, created, message.
  */
 function facebook_status_load($sid) {
-  return db_fetch_object(db_query("SELECT * FROM {facebook_status} WHERE sid = %d", $sid));
+  static $statuses = array();
+  if (!isset($statuses[$sid])) {
+    $statuses[$sid] = db_fetch_object(db_query("SELECT * FROM {facebook_status} WHERE sid = %d", $sid));
+  }
+  return $statuses[$sid];
 }
 
 /**
