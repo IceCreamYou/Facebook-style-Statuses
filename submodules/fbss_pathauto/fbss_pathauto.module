@@ -20,11 +20,11 @@ function fbss_pathauto_facebook_status_save($status, $context, $edit = FALSE) {
   module_load_include('inc', 'pathauto');
   $placeholders = pathauto_get_placeholders('facebook_status', $status);
   $src = 'statuses/'. $status->sid;
-  if ($context['type'] == 'user') {
-    $type = ($context['recipient']->{$context['recipient_id']} == $sender->uid) ? 'self' : 'other';
+  if ($status->type == 'user') {
+    $type = ($status->recipient == $status->sender) ? 'self' : 'other';
   }
   else {
-    $type = $context['type'];
+    $type = $status->type;
   }
   pathauto_create_alias('fbss_pathauto', $op, $placeholders, $src, $type);
 }
