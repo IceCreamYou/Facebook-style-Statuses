@@ -1,7 +1,8 @@
 /**
  * @group Visuals
  *
- * Things that you are relatively likely to want to override in your theme.
+ * Things that you are relatively likely to want to override in your theme,
+ * like colors.
  */
 
 .facebook-status-comments {
@@ -21,9 +22,15 @@
   border-color: #CCCCCC;
 }
 
+/* @end */
+
 /**
  * @group Links and buttons
  */
+
+.facebook-status-media .fbss-comments-links {
+  float: right;
+}
 
 .fbss-comments-form .form-submit {
   border-style: solid;
@@ -58,6 +65,7 @@
   padding-top: 0.75em;
 }
 
+/* .no-comments is unreliable; it doesn't update when a comment is saved via AJAX. */
 .facebook-status-comments.no-comments {
   border: 0 none;
 }
@@ -66,14 +74,14 @@
   margin-bottom: 0 !important; /* Fix Garland's #center form { margin-bottom: 2em; } */
 }
 
+.fbss-comments-form .button {
+  margin-top: -0.75em;
+}
+
 .fbss-comments .facebook-status-subitem:first-child,
 .facebook-status-comments :first-child,
 .facebook-status-subitem.form-piece {
   border-top: 0 none;
-}
-
-.fbss-comments + .facebook-status-subitem {
-  padding-bottom: 0;
 }
 
 .fbss-comments + .facebook-status-subitem .fbss-comments-show-comment-form-inner {

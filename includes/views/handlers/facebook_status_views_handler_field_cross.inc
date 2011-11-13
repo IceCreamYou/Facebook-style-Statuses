@@ -20,7 +20,7 @@ class facebook_status_views_handler_field_cross extends views_handler_field {
     $recipient_id = $values->{$this->aliases['recipient']};
     $sender_id = $values->{$this->field_alias};
     if ($sender_id == $recipient_id && $type == 'user') {
-      return theme('username', _facebook_status_user_load($sender_id));
+      return '<span class="facebook-status-sender">'. theme('username', _facebook_status_user_load($sender_id)) .'</span>';
     }
     else {
       $context = facebook_status_determine_context($type);

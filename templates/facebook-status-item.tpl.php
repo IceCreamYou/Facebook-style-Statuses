@@ -48,14 +48,18 @@
     <div class="facebook-status-sender-picture user-picture"><?php echo $sender_picture; ?></div>
   <?php endif; ?>
   <div class="content">
-    <?php if (!empty($sender_link)) : ?>
-      <div class="facebook-status-sender"><?php echo $sender_link; ?></div>
-    <?php endif; ?>
-    <?php if ($type == 'user' && !$self): ?>
-      &raquo; <span class="facebook-status-recipient"><?php echo $recipient_link; ?></span>
-    <?php endif; ?>
-    <?php if (!empty($private)) : ?>
-      <div class="facebook-status-private-text"><?php echo $private_text; ?></div>
+    <?php if (!empty($sender_link) && !empty($recipient_link)): ?>
+      <div class="facebook-status-participants">
+      <?php if (!empty($sender_link)) : ?>
+        <span class="facebook-status-sender"><?php echo $sender_link; ?></span>
+      <?php endif; ?>
+      <?php if (!empty($recipient_link) && $type == 'user' && !$self): ?>
+        &raquo; <span class="facebook-status-recipient"><?php echo $recipient_link; ?></span>
+      <?php endif; ?>
+      <?php if (!empty($private)) : ?>
+        <span class="facebook-status-private-text"><?php echo $private_text; ?></span>
+      <?php endif; ?>
+      </div>
     <?php endif; ?>
     <div class="facebook-status-content"><?php echo $message; ?></div>
     <?php if (!empty($attachment)) : ?>

@@ -51,7 +51,7 @@ function fbss_privacy_views_default_views() {
       'field' => 'sid',
       'relationship' => 'none',
     ),
-    'user_contextual_pic' => array(
+    'classes' => array(
       'label' => '',
       'alter' => array(
         'alter_text' => 0,
@@ -75,9 +75,67 @@ function fbss_privacy_views_default_views() {
       'hide_empty' => 0,
       'empty_zero' => 0,
       'exclude' => 1,
-      'id' => 'user_contextual_pic',
+      'id' => 'classes',
       'table' => 'facebook_status',
-      'field' => 'user_contextual_pic',
+      'field' => 'classes',
+      'relationship' => 'none',
+    ),
+    'sender_pic' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 1,
+      'id' => 'sender_pic',
+      'table' => 'facebook_status',
+      'field' => 'sender_pic',
+      'relationship' => 'none',
+    ),
+    'user_contextual' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 1,
+      'id' => 'user_contextual',
+      'table' => 'facebook_status',
+      'field' => 'user_contextual',
       'relationship' => 'none',
     ),
     'message' => array(
@@ -231,9 +289,16 @@ function fbss_privacy_views_default_views() {
     'nothing' => array(
       'label' => '',
       'alter' => array(
-        'text' => '<div>[user_contextual_pic] [message]</div>
-  
-  <div class="facebook-status-details">[created] [edit] [delete] [repost]</div>',
+        'text' => '<div id="facebook-status-item-[sid]" class="[classes]">
+  [sender_pic]
+  <div class="content">
+    [user_contextual]
+    [message]
+    <div class="facebook-status_details">
+      [edit] [delete] [repost] [created]
+    </div>
+  </div>
+</div>',
         'make_link' => 0,
         'path' => '',
         'link_class' => '',

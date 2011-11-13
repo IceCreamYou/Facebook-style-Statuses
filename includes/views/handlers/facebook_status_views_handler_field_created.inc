@@ -23,7 +23,7 @@ class facebook_status_views_handler_field_created extends views_handler_field_da
     $value = $values->{$this->field_alias};
     $format = $this->options['date_format'];
     $custom_format = '';
-    $output = '<span class="facebook-status-time">';
+    $output = '<div class="facebook-status-time">';
     if (in_array($format, array('custom', 'raw time ago', 'time ago', 'raw time span', 'time span'))) {
       $custom_format = $this->options['custom_date_format'];
     }
@@ -61,6 +61,6 @@ class facebook_status_views_handler_field_created extends views_handler_field_da
           break;
       }
     }
-    return $output .'</span>';
+    return $output .'</div>';
   }
 }
