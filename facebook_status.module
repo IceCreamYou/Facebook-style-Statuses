@@ -424,6 +424,9 @@ function theme_facebook_status_time($time) {
   if (!$time) {
     return FALSE;
   }
+  if (module_exists('timeago')) {
+    return timeago_format_date($time);
+  }
   if (time() - $time < 60) {
     return t('a moment ago');
   }
