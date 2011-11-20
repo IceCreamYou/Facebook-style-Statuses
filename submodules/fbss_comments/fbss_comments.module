@@ -613,7 +613,7 @@ function _fbss_comments_get_thread_author($sid) {
  */
 function _fbss_comments_use_autogrow() {
   module_load_include('inc', 'facebook_status', 'includes/utility/facebook_status.form');
-  _facebook_status_use_autogrow();
+  return _facebook_status_use_autogrow();
 }
 
 /**
@@ -692,7 +692,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE, $hide_submit 
   drupal_add_js(array('fbss_comments' => array(
     'ahah_enabled' => (bool) variable_get('fbss_comments_ahah', 1)
   )), 'setting');
-  _fbss_comments_use_autogrow();
+  $autogrow = _fbss_comments_use_autogrow();
   $form = array();
   if (!isset($form_state['fbss_comments']['q'])) {
     $form['#qu'] = $_GET['q'];
@@ -711,7 +711,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE, $hide_submit 
 
   $form['status-comment'] = array(
     '#type' => 'textarea',
-    '#rows' => 2,
+    '#rows' => $autogrow ? 1 : 2,
     '#prefix' => '<div class="facebook-status-textarea-wrapper">',
     '#suffix' => '</div>',
     '#attributes' => array('class' => 'fbss-comments-textarea'),
