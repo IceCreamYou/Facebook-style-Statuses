@@ -13,6 +13,10 @@
   border-color: #CCCCCC;
 }
 
+.facebook-status-update .button:hover {
+  background-color: #F6F6F6;
+}
+
 .facebook-status-negative {
   color: #900000;
 }
@@ -75,8 +79,6 @@
   overflow: auto;
   visibility: hidden;
 }
-
-/* @end */
 
 /* @group Textareas
  * 
