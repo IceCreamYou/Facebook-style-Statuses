@@ -376,6 +376,23 @@ function facebook_status_views_data() {
       ),
     );
   }
+  
+  if (module_exists('og_views')) {
+    // Include statuses from a user's groups.
+    $data['facebook_status']['og_statuses'] = array(
+      'title' => t('Show group statuses'),
+      'filter' => array(
+        'field' => 'type',
+        'handler' => 'facebook_status_views_handler_filter_og',
+        'help' => t("Limits statuses to those in the current user's stream and in the current user's groups' streams."),
+      ),
+      'argument' => array(
+        'field' => 'sender',
+        'handler' => 'facebook_status_views_handler_argument_og',
+        'help' => t("Limits statuses to those in the argument user's stream and in the argument user's groups' streams."),
+      ),
+    );
+  }
 
   return $data;
 }
@@ -390,6 +407,9 @@ function facebook_status_views_handlers() {
     ),
     'handlers' => array(
       'facebook_status_views_handler_argument_communicated' => array(
+        'parent' => 'views_handler_argument',
+      ),
+      'facebook_status_views_handler_argument_og' => array(
         'parent' => 'views_handler_argument',
       ),
       'facebook_status_views_handler_argument_participant' => array(
@@ -448,6 +468,9 @@ function facebook_status_views_handlers() {
       ),
       'facebook_status_views_handler_filter_latest_only' => array(
         'parent' => 'views_handler_filter_boolean_operator',
+      ),
+      'facebook_status_views_handler_filter_og' => array(
+        'parent' => 'views_handler_filter',
       ),
       'facebook_status_views_handler_filter_participant' => array(
         'parent' => 'views_handler_filter',
