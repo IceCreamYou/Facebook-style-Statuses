@@ -294,7 +294,7 @@ function fbss_privacy_views_default_views() {
   <div class="content">
     [user_contextual]
     [message]
-    <div class="facebook-status_details">
+    <div class="facebook-status-details">
       [edit] [delete] [repost] [created]
     </div>
   </div>

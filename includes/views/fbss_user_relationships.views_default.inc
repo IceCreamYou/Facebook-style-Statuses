@@ -310,7 +310,7 @@ function fbss_user_relationships_views_default_views() {
   <div class="content">
     <div class="facebook-status-participants">[name]</div>
     [message]
-    <div class="facebook-status_details">
+    <div class="facebook-status-details">
       <div class="facebook-status-links">[edit] [delete] [repost]</div> [created]
     </div>
     <!-- meta -->
