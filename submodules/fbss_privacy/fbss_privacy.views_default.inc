@@ -292,11 +292,12 @@ function fbss_privacy_views_default_views() {
         'text' => '<div id="facebook-status-item-[sid]" class="[classes]">
   [sender_pic]
   <div class="content">
-    [user_contextual]
+    <div class="facebook-status-participants">[user_contextual]</div>
     [message]
     <div class="facebook-status-details">
-      [edit] [delete] [repost] [created]
+      <div class="facebook-status-links">[edit] [delete] [repost]</div> [created]
     </div>
+    <!-- meta -->
   </div>
 </div>',
         'make_link' => 0,
