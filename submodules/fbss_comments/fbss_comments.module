@@ -185,7 +185,7 @@ function theme_fbss_comments_item($comment, $classes = array(), $destination = '
   if ($destination) {
     $q = $destination;
   }
-  elseif (strpos($q, 'fbss_comments/js/refresh') !== FALSE) {
+  elseif (strpos($q, 'fbss_comments/js') !== FALSE) {
     $q = '<front>';
   }
   // The following links output should ideally be created with theme_links. But since the query property
@@ -850,7 +850,9 @@ function fbss_comments_form_facebook_status_box_alter(&$form) {
  */
 function fbss_comments_modalframe_refresh($sid) {
   drupal_set_header('Content-Type: text/html; charset: utf-8');
-  echo theme('fbss_comments_items', fbss_comments_get_comments($sid, TRUE));
+  // $destination eventually gets encoded via l().
+  $destination = empty($_GET['source']) ? '' : $_GET['source'];
+  echo theme('fbss_comments_items', fbss_comments_get_comments($sid, TRUE), TRUE, $destination);
 }
 
 /**
