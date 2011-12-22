@@ -27,6 +27,7 @@
 
 .facebook-status-time { /* does not affect links */
   color: #999999;
+  display: inline;
 }
 
 .facebook-status-item .facebook-status-links ul.links li {
