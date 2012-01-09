@@ -622,30 +622,12 @@ function _fbss_comments_use_autogrow() {
  * @see template_preprocess_user_picture()
  */
 function _fbss_comments_user_picture($account) {
-  if (!module_exists('imagecache_profiles')) {
-    return theme('user_picture', $account);
+  $preset = variable_get('fbss_comments_user_pictures', 0);
+  if ($preset) {
+    $account->imagecache_preset = $preset;
   }
-  $output = '';
-  if (variable_get('user_pictures', 0)) {
-    if (!empty($account->picture) && file_exists($account->picture)) {
-      $picture = $account->picture;
-    }
-    else if (variable_get('user_picture_default', '')) {
-      $picture = variable_get('user_picture_default', '');
-    }
-    if (isset($picture)) {
-      $alt = t("@user's picture", array('@user' => $account->name ? $account->name : variable_get('anonymous', t('Anonymous'))));
-      $output = theme('imagecache', variable_get('fbss_comments_user_pictures', 0), $picture, $alt, $alt, NULL, FALSE);
-      if (!empty($account->uid) && user_access('access user profiles')) {
-        $attributes = array(
-          'attributes' => array('title' => t('View user profile.')),
-          'html' => TRUE,
-        );
-        $output = l($output, "user/$account->uid", $attributes);
-      }
-    }
-  }
-  return $output;
+  $picture = facebook_status_display_user_picture($account);
+  return empty($picture) ? '' : '<div class="fbss-comments-picture user-picture">'. $picture .'</div>';
 }
 
 //=================
