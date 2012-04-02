@@ -11,6 +11,7 @@
 class facebook_status_views_handler_argument_flagged_user extends views_handler_argument {
   function option_definition() {
     $options = parent::option_definition();
+    $content_type = 'facebook_status';
     $flag = array_shift(flag_get_flags($content_type));
     $default = $flag ? $flag->fid : NULL;
     $options['facebook_status_flag_type'] = array(

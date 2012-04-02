@@ -8,7 +8,7 @@
 /**
  * Allows linking to the recipient of the status.
  */
-class facebook_status_views_handler_field_recipient extends views_handler_field_user {
+class facebook_status_views_handler_field_recipient extends views_handler_field {
   function option_definition() {
     $options = parent::option_definition();
     $options['link_to'] = array(
