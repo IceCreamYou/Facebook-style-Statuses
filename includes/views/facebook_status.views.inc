@@ -300,6 +300,11 @@ function facebook_status_views_data() {
     'filter' => array(
       'handler' => 'views_handler_filter_date',
     ),
+    'argument' => array(
+      'handler' => 'facebook_status_views_handler_argument_created',
+      'field' => 'created',
+      'title' => t('Created time (YYYYMMDD)'),
+    ),
   );
 
   // Declares the status text column.
@@ -408,6 +413,9 @@ function facebook_status_views_handlers() {
     'handlers' => array(
       'facebook_status_views_handler_argument_communicated' => array(
         'parent' => 'views_handler_argument',
+      ),
+      'facebook_status_views_handler_argument_created' => array(
+        'parent' => 'views_handler_argument_date',
       ),
       'facebook_status_views_handler_argument_og' => array(
         'parent' => 'views_handler_argument',
