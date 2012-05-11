@@ -689,7 +689,7 @@ function fbss_comments_box(&$form_state, $sid, $delay_load = TRUE, $hide_submit 
     //$form['#action'] = url($_GET['view_path']);
   }
   $comments = fbss_comments_get_comments($sid, TRUE);
-  $form['before'] = array('#value' => '<div id="fbss-comments-replace-'. $sid .'">');
+  $form['before'] = array('#value' => '<div id="fbss-comments-replace-'. $sid .'" class="fbss-comments-replace">');
   $form['comments'] = array('#value' => theme('fbss_comments_items', $comments, $delay_load, $form['#qu']));
   $form['comment-entry-wrapper'] = array('#value' => '<div class="facebook-status-subitem">',);
 
