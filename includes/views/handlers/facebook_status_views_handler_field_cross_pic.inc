@@ -77,7 +77,6 @@ class facebook_status_views_handler_field_cross_pic extends views_handler_field 
       $recipient = $context['handler']->load_recipient($recipient_id);
       if (isset($options['imagecache_preset']) && $options['imagecache_preset']) {
         $sender->imagecache_preset = $options['imagecache_preset'];
-        $recipient->imagecache_preset = $options['imagecache_preset'];
       }
       $args = array(
         '!sender' => '<span class="facebook-status-sender">'. theme('username', $sender) .'</span>',
