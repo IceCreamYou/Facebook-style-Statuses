@@ -85,6 +85,6 @@ function fbss_comments_uninstall() {
   variable_del('fbss_comments_user_pictures');
   variable_del('fbss_comments_hide_small');
   variable_del('fbss_comments_show_all');
-  variable_del('facebook_status_ahah');
   variable_del('fbss_comments_enter');
+  variable_del('fbss_comments_ahah');
 }
