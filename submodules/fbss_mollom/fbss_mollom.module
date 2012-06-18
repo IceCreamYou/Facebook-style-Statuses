@@ -70,3 +70,12 @@ function fbss_mollom_mollom_form_info($form_id) {
     );
   }
 }
+
+/**
+ * Implementation of hook_facebook_status_form_ahah_alter().
+ */
+function fbss_mollom_facebook_status_form_ahah_alter(&$new_form, $old_form) {
+  if (isset($old_form['mollom'])) {
+    $new_form['mollom'] = $old_form['mollom'];
+  }
+}
